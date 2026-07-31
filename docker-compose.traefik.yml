@@ -1,0 +1,74 @@
+# Local end-to-end integration only. Production properties are deployed from
+# Vendra's deploy/property-template using a published image pinned by digest.
+# Start Vendra's proxy stack first; it owns ports 80/443 and traefik-public.
+name: "${ROUTER_NAME:?Set ROUTER_NAME in .env}"
+
+x-storefront-env: &storefront-env
+  # Runtime server values only. PROPERTY and NEXT_PUBLIC_* are compiled in.
+  VENDRA_API_URL: ${VENDRA_API_URL:?Set VENDRA_API_URL in .env}
+  STORAGE_BASE_URL: ${STORAGE_BASE_URL:-}
+  CONTACT_MOBILE_PHONE: ${CONTACT_MOBILE_PHONE:-}
+  CONTACT_OFFICE_PHONE: ${CONTACT_OFFICE_PHONE:-}
+  CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+  CONTACT_HOURS_OPEN: ${CONTACT_HOURS_OPEN:-}
+  CONTACT_HOURS_CLOSE: ${CONTACT_HOURS_CLOSE:-}
+  CONTACT_MAP_QUERY: ${CONTACT_MAP_QUERY:-}
+  NESHAN_SERVICE_KEY: ${NESHAN_SERVICE_KEY:-}
+
+services:
+  app:
+    image: "vendra-storefront-florist:${PROPERTY:?Set PROPERTY in .env}"
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ALPINE_MIRROR: ${ALPINE_MIRROR:-https://mirror.arvancloud.ir/alpine}
+        PROPERTY: ${PROPERTY:?Set PROPERTY in .env}
+        VENDRA_API_URL: ${VENDRA_API_URL:?Set VENDRA_API_URL in .env}
+        NEXT_PUBLIC_VENDRA_API_URL: ${NEXT_PUBLIC_VENDRA_API_URL:?Set NEXT_PUBLIC_VENDRA_API_URL in .env}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+        STORAGE_BASE_URL: ${STORAGE_BASE_URL:-}
+        NEXT_PUBLIC_STORAGE_BASE_URL: ${NEXT_PUBLIC_STORAGE_BASE_URL:-}
+        NEXT_PUBLIC_MAP_PROVIDER: ${NEXT_PUBLIC_MAP_PROVIDER:-osm}
+        NEXT_PUBLIC_NESHAN_MAP_KEY: ${NEXT_PUBLIC_NESHAN_MAP_KEY:-}
+        NEXT_PUBLIC_NESHAN_MAP_TYPE: ${NEXT_PUBLIC_NESHAN_MAP_TYPE:-}
+    environment: *storefront-env
+    # Local .test DNS resolves on the host; make its API hostname reachable
+    # from the container without baking a Vendra domain into this template.
+    extra_hosts:
+      - "${VENDRA_API_HOST:?Set VENDRA_API_HOST in .env}:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    expose:
+      - "3000"
+    networks:
+      - traefik-public
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.services.${ROUTER_NAME}.loadbalancer.server.port=3000"
+      - "traefik.http.services.${ROUTER_NAME}.loadbalancer.healthcheck.path=/api/health"
+      - "traefik.http.services.${ROUTER_NAME}.loadbalancer.healthcheck.interval=10s"
+      - "traefik.http.services.${ROUTER_NAME}.loadbalancer.healthcheck.timeout=3s"
+      - "traefik.http.routers.${ROUTER_NAME}.rule=Host(`${DOMAIN:?Set DOMAIN in .env}`) || Host(`www.${DOMAIN}`)"
+      - "traefik.http.routers.${ROUTER_NAME}.entrypoints=websecure"
+      - "traefik.http.routers.${ROUTER_NAME}.service=${ROUTER_NAME}"
+      - "traefik.http.routers.${ROUTER_NAME}.tls=true"
+      - "traefik.http.routers.${ROUTER_NAME}.tls.certresolver=${CERT_RESOLVER:-}"
+      - "traefik.http.routers.${ROUTER_NAME}.middlewares=www-redirect@file,security-headers@file,compression@file"
+    restart: unless-stopped
+
+networks:
+  traefik-public:
+    external: true
