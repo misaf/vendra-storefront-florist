@@ -1,1 +1,4 @@
-export { generateMetadata, default } from "@/modules/blog/page";
+export {
+  BlogPage as default,
+  generateBlogMetadata as generateMetadata,
+} from "@/generated/theme";

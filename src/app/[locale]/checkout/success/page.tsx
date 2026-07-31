@@ -1,1 +1,1 @@
-export { CheckoutSuccess as default } from "@/modules/checkout";
+export { CheckoutSuccessPage as default } from "@/generated/theme";

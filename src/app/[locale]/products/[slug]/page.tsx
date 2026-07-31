@@ -1,1 +1,4 @@
-export { generateMetadata, default } from "@/modules/products/detail-page";
+export {
+  ProductDetailPage as default,
+  generateProductDetailMetadata as generateMetadata,
+} from "@/generated/theme";

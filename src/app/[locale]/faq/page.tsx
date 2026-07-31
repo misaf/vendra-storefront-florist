@@ -1,1 +1,4 @@
-export { generateMetadata, default } from "@/modules/faq/page";
+export {
+  FaqPage as default,
+  generateFaqMetadata as generateMetadata,
+} from "@/generated/theme";
