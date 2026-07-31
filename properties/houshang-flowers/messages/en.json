@@ -1,0 +1,38 @@
+{
+  "checkout": {
+    "metadataDescription": "Discover beautiful fresh flowers and arrangements. Houshang Flowers offers premium quality bouquets, plants, and floral arrangements for every occasion."
+  },
+  "home": {
+    "metadataDescription": "Houshang Flowers — fresh bouquets, premium plants, and occasion-ready floral arrangements in Tehran, with careful design and same-day delivery.",
+    "heroBadge": "Houshang floral studio",
+    "heroWhatsAppLabel": "Open Houshang Flowers on WhatsApp",
+    "heroTelegramLabel": "Open Houshang Flowers on Telegram",
+    "heroInstagramLabel": "Open Houshang Flowers on Instagram",
+    "heroAddress": "Tehran - Jordan - West Atefi corner"
+  },
+  "products": {
+    "metadataDescription": "Discover beautiful fresh flowers and arrangements. Houshang Flowers offers premium quality bouquets, plants, and floral arrangements for every occasion."
+  },
+  "about": {
+    "heroSubtitle": "Houshang Flowers designs arrangements for gifting, celebration, and everyday beauty with careful flower selection, balanced composition, and personal attention to each order.",
+    "storyBody1": "Houshang Flowers is built around a simple belief: flowers should feel personal, considered, and beautifully prepared for the moment they are chosen for.",
+    "metadataTitle": "About Houshang Flowers",
+    "metadataDescription": "Learn about Houshang Flowers, a premium flower shop focused on fresh blooms, elegant floral design, and thoughtful customer service."
+  },
+  "contact": {
+    "mapLabel": "Map showing the location of Houshang Flowers",
+    "metadataDescription": "Discover beautiful fresh flowers and arrangements. Houshang Flowers offers premium quality bouquets, plants, and floral arrangements for every occasion.",
+    "addressValue": "Tehran - Jordan - Corner of West Atefi",
+    "visitTitle": "Find us in Jordan",
+    "visitDescription": "We're on the corner of West Atefi in Tehran's Jordan district. Drop in to choose stems in person, collect an order, or plan an occasion with the team."
+  },
+  "footer": {
+    "copyright": "© 2024 Houshang Flowers. All rights reserved."
+  },
+  "blog": {
+    "metadataDescription": "Discover beautiful fresh flowers and arrangements. Houshang Flowers offers premium quality bouquets, plants, and floral arrangements for every occasion."
+  },
+  "faq": {
+    "metadataDescription": "Find answers to common questions about Houshang Flowers — orders, delivery, flower care, and more."
+  }
+}

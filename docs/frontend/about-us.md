@@ -1,6 +1,6 @@
 # Frontend About Us Page
 
-The About Us page should introduce Houshang Flowers as a premium, trustworthy flower shop through authentic storytelling, craftsmanship, and service quality. It should strengthen customer confidence, communicate the brand's values, and naturally guide visitors toward browsing products or contacting the shop.
+The About Us page should introduce the property as a premium, trustworthy shop through authentic storytelling, craftsmanship, and service quality. It should strengthen customer confidence, communicate the brand's values, and naturally guide visitors toward browsing products or contacting the shop.
 
 The page should feel warm, elegant, editorial, and distinctly floral rather than resembling a generic corporate profile or company brochure.
 
@@ -10,7 +10,7 @@ The page should feel warm, elegant, editorial, and distinctly floral rather than
 
 The About Us page should:
 
-- Introduce the Houshang Flowers brand.
+- Introduce the property's brand.
 - Explain what makes the flower shop distinctive.
 - Build customer trust before purchase.
 - Showcase craftsmanship, freshness, and thoughtful service.
@@ -87,7 +87,7 @@ Requirements:
 
 ## Hero
 
-The hero should introduce Houshang Flowers with confidence and warmth.
+The hero should introduce the brand with confidence and warmth.
 
 Display:
 
@@ -121,7 +121,7 @@ Avoid:
 
 ## Brand Story
 
-The Brand Story should explain the philosophy behind Houshang Flowers.
+The Brand Story should explain the philosophy behind the brand.
 
 Topics may include:
 
@@ -364,9 +364,9 @@ Copy should be:
 - Shopping-oriented
 - Grounded in real floristry
 
-Only describe services, values, and capabilities that Houshang Flowers actually provides.
+Only describe services, values, and capabilities that the property actually provides.
 
-The About Us page exists to build trust and communicate the Houshang Flowers brand.
+The About Us page exists to build trust and communicate the property's brand.
 
 Do not include:
 

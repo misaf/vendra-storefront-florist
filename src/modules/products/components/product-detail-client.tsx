@@ -8,6 +8,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Card } from "@/shared/components/ui/card";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { isRtlLocale } from "@/shared/lib/locale";
+import { property } from "@/shared/property";
 import {
   Dialog,
   DialogContent,
@@ -64,8 +65,9 @@ interface ProductDetailClientProps {
 }
 
 const SOCIAL_SHARE_TARGETS = {
-  telegramUsername: "houshangflowers",
-  whatsappPhone: "989129333034",
+  telegramUsername: property.social.telegramUsername,
+  // wa.me accepts digits only.
+  whatsappPhone: property.social.whatsappPhone.replace(/\D/g, ""),
 } as const;
 
 type SocialSharePlatform = "telegram" | "whatsapp";

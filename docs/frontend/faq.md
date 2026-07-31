@@ -22,7 +22,7 @@ Reuse `PageShell`, `@/shared/i18n/navigation`, and existing shadcn/ui primitives
 
 Use the `src/modules/faq` public API — never fetch FAQ data directly in components.
 
-- Backend resources: `/faqs` and `/faq-categories` (JSON:API), with `include=faqCategory`, `filter[status]=1`, and `sort=position`. Category filtering uses the relationship route `faq-categories/{id}/faqs` (the slug is resolved to an id first, mirroring blog).
+- Backend resources: `/faqs` and `/faq-categories` (JSON:API), with `include=faqCategory`, `filter[status]=1`, and `sort[position]=asc`. Category filtering uses the relationship route `faq-categories/{id}/faqs` (the slug is resolved to an id first, mirroring blog).
 - Query helpers: `fetchFaqs` (list, optional `category` slug), `fetchFaqCategories`. React Query hooks `useFaqs` / `useFaqCategories` are available for client fetching. Re-exported from `src/modules/faq/index.ts`.
 - The API layer maps the JSON:API resource into the domain `Faq` type (`question`, `answer`, `position`, `category`, `categorySlug`). Answers are coerced to plain text (HTML stripped) in `src/modules/faq/lib/queries.ts` — keep all mapping there, not in components.
 

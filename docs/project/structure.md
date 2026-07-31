@@ -83,6 +83,18 @@ Shared code is for generic utilities and UI used by multiple modules:
 Prefer shared only for code genuinely used by two or more modules. Do not move
 feature-specific behavior into shared just to avoid an import.
 
+## Storefront Themes
+
+`src/themes/<id>/` owns theme-specific route composition. The bundled current
+design is `default`. A property selects one theme in `property.config.json`, and
+`scripts/select-property.mjs` writes a static `src/generated/theme.ts` adapter.
+App Router pages import that adapter, while themes reuse feature modules for
+API access, types, state, and shared behavior. This keeps property selection and
+theme selection build-time safe without coupling reusable modules to a design.
+
+Storefront themes are distinct from the visitor-controlled light/dark color
+mode; every storefront theme must support both color modes.
+
 ## State Management
 
 Cart, favorites, and order history are **client-side localStorage state**:

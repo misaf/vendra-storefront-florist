@@ -4,6 +4,7 @@ import {
   getNeshanServiceKey,
 } from "@/shared/lib/map-config";
 import { getSiteUrl } from "@/shared/lib/config";
+import { property } from "@/shared/property";
 
 /**
  * Reverse-geocode a pinned coordinate into a postal address. Runs server-side
@@ -59,7 +60,7 @@ async function reverseWithNominatim(
     `&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=${locale}`;
   const res = await fetch(url, {
     // Nominatim's usage policy requires an identifying User-Agent.
-    headers: { "User-Agent": `HoushangFlowers/1.0 (+${getSiteUrl()})` },
+    headers: { "User-Agent": `${property.slug}/1.0 (+${getSiteUrl()})` },
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Nominatim reverse failed: ${res.status}`);

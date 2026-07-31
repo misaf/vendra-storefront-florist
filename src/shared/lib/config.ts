@@ -1,63 +1,75 @@
-const DEFAULT_API_BASE_URL = "https://vendra.test/v1";
-const DEFAULT_STORAGE_BASE_URL = "https://vendra.test";
-const DEFAULT_SITE_URL = "https://houshang-flowers.com";
+import { property } from "@/shared/property";
 
 function normalizeBaseUrl(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
 /**
+ * The deploy template passes the canonical API as an origin
+ * (`VENDRA_API_URL=https://api.<base>`), while the storefront addresses
+ * resources below `/api`. Accept either form.
+ */
+function withApiSegment(value: string): string {
+  const base = normalizeBaseUrl(value);
+  return base.endsWith("/api") ? base : `${base}/api`;
+}
+
+/**
  * Public, canonical origin of the storefront (no trailing slash), e.g.
- * "https://houshang-flowers.com". Used for canonical URLs, hreflang
- * alternates, sitemap/robots, Open Graph and JSON-LD. Override per
- * environment via NEXT_PUBLIC_SITE_URL (must be the real production domain).
+ * "https://example.com". Used for canonical URLs, hreflang alternates,
+ * sitemap/robots, Open Graph and JSON-LD — and as the Origin the canonical API
+ * resolves this property's tenant from, so it must be the registered domain.
+ * Defaults to the selected property's `siteUrl`.
  */
 export function getSiteUrl(): string {
   return normalizeBaseUrl(
-    process.env.NEXT_PUBLIC_SITE_URL ||
-      process.env.SITE_URL ||
-      DEFAULT_SITE_URL
+    process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || property.siteUrl
   );
 }
 
 export function getApiBaseUrl(): string {
-  return normalizeBaseUrl(
+  return withApiSegment(
     process.env.API_BASE_URL ||
       process.env.NEXT_PUBLIC_API_BASE_URL ||
-      DEFAULT_API_BASE_URL
+      process.env.VENDRA_API_URL ||
+      process.env.NEXT_PUBLIC_VENDRA_API_URL ||
+      "http://localhost/api"
   );
 }
 
+/** Media host. Defaults to the API origin, which serves `/storage`. */
 export function getStorageBaseUrl(): string {
-  return normalizeBaseUrl(
-    process.env.STORAGE_BASE_URL ||
-      process.env.NEXT_PUBLIC_STORAGE_BASE_URL ||
-      DEFAULT_STORAGE_BASE_URL
-  );
-}
+  const configured =
+    process.env.STORAGE_BASE_URL || process.env.NEXT_PUBLIC_STORAGE_BASE_URL;
 
-const DEFAULT_CONTACT_MOBILE_PHONE = "0912-9333034";
-const DEFAULT_CONTACT_OFFICE_PHONE = "021-22011507";
-const DEFAULT_CONTACT_HOURS_OPEN = "08:00";
-const DEFAULT_CONTACT_HOURS_CLOSE = "21:00";
-// Store location for the map, as "lat,lng" so the pin lands on the
-// storefront. Override via CONTACT_MAP_QUERY (accepts coords or a place query).
-const DEFAULT_CONTACT_MAP_QUERY = "35.772123240655716,51.420586774090964";
+  return configured
+    ? normalizeBaseUrl(configured)
+    : getApiBaseUrl().replace(/\/api$/, "");
+}
 
 export interface ContactInfo {
   mobilePhone: string;
   officePhone: string;
+  email: string;
   hoursOpen: string;
   hoursClose: string;
   mapQuery: string;
 }
 
+/**
+ * Contact details for the selected property. Every field can still be
+ * overridden per environment, which is what keeps one image usable for a
+ * staging deployment of the same property.
+ */
 export function getContactInfo(): ContactInfo {
+  const { contact } = property;
+
   return {
-    mobilePhone: process.env.CONTACT_MOBILE_PHONE || DEFAULT_CONTACT_MOBILE_PHONE,
-    officePhone: process.env.CONTACT_OFFICE_PHONE || DEFAULT_CONTACT_OFFICE_PHONE,
-    hoursOpen: process.env.CONTACT_HOURS_OPEN || DEFAULT_CONTACT_HOURS_OPEN,
-    hoursClose: process.env.CONTACT_HOURS_CLOSE || DEFAULT_CONTACT_HOURS_CLOSE,
-    mapQuery: process.env.CONTACT_MAP_QUERY || DEFAULT_CONTACT_MAP_QUERY,
+    mobilePhone: process.env.CONTACT_MOBILE_PHONE || contact.mobilePhone,
+    officePhone: process.env.CONTACT_OFFICE_PHONE || contact.officePhone,
+    email: process.env.CONTACT_EMAIL || contact.email,
+    hoursOpen: process.env.CONTACT_HOURS_OPEN || contact.hoursOpen,
+    hoursClose: process.env.CONTACT_HOURS_CLOSE || contact.hoursClose,
+    mapQuery: process.env.CONTACT_MAP_QUERY || contact.mapQuery,
   };
 }

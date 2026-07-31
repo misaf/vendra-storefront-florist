@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
 import { getContactInfo, getSiteUrl } from "@/shared/lib/config";
+import { getPropertyName, property } from "@/shared/property";
 import { routing, type Locale } from "@/shared/i18n/routing";
 
 /** Brand name per locale (used for OG site name, JSON-LD, title templates). */
-export const SITE_NAME: Record<Locale, string> = {
-  fa: "مجتمع گل و گیاه هوشنگ",
-  en: "Houshang Flowers",
-};
+export const SITE_NAME: Record<Locale, string> = Object.fromEntries(
+  routing.locales.map((locale) => [locale, getPropertyName(locale)])
+) as Record<Locale, string>;
 
 /** Default social-share image, resolved against `metadataBase`. */
-export const DEFAULT_OG_IMAGE = "/hero-florist-studio.webp";
+export const DEFAULT_OG_IMAGE = property.ogImage;
 
-/**
- * Currency used in Product JSON-LD offers. ISO 4217 code — Iranian Rial.
- * If the store actually prices in Toman, change this to a custom unit.
- */
-export const PRICE_CURRENCY = "IRR";
+/** Currency used in Product JSON-LD offers (ISO 4217). */
+export const PRICE_CURRENCY = property.priceCurrency;
 
 const OG_LOCALE: Record<Locale, string> = {
   fa: "fa_IR",
@@ -168,17 +165,18 @@ export function organizationSchema(locale: string): JsonLd {
   const contact = getContactInfo();
   return {
     "@context": "https://schema.org",
-    "@type": "Florist",
+    "@type": property.businessType,
     "@id": `${getSiteUrl()}/#organization`,
     name: siteName(locale),
     url: getSiteUrl(),
     image: absoluteUrl(DEFAULT_OG_IMAGE),
     logo: absoluteUrl(DEFAULT_OG_IMAGE),
     telephone: contact.mobilePhone,
+    email: contact.email,
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Tehran",
-      addressCountry: "IR",
+      addressLocality: property.address.locality,
+      addressCountry: property.address.country,
     },
     openingHours: `Mo-Su ${contact.hoursOpen}-${contact.hoursClose}`,
     contactPoint: [

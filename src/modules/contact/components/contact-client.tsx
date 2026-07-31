@@ -20,6 +20,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { useTranslations } from "@/shared/hooks/use-translations";
+import { usePropertyName } from "@/shared/property/use-property-name";
 import { telHref } from "@/shared/lib/utils";
 import { Link } from "@/shared/i18n/navigation";
 import type { ContactInfo } from "@/shared/lib/config";
@@ -78,7 +79,7 @@ export default function ContactClient({ contactInfo }: { contactInfo: ContactInf
     contactInfo.hoursClose,
     locale
   );
-  const email = t("contact.emailValue");
+  const email = contactInfo.email;
 
   const guidanceItems = [
     t("contact.supportNoteProducts"),
@@ -235,6 +236,7 @@ function VisitStudioMap({
   locale: string;
   t: (key: string) => string;
 }) {
+  const storeName = usePropertyName();
   const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=16&hl=${locale}&output=embed`;
   const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
 
@@ -278,7 +280,7 @@ function VisitStudioMap({
                 <div className="flex items-center gap-2">
                   <MapPin className="size-4 shrink-0 text-primary-foreground/80" />
                   <p className="font-display text-base font-semibold leading-tight sm:text-lg">
-                    {t("common.store")}
+                    {storeName}
                   </p>
                 </div>
                 <p className="mt-1.5 text-sm leading-6 text-primary-foreground/85">

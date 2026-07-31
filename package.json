@@ -1,5 +1,5 @@
 {
-  "name": "houshang-flowers",
+  "name": "vendra-storefront-florist",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,7 +10,11 @@
     "lint:strict": "eslint --max-warnings=0",
     "typecheck": "tsc --noEmit --pretty false",
     "check": "npm run lint && npm run typecheck && npm run build",
-    "check:strict": "npm run lint:strict && npm run typecheck"
+    "check:strict": "npm run lint:strict && npm run typecheck",
+    "property": "node scripts/select-property.mjs",
+    "predev": "npm run property",
+    "prebuild": "npm run property",
+    "pretypecheck": "npm run property"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

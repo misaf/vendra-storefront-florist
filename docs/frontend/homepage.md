@@ -39,15 +39,9 @@ Requirements:
   - store address
   - mobile phone number
   - office phone number
-- Use the following contact information:
-  - Address: `تهران - جردن - نبش عاطفی غربی`
-  - Mobile: `0912-9333034`
-  - Office: `021-22011507`
+- Read the contact information from the property config (`getContactInfo()` in `src/shared/lib/config.ts`, backed by `properties/<slug>/property.config.json`). The address string stays in `messages/*.json` as `contact.addressValue`, overridden per property. Never hardcode a phone number or address here.
 - Display compact Instagram, Telegram, and WhatsApp icons alongside the contact information.
-- Use the following social links:
-  - WhatsApp: `https://wa.me/+989129333034`
-  - Telegram: `https://t.me/houshangflowers`
-  - Instagram: `https://www.instagram.com/houshangflower`
+- Build the social links from `property.social` (`whatsappPhone`, `telegramUsername`, `instagramUsername`) — never hardcode a handle.
 - Social icons should link to their corresponding pages and open in a new browser tab.
 - Provide accessible labels (`aria-label`) for each social link.
 - Present the contact information and social icons with a premium, elegant design that complements the hero instead of competing with the primary call-to-action.

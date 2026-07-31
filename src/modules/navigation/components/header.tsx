@@ -20,6 +20,7 @@ import {
 } from "@/shared/components/ui/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { useTranslations } from "@/shared/hooks/use-translations";
+import { usePropertyName } from "@/shared/property/use-property-name";
 import { useProductCategories } from "@/modules/products";
 import { cn } from "@/shared/lib/utils";
 import { isRtlLocale } from "@/shared/lib/locale";
@@ -114,6 +115,7 @@ function NavLink({
 
 export function Header({ showNav = true }: HeaderProps) {
   const { t, locale } = useTranslations();
+  const storeName = usePropertyName();
   const pathname = usePathname();
   const { data: apiCategories = [] } = useProductCategories();
   const [isMobileProductsOpen, setIsMobileProductsOpen] = useState(false);
@@ -158,7 +160,7 @@ export function Header({ showNav = true }: HeaderProps) {
             </span>
             <div className="min-w-0 leading-none">
               <span className="font-display block truncate text-lg font-medium text-foreground dark:text-white sm:text-xl">
-                {t("common.store")}
+                {storeName}
               </span>
               <span className="mt-1 hidden font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground sm:block">
                 {t("common.storeTagline")}
@@ -224,7 +226,7 @@ export function Header({ showNav = true }: HeaderProps) {
                         <Flower2 className="size-5" />
                       </span>
                       <div>
-                        <SheetTitle>{t("common.store")}</SheetTitle>
+                        <SheetTitle>{storeName}</SheetTitle>
                         <p className="mt-1 text-sm text-muted-foreground">
                           {t("common.mobileStoreTagline")}
                         </p>

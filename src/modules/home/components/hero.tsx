@@ -4,6 +4,8 @@ import Image from "next/image";
 import { Link } from "@/shared/i18n/navigation";
 import { Button } from "@/shared/components/ui/button";
 import { useTranslations } from "@/shared/hooks/use-translations";
+import { property } from "@/shared/property";
+import { usePropertyName } from "@/shared/property/use-property-name";
 import { cn, telHref } from "@/shared/lib/utils";
 import { isRtlLocale } from "@/shared/lib/locale";
 import {
@@ -25,6 +27,7 @@ interface HeroProps {
 
 export function Hero({ title, subtitle, showButtons = true }: HeroProps) {
   const { t, locale } = useTranslations();
+  const storeName = usePropertyName();
   const consultText = t("home.heroConsult");
   const isRTL = isRtlLocale(locale);
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
@@ -38,8 +41,11 @@ export function Hero({ title, subtitle, showButtons = true }: HeroProps) {
     { token: "var(--leaf)", label: t("home.colorLeaf") },
   ];
 
-  const heroMobile = t("home.heroMobile");
-  const heroOffice = t("home.heroOffice");
+  // Phone numbers come from the property config rather than the message
+  // catalogue: this is a client component, and a server-only CONTACT_* override
+  // would render on the server and then differ after hydration.
+  const heroMobile = property.contact.mobilePhone;
+  const heroOffice = property.contact.officePhone;
   const contactItems = [
     { icon: MapPin, value: t("home.heroAddress") },
     {
@@ -59,17 +65,17 @@ export function Hero({ title, subtitle, showButtons = true }: HeroProps) {
     {
       icon: MessageCircle,
       label: t("home.heroWhatsAppLabel"),
-      href: "https://wa.me/+989129333034",
+      href: `https://wa.me/${property.social.whatsappPhone}`,
     },
     {
       icon: Send,
       label: t("home.heroTelegramLabel"),
-      href: "https://t.me/houshangflowers",
+      href: `https://t.me/${property.social.telegramUsername}`,
     },
     {
       icon: Camera,
       label: t("home.heroInstagramLabel"),
-      href: "https://www.instagram.com/houshangflower",
+      href: `https://www.instagram.com/${property.social.instagramUsername}`,
     },
   ];
 
@@ -228,7 +234,7 @@ export function Hero({ title, subtitle, showButtons = true }: HeroProps) {
           >
             <Image
               src="/hero-florist-studio-storefront.webp"
-              alt={t("common.store")}
+              alt={storeName}
               fill
               sizes="(min-width: 1024px) 45vw, 100vw"
               className="object-cover"

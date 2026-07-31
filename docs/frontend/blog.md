@@ -1,6 +1,6 @@
 # Frontend Blog
 
-The blog presents Houshang Flowers articles and updates. It is fully **API-backed** — never hardcode or invent posts, categories, or content.
+The blog presents the property's articles and updates. It is fully **API-backed** — never hardcode or invent posts, categories, or content.
 
 ---
 

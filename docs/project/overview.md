@@ -2,7 +2,7 @@
 
 ## Overview
 
-Houshang Flowers is a multilingual flower-shop storefront built with **Next.js App Router**, **React**, **TypeScript**, **Tailwind CSS v4**, and **shadcn/ui** components powered by **Radix UI** primitives. The storefront consumes a **Laravel JSON:API** backend.
+This is the Vendra storefront template — a multilingual storefront built with **Next.js App Router**, **React**, **TypeScript**, **Tailwind CSS v4**, and **shadcn/ui** components powered by **Radix UI** primitives. The storefront consumes a **Laravel JSON:API** backend.
 
 Use shadcn/ui as the primary UI foundation across public storefront sections, forms, and interactive surfaces. Existing `src/shared/components/ui/` primitives should be reused before custom controls are introduced.
 

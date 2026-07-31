@@ -1,6 +1,6 @@
 # Frontend Contact Page
 
-The Contact page should help shoppers quickly reach Houshang Flowers for product inquiries, custom floral arrangements, delivery coordination, and general customer support.
+The Contact page should help shoppers quickly reach the store for product inquiries, custom floral arrangements, delivery coordination, and general customer support.
 
 The page must feel warm, trustworthy, premium, and consistent with the storefront. It should not look like a generic lead-generation or SaaS contact page.
 
@@ -69,7 +69,7 @@ The contact aside surfaces FAQs from the backend.
 - Use the `src/modules/faq` public API.
 - Fetch with the `useFaqs()` hook through the shared `apiClient`; never hardcode FAQ content.
 - The `/faqs` JSON:API resource exposes `name` (question) and `description` (answer); map them in the API layer, not the component.
-- Request `sort=position` and also sort by `position` client-side as a safety net.
+- Request `sort[position]=asc` and also sort by `position` client-side as a safety net.
 - Limit the aside to a small number of records (currently `perPage: 5`).
 
 ---
@@ -391,4 +391,4 @@ Every implementation of the Contact page should feel:
 - Helpful
 - Calm
 
-The page should reduce friction, encourage communication, and make it effortless for customers to contact Houshang Flowers.
+The page should reduce friction, encourage communication, and make it effortless for customers to contact the store.

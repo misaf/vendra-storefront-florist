@@ -3,15 +3,29 @@
 import { Link } from "@/shared/i18n/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/shared/hooks/use-translations";
+import { property } from "@/shared/property";
+import { usePropertyName } from "@/shared/property/use-property-name";
 import { Newsletter } from "@/modules/newsletter";
 import { Flower2, ShieldCheck } from "lucide-react";
 
 const linkClassName = "text-sm text-muted-foreground transition-colors hover:text-primary";
 
 const socialLinks = [
-  { label: "Instagram", href: "https://www.instagram.com/houshangflower", labelKey: "home.heroInstagramLabel" },
-  { label: "Telegram", href: "https://t.me/houshangflowers", labelKey: "home.heroTelegramLabel" },
-  { label: "WhatsApp", href: "https://wa.me/+989129333034", labelKey: "home.heroWhatsAppLabel" },
+  {
+    label: "Instagram",
+    href: `https://www.instagram.com/${property.social.instagramUsername}`,
+    labelKey: "home.heroInstagramLabel",
+  },
+  {
+    label: "Telegram",
+    href: `https://t.me/${property.social.telegramUsername}`,
+    labelKey: "home.heroTelegramLabel",
+  },
+  {
+    label: "WhatsApp",
+    href: `https://wa.me/${property.social.whatsappPhone}`,
+    labelKey: "home.heroWhatsAppLabel",
+  },
 ] as const;
 
 interface FooterProps {
@@ -20,6 +34,7 @@ interface FooterProps {
 
 export function Footer({ showNewsletter = true }: FooterProps) {
   const { t } = useTranslations();
+  const storeName = usePropertyName();
   const enamadContainerRef = useRef<HTMLDivElement | null>(null);
   const [showEnamadFallback, setShowEnamadFallback] = useState(true);
   const enamadHtml =
@@ -86,7 +101,7 @@ export function Footer({ showNewsletter = true }: FooterProps) {
                 <Flower2 className="size-5" />
               </span>
               <span className="font-display text-xl font-medium text-foreground">
-                {t("common.store")}
+                {storeName}
               </span>
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-7 text-muted-foreground">
