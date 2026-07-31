@@ -1,31 +1,32 @@
+import type { LocalizedValue } from "@/shared/api/localized";
+import type { ResourceReference } from "@/shared/api/types";
+
 export interface FaqResource {
   id: string | number;
   type?: string;
   relationshipNames?: string[];
 }
 
-export interface FaqCategorySummary extends FaqResource {
-  slug?: string;
-  name?: string;
-}
+export type FaqCategorySummary = ResourceReference;
 
 export interface FaqDto extends FaqResource {
-  name: string;
-  description?: unknown;
+  name: LocalizedValue<string>;
+  description?: LocalizedValue<unknown>;
+  slug?: LocalizedValue<string>;
   position?: number | string;
-  status?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   faqCategory?: FaqCategorySummary | FaqCategorySummary[];
 }
 
 export interface FaqCategoryDto extends FaqResource {
-  name: string;
-  slug: string;
-  description?: string;
-  status?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  name: LocalizedValue<string>;
+  slug: LocalizedValue<string>;
+  description?: LocalizedValue<string>;
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Faq {

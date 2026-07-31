@@ -1,4 +1,9 @@
-import type { JsonApiLinks, JsonApiPageMeta } from "@/shared/api/types";
+import type {
+  JsonApiLinks,
+  JsonApiPageMeta,
+  ResourceReference,
+} from "@/shared/api/types";
+import type { LocalizedValue } from "@/shared/api/localized";
 
 export interface PostResource {
   id: string | number;
@@ -9,31 +14,30 @@ export interface PostResource {
 export interface PostMedia extends PostResource {
   url?: string;
   uuid?: string;
+  generatedConversions?: Record<string, unknown>;
+  fileName?: string;
   generated_conversions?: Record<string, unknown>;
   file_name?: string;
   name?: string;
 }
 
-export interface PostCategorySummary extends PostResource {
-  slug?: string;
-  name?: string;
-}
+export type PostCategorySummary = ResourceReference;
 
 export interface PostCategoryDto extends PostResource {
-  name: string;
-  slug: string;
-  description?: string;
-  status?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  name: LocalizedValue<string>;
+  slug: LocalizedValue<string>;
+  description?: LocalizedValue<string>;
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PostDto extends PostResource {
-  name: string;
-  description?: unknown;
-  slug: string;
-  created_at: string;
-  updated_at: string;
+  name: LocalizedValue<string>;
+  description?: LocalizedValue<unknown>;
+  slug: LocalizedValue<string>;
+  createdAt: string;
+  updatedAt: string;
   multimedia?: PostMedia | PostMedia[];
   media?: PostMedia | PostMedia[];
   blogPostCategory?: PostCategorySummary | PostCategorySummary[];

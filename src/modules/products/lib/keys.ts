@@ -5,8 +5,8 @@ export type ProductSortValue = "newest" | "oldest" | "price-asc" | "price-desc";
 export function getProductsApiSort(
   sort: ProductSortValue | undefined
 ): string | undefined {
-  if (!sort || sort === "newest") return "-id";
-  if (sort === "oldest") return "id";
+  if (!sort || sort === "newest") return "desc";
+  if (sort === "oldest") return "asc";
   return undefined;
 }
 

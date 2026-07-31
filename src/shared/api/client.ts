@@ -1,5 +1,5 @@
 import Jsona from "jsona";
-import { getApiBaseUrl } from "@/shared/lib/config";
+import { getApiBaseUrl, getSiteUrl } from "@/shared/lib/config";
 import type { JsonApiLinks, JsonApiMeta } from "@/shared/api/types";
 import {
   JSON_API_HEADERS,
@@ -182,6 +182,13 @@ function createRequestHeaders({
 
   if (acceptLanguage) {
     requestHeaders.set("Accept-Language", acceptLanguage);
+  }
+
+  // The canonical API serves every property from one host and picks the tenant
+  // from the request origin. A browser sets Origin itself; a server-side render
+  // has none, so the storefront states its own public origin.
+  if (typeof window === "undefined") {
+    requestHeaders.set("Origin", getSiteUrl());
   }
 
   if (token) {

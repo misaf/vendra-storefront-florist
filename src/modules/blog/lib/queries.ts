@@ -1,12 +1,13 @@
 import { cache } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ApiClientError, apiClient } from "@/shared/api/client";
+import { getLocalizedValue } from "@/shared/api/localized";
 import { createApiQueryOptions, type ApiQueryOptions } from "@/shared/api/query-client";
 import { PLACEHOLDER_IMAGE, buildMediaUrl } from "@/shared/lib/image";
 import { getLeadingResourceId } from "@/shared/lib/slug-url";
 import { stringifyRichText, stripHtml } from "@/shared/lib/rich-text";
 import { parseNumericId } from "@/shared/lib/utils";
-import type { JsonApiLinks, JsonApiPageMeta } from "@/shared/api/types";
+import type { JsonApiLinks, JsonApiMeta } from "@/shared/api/types";
 import { postKeys } from "./keys";
 import type {
   CollectionLinks,
@@ -32,8 +33,8 @@ function appendOptionalQueryParam(
 
 function createPageQueryParams(page: number, perPage: number): URLSearchParams {
   return new URLSearchParams({
-    "page[number]": page.toString(),
-    "page[size]": perPage.toString(),
+    page: page.toString(),
+    itemsPerPage: perPage.toString(),
   });
 }
 
@@ -55,16 +56,20 @@ function getFirstRelationship<T>(data: T | T[] | undefined): T | undefined {
 }
 
 function getPagination(
-  pageMeta: JsonApiPageMeta | undefined,
+  meta: JsonApiMeta | undefined,
   fallback: { page: number; perPage: number }
 ): Pagination {
+  const currentPage = meta?.currentPage ?? meta?.page?.currentPage ?? fallback.page;
+  const perPage = meta?.itemsPerPage ?? meta?.page?.perPage ?? fallback.perPage;
+  const total = meta?.totalItems ?? meta?.page?.total ?? 0;
+
   return {
-    currentPage: pageMeta?.currentPage ?? fallback.page,
-    lastPage: pageMeta?.lastPage ?? 1,
-    perPage: pageMeta?.perPage ?? fallback.perPage,
-    total: pageMeta?.total ?? 0,
-    from: pageMeta?.from ?? 0,
-    to: pageMeta?.to ?? 0,
+    currentPage,
+    lastPage: meta?.page?.lastPage ?? Math.max(1, Math.ceil(total / perPage)),
+    perPage,
+    total,
+    from: meta?.page?.from ?? (total === 0 ? 0 : (currentPage - 1) * perPage + 1),
+    to: meta?.page?.to ?? Math.min(currentPage * perPage, total),
   };
 }
 
@@ -73,9 +78,9 @@ function buildImageUrl(media?: PostMedia | null): string | null {
   return buildMediaUrl({
     url: media.url,
     uuid: media.uuid,
-    fileName: media.file_name,
+    fileName: media.fileName ?? media.file_name,
     name: media.name,
-    conversions: media.generated_conversions,
+    conversions: media.generatedConversions ?? media.generated_conversions,
   });
 }
 
@@ -84,38 +89,57 @@ function getFirstRelatedImage(post: PostDto): string {
   return buildImageUrl(media) ?? "";
 }
 
-export function transformPost(post: PostDto): Post {
-  const excerpt = stripHtml(post.description, 200);
-  const category = getFirstRelationship(post.blogPostCategory);
+export function transformPost(
+  post: PostDto,
+  locale?: string,
+  categories?: PostCategoryLookup
+): Post {
+  const content = getLocalizedValue(post.description, locale);
+  const excerpt = stripHtml(content, 200);
+  // The API embeds the category as a reference (id, type, label), so the slug
+  // has to be resolved from the category collection.
+  const reference = getFirstRelationship(post.blogPostCategory);
+  const category = reference
+    ? categories?.get(parseNumericId(reference.id))
+    : undefined;
 
   return {
     id: parseNumericId(post.id),
-    title: post.name,
-    content: stringifyRichText(post.description),
-    richContent: post.description,
+    title: getLocalizedValue(post.name, locale) ?? "",
+    content: stringifyRichText(content),
+    richContent: content,
     excerpt,
-    slug: post.slug,
+    slug: getLocalizedValue(post.slug, locale) ?? "",
     image: getFirstRelatedImage(post),
-    publishedAt: undefined,
-    createdAt: post.created_at,
-    updatedAt: post.updated_at,
-    category: category?.name || category?.slug,
+    // Blog posts carry no separate publication date; creation is the closest
+    // equivalent the API exposes.
+    publishedAt: post.createdAt,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    category: reference?.label ?? category?.name,
   };
 }
 
-function transformPosts(posts: PostDto[]): Post[] {
-  return posts.map(transformPost);
+function transformPosts(
+  posts: PostDto[],
+  locale?: string,
+  categories?: PostCategoryLookup
+): Post[] {
+  return posts.map((post) => transformPost(post, locale, categories));
 }
 
-function transformPostCategory(category: PostCategoryDto): PostCategory {
+function transformPostCategory(
+  category: PostCategoryDto,
+  locale?: string
+): PostCategory {
   return {
     id: parseNumericId(category.id),
-    name: category.name,
-    slug: category.slug,
-    description: category.description,
-    status: category.status,
-    createdAt: category.created_at,
-    updatedAt: category.updated_at,
+    name: getLocalizedValue(category.name, locale) ?? "",
+    slug: getLocalizedValue(category.slug, locale) ?? "",
+    description: getLocalizedValue(category.description, locale),
+    status: category.active,
+    createdAt: category.createdAt,
+    updatedAt: category.updatedAt,
   };
 }
 
@@ -124,9 +148,12 @@ function getCategoryTimestamp(category: PostCategory): number {
   return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
-function transformPostCategories(categories: PostCategoryDto[]): PostCategory[] {
+function transformPostCategories(
+  categories: PostCategoryDto[],
+  locale?: string
+): PostCategory[] {
   return categories
-    .map(transformPostCategory)
+    .map((category) => transformPostCategory(category, locale))
     .sort((a, b) => {
       const timestampDiff = getCategoryTimestamp(b) - getCategoryTimestamp(a);
       return timestampDiff || b.id - a.id;
@@ -158,72 +185,50 @@ async function resolvePostCategoryId(
   return category ? String(category.id) : null;
 }
 
+type PostCategoryLookup = Map<number, PostCategory>;
+
+/**
+ * Category slugs live on the category collection, so it is loaded alongside
+ * every post fetch. A failure only costs the category label on a card, so it
+ * must not fail the post list itself.
+ */
+async function loadPostCategoryLookup(
+  locale?: string
+): Promise<PostCategoryLookup> {
+  try {
+    const categories = await fetchPostCategories(locale);
+    return new Map(categories.map((category) => [category.id, category]));
+  } catch {
+    return new Map();
+  }
+}
+
 async function fetchPostCollection(
   path: string,
   queryParams: URLSearchParams,
   fallback: { page: number; perPage: number },
   locale?: string
 ): Promise<FetchPostsResult> {
-  const response = await apiClient.get<PostDto[]>(path, {
-    query: queryParams,
-    locale,
-    next: { revalidate: 10 },
-    mode: "cors",
-    credentials: "omit",
-  });
+  const [response, categories] = await Promise.all([
+    apiClient.get<PostDto[]>(path, {
+      query: queryParams,
+      locale,
+      next: { revalidate: 10 },
+      mode: "cors",
+      credentials: "omit",
+    }),
+    loadPostCategoryLookup(locale),
+  ]);
 
   return {
-    posts: transformPosts(response.data),
-    pagination: getPagination(response.meta?.page, fallback),
+    posts: transformPosts(response.data, locale, categories),
+    pagination: getPagination(response.meta, fallback),
     links: extractCollectionLinks(response.links),
   };
 }
 
-function mergePostResults(
-  results: FetchPostsResult[],
-  fallback: { page: number; perPage: number }
-): FetchPostsResult {
-  const postsById = new Map<number, Post>();
-
-  for (const result of results) {
-    for (const post of result.posts) {
-      if (!postsById.has(post.id)) {
-        postsById.set(post.id, post);
-      }
-    }
-  }
-
-  return {
-    posts: [...postsById.values()],
-    pagination: {
-      currentPage: fallback.page,
-      lastPage: Math.max(
-        1,
-        ...results.map((result) => result.pagination.lastPage)
-      ),
-      perPage: fallback.perPage,
-      total: results.reduce(
-        (total, result) => total + result.pagination.total,
-        0
-      ),
-      from: results.some((result) => result.pagination.from > 0)
-        ? Math.min(
-            ...results
-              .map((result) => result.pagination.from)
-              .filter((value) => value > 0)
-          )
-        : 0,
-      to: results.reduce((total, result) => total + result.pagination.to, 0),
-    },
-    links: extractCollectionLinks(undefined),
-  };
-}
-
 function createPostQueryParams(page: number, perPage: number): URLSearchParams {
-  const queryParams = createPageQueryParams(page, perPage);
-  queryParams.append("include", "multimedia,blogPostCategory");
-  queryParams.append("filter[status]", "1");
-  return queryParams;
+  return createPageQueryParams(page, perPage);
 }
 
 export async function fetchPosts(
@@ -232,9 +237,9 @@ export async function fetchPosts(
   const { page = 1, perPage = 15, category, locale, search, slug } = params;
   const queryParams = createPostQueryParams(page, perPage);
   const normalizedSearch = search?.trim();
-  let path = "blog-posts";
+  const path = "content/blog-posts";
 
-  appendOptionalQueryParam(queryParams, "filter[slug]", slug);
+  appendOptionalQueryParam(queryParams, "slug", slug);
 
   if (category) {
     const categoryId = await resolvePostCategoryId(category, locale);
@@ -243,20 +248,11 @@ export async function fetchPosts(
       return emptyPostsResult(page, perPage);
     }
 
-    path = `blog-post-categories/${categoryId}/blog-posts`;
+    queryParams.append("categoryId", categoryId);
   }
 
   if (normalizedSearch && !slug) {
-    const searchFilters = ["filter[name]", "filter[slug]"];
-    const searchResults = await Promise.all(
-      searchFilters.map((filterKey) => {
-        const searchQueryParams = createPostQueryParams(page, perPage);
-        searchQueryParams.append(filterKey, normalizedSearch);
-        return fetchPostCollection(path, searchQueryParams, { page, perPage }, locale);
-      })
-    );
-
-    return mergePostResults(searchResults, { page, perPage });
+    queryParams.append("search", normalizedSearch);
   }
 
   return fetchPostCollection(path, queryParams, { page, perPage }, locale);
@@ -267,20 +263,17 @@ async function fetchPostById(
   locale?: string
 ): Promise<Post | null> {
   try {
-    const response = await apiClient.get<PostDto | PostDto[]>(
-      `blog-posts/${id}`,
-      {
-        query: {
-          include: "multimedia,blogPostCategory",
-        },
+    const [response, categories] = await Promise.all([
+      apiClient.get<PostDto | PostDto[]>(`content/blog-posts/${id}`, {
         locale,
         next: { revalidate: 10 },
         mode: "cors",
         credentials: "omit",
-      }
-    );
+      }),
+      loadPostCategoryLookup(locale),
+    ]);
     const post = getFirstResource(response.data);
-    return post ? transformPost(post) : null;
+    return post ? transformPost(post, locale, categories) : null;
   } catch (error) {
     if (error instanceof ApiClientError && error.status === 404) return null;
     throw error;
@@ -343,10 +336,10 @@ export async function fetchPostsWithDetails(
 export const fetchPostCategories = cache(
   async (locale?: string): Promise<PostCategory[]> => {
     const response = await apiClient.get<PostCategoryDto[]>(
-      "blog-post-categories",
+      "content/blog-post-categories",
       {
         query: {
-          "page[size]": "50",
+          itemsPerPage: "50",
         },
         locale,
         next: { revalidate: 10 },
@@ -355,7 +348,7 @@ export const fetchPostCategories = cache(
       }
     );
 
-    return transformPostCategories(response.data).filter(
+    return transformPostCategories(response.data, locale).filter(
       (category) => category.status !== false
     );
   }

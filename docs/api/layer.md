@@ -58,13 +58,13 @@ Avoid placing resource-specific logic inside unrelated modules or UI components.
 
 Primary backend resources currently include:
 
-- `/products`
-- `/product-categories`
-- `/blog-posts`
-- `/blog-post-categories`
-- `/faqs`
-- `/faq-categories`
-- `/multimedia`
+- `/catalog/products`
+- `/catalog/product-categories`
+- `/content/blog-posts`
+- `/content/blog-post-categories`
+- `/content/faqs`
+- `/content/faq-categories`
+- `/content/multimedia`
 - `/transactions`
 - `/users`
 

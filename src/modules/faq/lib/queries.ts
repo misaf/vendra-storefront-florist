@@ -1,5 +1,7 @@
+import { cache } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/shared/api/client";
+import { getLocalizedValue } from "@/shared/api/localized";
 import {
   createApiQueryOptions,
   type ApiQueryOptions,
@@ -24,28 +26,40 @@ function toPlainText(value: unknown): string {
   return stringifyRichText(value).replace(/<[^>]*>/g, "").trim();
 }
 
-function transformFaq(faq: FaqDto): Faq {
-  const category = getFirstRelationship<FaqCategorySummary>(faq.faqCategory);
+function transformFaq(
+  faq: FaqDto,
+  locale?: string,
+  categories?: FaqCategoryLookup
+): Faq {
+  // The API embeds the category as a reference (id, type, label), so the slug
+  // has to be resolved from the category collection.
+  const reference = getFirstRelationship<FaqCategorySummary>(faq.faqCategory);
+  const category = reference
+    ? categories?.get(parseNumericId(reference.id))
+    : undefined;
 
   return {
     id: parseNumericId(faq.id),
-    question: faq.name,
-    answer: toPlainText(faq.description),
+    question: getLocalizedValue(faq.name, locale) ?? "",
+    answer: toPlainText(getLocalizedValue(faq.description, locale)),
     position: parseNumericId(faq.position ?? 0),
-    category: category?.name || category?.slug,
+    category: reference?.label ?? category?.name,
     categorySlug: category?.slug,
   };
 }
 
-function transformFaqCategory(category: FaqCategoryDto): FaqCategory {
+function transformFaqCategory(
+  category: FaqCategoryDto,
+  locale?: string
+): FaqCategory {
   return {
     id: parseNumericId(category.id),
-    name: category.name,
-    slug: category.slug,
-    description: category.description,
-    status: category.status,
-    createdAt: category.created_at,
-    updatedAt: category.updated_at,
+    name: getLocalizedValue(category.name, locale) ?? "",
+    slug: getLocalizedValue(category.slug, locale) ?? "",
+    description: getLocalizedValue(category.description, locale),
+    status: category.active,
+    createdAt: category.createdAt,
+    updatedAt: category.updatedAt,
   };
 }
 
@@ -59,21 +73,42 @@ async function resolveFaqCategoryId(
   return category ? String(category.id) : null;
 }
 
+type FaqCategoryLookup = Map<number, FaqCategory>;
+
+/**
+ * Category slugs live on the category collection, so it is loaded alongside the
+ * FAQ list. A failure only costs the category label, so it must not fail the
+ * list itself.
+ */
+async function loadFaqCategoryLookup(
+  locale?: string
+): Promise<FaqCategoryLookup> {
+  try {
+    const categories = await fetchFaqCategories(locale);
+    return new Map(categories.map((category) => [category.id, category]));
+  } catch {
+    return new Map();
+  }
+}
+
 async function fetchFaqCollection(
   path: string,
   queryParams: URLSearchParams,
   locale?: string
 ): Promise<Faq[]> {
-  const response = await apiClient.get<FaqDto[]>(path, {
-    query: queryParams,
-    locale,
-    next: { revalidate: 10 },
-    mode: "cors",
-    credentials: "omit",
-  });
+  const [response, categories] = await Promise.all([
+    apiClient.get<FaqDto[]>(path, {
+      query: queryParams,
+      locale,
+      next: { revalidate: 10 },
+      mode: "cors",
+      credentials: "omit",
+    }),
+    loadFaqCategoryLookup(locale),
+  ]);
 
   return response.data
-    .map(transformFaq)
+    .map((faq) => transformFaq(faq, locale, categories))
     .filter((faq) => faq.question);
 }
 
@@ -81,29 +116,13 @@ function sortFaqs(faqs: Faq[]): Faq[] {
   return faqs.sort((a, b) => a.position - b.position || a.id - b.id);
 }
 
-function mergeFaqs(results: Faq[][]): Faq[] {
-  const faqsById = new Map<number, Faq>();
-
-  for (const result of results) {
-    for (const faq of result) {
-      if (!faqsById.has(faq.id)) {
-        faqsById.set(faq.id, faq);
-      }
-    }
-  }
-
-  return sortFaqs([...faqsById.values()]);
-}
-
 function createFaqQueryParams(page: number, perPage: number): URLSearchParams {
   const queryParams = new URLSearchParams({
-    "page[number]": page.toString(),
-    "page[size]": perPage.toString(),
+    page: page.toString(),
+    itemsPerPage: perPage.toString(),
   });
 
-  queryParams.append("include", "faqCategory");
-  queryParams.append("filter[status]", "1");
-  queryParams.append("sort", "position");
+  queryParams.append("sort[position]", "asc");
   return queryParams;
 }
 
@@ -112,7 +131,7 @@ export async function fetchFaqs(params: FetchFaqsParams = {}): Promise<Faq[]> {
   const queryParams = createFaqQueryParams(page, perPage);
   const normalizedSearch = search?.trim();
 
-  let path = "faqs";
+  const path = "content/faqs";
 
   if (category) {
     const categoryId = await resolveFaqCategoryId(category, locale);
@@ -121,40 +140,36 @@ export async function fetchFaqs(params: FetchFaqsParams = {}): Promise<Faq[]> {
       return [];
     }
 
-    path = `faq-categories/${categoryId}/faqs`;
+    queryParams.append("categoryId", categoryId);
   }
 
   if (normalizedSearch) {
-    const searchFilters = ["filter[name]", "filter[slug]"];
-    const results = await Promise.all(
-      searchFilters.map((filterKey) => {
-        const searchQueryParams = createFaqQueryParams(page, perPage);
-        searchQueryParams.append(filterKey, normalizedSearch);
-        return fetchFaqCollection(path, searchQueryParams, locale);
-      })
-    );
-
-    return mergeFaqs(results);
+    queryParams.append("search", normalizedSearch);
   }
 
   return sortFaqs(await fetchFaqCollection(path, queryParams, locale));
 }
 
-export async function fetchFaqCategories(locale?: string): Promise<FaqCategory[]> {
-  const response = await apiClient.get<FaqCategoryDto[]>("faq-categories", {
-    query: {
-      "page[size]": "50",
-    },
-    locale,
-    next: { revalidate: 10 },
-    mode: "cors",
-    credentials: "omit",
-  });
+// Cached per request: the FAQ page resolves the category list, and every FAQ
+// fetch resolves category slugs through it, so without cache() the fetch +
+// transform would run repeatedly for a single render.
+export const fetchFaqCategories = cache(
+  async (locale?: string): Promise<FaqCategory[]> => {
+    const response = await apiClient.get<FaqCategoryDto[]>("content/faq-categories", {
+      query: {
+        itemsPerPage: "50",
+      },
+      locale,
+      next: { revalidate: 10 },
+      mode: "cors",
+      credentials: "omit",
+    });
 
-  return response.data
-    .map(transformFaqCategory)
-    .filter((category) => category.status !== false && category.name);
-}
+    return response.data
+      .map((category) => transformFaqCategory(category, locale))
+      .filter((category) => category.status !== false && category.name);
+  }
+);
 
 export function useFaqs(
   params: FetchFaqsParams = {},

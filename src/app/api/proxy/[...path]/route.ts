@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getApiBaseUrl } from "@/shared/lib/config";
+import { getApiBaseUrl, getSiteUrl } from "@/shared/lib/config";
 import { JSON_API_HEADERS, getNetworkErrorStatus } from "@/shared/lib/network";
 
 const API_BASE_URL = getApiBaseUrl();
@@ -11,6 +11,11 @@ function createProxyHeaders(request: NextRequest): Headers {
   if (acceptLanguage) {
     headers.set("Accept-Language", acceptLanguage);
   }
+
+  // The browser's own origin is this storefront's runtime host, which in
+  // development is localhost. The canonical API selects the tenant by origin,
+  // so the proxy forwards the configured public origin instead.
+  headers.set("Origin", getSiteUrl());
 
   return headers;
 }

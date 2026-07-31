@@ -4,12 +4,13 @@
 
 The frontend consumes a **Laravel JSON:API** backend. Treat the backend API as an external contract and never infer or modify its behavior based solely on frontend requirements.
 
-The API follows the **JSON:API 1.1** specification and is implemented using **Laravel JSON:API 5.x**.
+The API follows the **JSON:API 1.1** specification and is implemented using
+**API Platform for Laravel 4.3**.
 
 Primary references:
 
 - JSON:API Specification 1.1
-- Laravel JSON:API 5.x documentation: `https://laraveljsonapi.io/5.x/`
+- API Platform documentation: `https://api-platform.com/docs/`
 
 Use both specifications as the authoritative reference for:
 

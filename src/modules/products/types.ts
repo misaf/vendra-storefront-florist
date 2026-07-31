@@ -1,4 +1,9 @@
-import type { JsonApiLinks, JsonApiPageMeta } from "@/shared/api/types";
+import type {
+  JsonApiLinks,
+  JsonApiPageMeta,
+  ResourceReference,
+} from "@/shared/api/types";
+import type { LocalizedValue } from "@/shared/api/localized";
 
 export interface ApiResource {
   id: string | number;
@@ -9,22 +14,14 @@ export interface ApiResource {
 export interface ProductMedia extends ApiResource {
   url?: string;
   uuid?: string;
+  generatedConversions?: Record<string, unknown>;
+  fileName?: string;
   generated_conversions?: Record<string, unknown>;
   file_name?: string;
   name?: string;
-  attributes?: {
-    url?: string;
-    uuid?: string;
-    generated_conversions?: Record<string, unknown>;
-    file_name?: string;
-    name?: string;
-  };
 }
 
-export interface ProductCategorySummary extends ApiResource {
-  slug?: string;
-  name?: string;
-}
+export type ProductCategorySummary = ResourceReference;
 
 export interface ProductPriceValue {
   amount?: number | string | null;
@@ -35,6 +32,9 @@ export interface ProductPriceValue {
 export type ProductPriceField = number | string | ProductPriceValue | null;
 
 export interface ProductPriceDto extends ApiResource {
+  minorAmount?: number | null;
+  currency?: string;
+  formatted?: string;
   price?: ProductPriceField;
   sale_price?: ProductPriceField;
   final_price?: ProductPriceField;
@@ -50,17 +50,20 @@ export interface ProductPriceDto extends ApiResource {
 }
 
 export interface ProductDto extends ApiResource {
-  name: string;
-  description?: unknown;
+  name: LocalizedValue<string>;
+  description?: LocalizedValue<unknown>;
   price?: number | string | null;
   sale_price?: number | string | null;
   final_price?: number | string | null;
-  slug?: string;
+  slug?: LocalizedValue<string>;
   token?: string;
   quantity?: number | null;
   in_stock?: boolean;
+  inStock?: boolean;
   created_at?: string;
   updated_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
   multimedia?: ProductMedia | ProductMedia[];
   media?: ProductMedia | ProductMedia[];
   productCategory?: ProductCategorySummary | ProductCategorySummary[];
@@ -75,11 +78,13 @@ export interface ProductDto extends ApiResource {
 }
 
 export interface ProductCategoryDto extends ApiResource {
-  name: string;
-  description: unknown;
-  slug: string;
+  name: LocalizedValue<string>;
+  description: LocalizedValue<unknown>;
+  slug: LocalizedValue<string>;
   position: number;
-  status: boolean;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   updated_at?: string;
   multimedia?: ProductMedia | ProductMedia[];
   media?: ProductMedia | ProductMedia[];

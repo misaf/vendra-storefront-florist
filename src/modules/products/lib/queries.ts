@@ -1,12 +1,13 @@
 import { cache } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ApiClientError, apiClient } from "@/shared/api/client";
+import { getLocalizedValue } from "@/shared/api/localized";
 import { createApiQueryOptions, type ApiQueryOptions } from "@/shared/api/query-client";
 import { PLACEHOLDER_IMAGE, buildMediaUrl } from "@/shared/lib/image";
 import { getLeadingResourceId } from "@/shared/lib/slug-url";
 import { stripHtml } from "@/shared/lib/rich-text";
 import { parseNumericId } from "@/shared/lib/utils";
-import type { JsonApiLinks, JsonApiPageMeta } from "@/shared/api/types";
+import type { JsonApiLinks, JsonApiMeta } from "@/shared/api/types";
 import { productKeys } from "./keys";
 import type {
   CollectionLinks,
@@ -34,8 +35,8 @@ function appendOptionalQueryParam(
 
 function createPageQueryParams(page: number, perPage: number): URLSearchParams {
   return new URLSearchParams({
-    "page[number]": page.toString(),
-    "page[size]": perPage.toString(),
+    page: page.toString(),
+    itemsPerPage: perPage.toString(),
   });
 }
 
@@ -107,7 +108,7 @@ function resolveProductPriceResource(
     if (parsed > 0) {
       return {
         value: parsed,
-        formatted: getFormattedPriceValue(candidate),
+        formatted: price.formatted ?? getFormattedPriceValue(candidate),
       };
     }
   }
@@ -145,43 +146,31 @@ function resolveProductPricing(product: ProductDto): ResolvedProductPrice {
 }
 
 function getPagination(
-  pageMeta: JsonApiPageMeta | undefined,
+  meta: JsonApiMeta | undefined,
   fallback: { page: number; perPage: number }
 ): Pagination {
+  const currentPage = meta?.currentPage ?? meta?.page?.currentPage ?? fallback.page;
+  const perPage = meta?.itemsPerPage ?? meta?.page?.perPage ?? fallback.perPage;
+  const total = meta?.totalItems ?? meta?.page?.total ?? 0;
+
   return {
-    currentPage: pageMeta?.currentPage ?? fallback.page,
-    lastPage: pageMeta?.lastPage ?? 1,
-    perPage: pageMeta?.perPage ?? fallback.perPage,
-    total: pageMeta?.total ?? 0,
-    from: pageMeta?.from ?? 0,
-    to: pageMeta?.to ?? 0,
+    currentPage,
+    lastPage: meta?.page?.lastPage ?? Math.max(1, Math.ceil(total / perPage)),
+    perPage,
+    total,
+    from: meta?.page?.from ?? (total === 0 ? 0 : (currentPage - 1) * perPage + 1),
+    to: meta?.page?.to ?? Math.min(currentPage * perPage, total),
   };
 }
 
-type ProductMediaAttributeKey =
-  | "url"
-  | "uuid"
-  | "generated_conversions"
-  | "file_name"
-  | "name";
-
-function getMediaValue<K extends ProductMediaAttributeKey>(
-  media: ProductMedia,
-  key: K
-): ProductMedia[K] | NonNullable<ProductMedia["attributes"]>[K] {
-  return media[key] ?? media.attributes?.[key];
-}
-
-// ProductMedia nests its fields under `attributes`; flatten them for the
-// shared storage-URL builder.
 function buildImageUrl(media?: ProductMedia | null): string | null {
   if (!media) return null;
   return buildMediaUrl({
-    url: getMediaValue(media, "url"),
-    uuid: getMediaValue(media, "uuid"),
-    fileName: getMediaValue(media, "file_name"),
-    name: getMediaValue(media, "name"),
-    conversions: getMediaValue(media, "generated_conversions"),
+    url: media.url,
+    uuid: media.uuid,
+    fileName: media.fileName ?? media.file_name,
+    name: media.name,
+    conversions: media.generatedConversions ?? media.generated_conversions,
   });
 }
 
@@ -210,11 +199,18 @@ function getFirstRelatedCategoryImage(category: ProductCategoryDto): string {
   return buildImageUrl(media) ?? "";
 }
 
-function getProductCategoryInfo(product: ProductDto): {
+/**
+ * The API embeds a product's category as a reference (id, type, label) rather
+ * than a full resource, so the slug has to come from the category collection.
+ */
+function getProductCategoryInfo(
+  product: ProductDto,
+  categories?: ProductCategoryLookup
+): {
   slug?: string;
   name?: string;
 } {
-  const category = getFirstRelationship(
+  const reference = getFirstRelationship(
     product.productCategory ??
       product.productCategories ??
       product.product_category ??
@@ -222,56 +218,81 @@ function getProductCategoryInfo(product: ProductDto): {
       product.categories
   );
 
+  if (!reference) {
+    return {};
+  }
+
+  const category = categories?.get(parseNumericId(reference.id));
+
   return {
     slug: category?.slug,
-    name: category?.name,
+    name: reference.label ?? category?.name ?? undefined,
   };
 }
 
-export function transformProduct(product: ProductDto): Product {
-  const categoryInfo = getProductCategoryInfo(product);
+export function transformProduct(
+  product: ProductDto,
+  locale?: string,
+  categories?: ProductCategoryLookup
+): Product {
+  const categoryInfo = getProductCategoryInfo(product, categories);
   const pricing = resolveProductPricing(product);
+  const description = getLocalizedValue(product.description, locale);
 
   return {
     id: parseNumericId(product.id),
-    name: product.name,
+    name: getLocalizedValue(product.name, locale) ?? "",
     price: pricing.value,
     formattedPrice: pricing.formatted,
     image: getFirstRelatedImage(product),
     images: getRelatedImages(product),
-    description: stripHtml(product.description, 150),
-    richDescription: product.description,
+    description: stripHtml(description, 150),
+    richDescription: description,
     category: categoryInfo.name || categoryInfo.slug,
     categorySlug: categoryInfo.slug,
-    slug: product.slug,
+    slug: getLocalizedValue(product.slug, locale),
     token: product.token,
-    inStock: product.in_stock,
+    inStock: product.inStock ?? product.in_stock,
     quantity: product.quantity,
-    createdAt: product.created_at,
-    updatedAt: product.updated_at,
+    createdAt: product.createdAt ?? product.created_at,
+    updatedAt: product.updatedAt ?? product.updated_at,
   };
 }
 
-function transformProducts(products: ProductDto[]): Product[] {
-  return products.map(transformProduct);
+function transformProducts(
+  products: ProductDto[],
+  locale?: string,
+  categories?: ProductCategoryLookup
+): Product[] {
+  return products.map((product) => transformProduct(product, locale, categories));
 }
 
-function transformCategory(category: ProductCategoryDto): ProductCategory {
+function transformCategory(
+  category: ProductCategoryDto,
+  locale?: string
+): ProductCategory {
+  const description = getLocalizedValue(category.description, locale);
+
   return {
     id: parseNumericId(category.id),
-    name: category.name,
-    slug: category.slug,
-    description: stripHtml(category.description, 500) || null,
-    richDescription: category.description,
+    name: getLocalizedValue(category.name, locale) ?? "",
+    slug: getLocalizedValue(category.slug, locale) ?? "",
+    description: stripHtml(description, 500) || null,
+    richDescription: description,
     position: category.position,
-    status: category.status,
-    updated_at: category.updated_at,
+    status: category.active,
+    updated_at: category.updatedAt ?? category.updated_at,
     image: getFirstRelatedCategoryImage(category),
   };
 }
 
-function transformCategories(categories: ProductCategoryDto[]): ProductCategory[] {
-  return categories.map(transformCategory).sort((a, b) => a.position - b.position);
+function transformCategories(
+  categories: ProductCategoryDto[],
+  locale?: string
+): ProductCategory[] {
+  return categories
+    .map((category) => transformCategory(category, locale))
+    .sort((a, b) => a.position - b.position);
 }
 
 function withPlaceholderImage<T extends { image?: string }>(items: T[]): T[] {
@@ -299,81 +320,69 @@ async function resolveProductCategoryId(
   return category ? String(category.id) : null;
 }
 
+type ProductCategoryLookup = Map<number, ProductCategory>;
+
+/**
+ * Category slugs are only available on the category collection, so it is loaded
+ * alongside every product fetch. A failure here only costs the category label on
+ * a card, so it must not fail the product list itself.
+ */
+async function loadProductCategoryLookup(
+  locale?: string
+): Promise<ProductCategoryLookup> {
+  try {
+    const categories = await fetchProductCategories(locale);
+    return new Map(categories.map((category) => [category.id, category]));
+  } catch {
+    return new Map();
+  }
+}
+
 async function fetchProductCollection(
   path: string,
   queryParams: URLSearchParams,
   fallback: { page: number; perPage: number },
   locale?: string
 ): Promise<FetchProductsResult> {
-  const response = await apiClient.get<ProductDto[]>(path, {
-    query: queryParams,
-    locale,
-    next:
-      queryParams.get("sort") === "random-position"
-        ? { revalidate: 0 }
-        : { revalidate: 10 },
-    mode: "cors",
-    credentials: "omit",
-  });
+  const [response, categories] = await Promise.all([
+    apiClient.get<ProductDto[]>(path, {
+      query: queryParams,
+      locale,
+      next:
+        queryParams.get("random") === "1"
+          ? { revalidate: 0 }
+          : { revalidate: 10 },
+      mode: "cors",
+      credentials: "omit",
+    }),
+    loadProductCategoryLookup(locale),
+  ]);
 
   return {
-    products: transformProducts(response.data),
-    pagination: getPagination(response.meta?.page, fallback),
+    products: transformProducts(response.data, locale, categories),
+    pagination: getPagination(response.meta, fallback),
     links: extractCollectionLinks(response.links),
   };
 }
 
-function mergeProductResults(
-  results: FetchProductsResult[],
-  fallback: { page: number; perPage: number }
-): FetchProductsResult {
-  const productsById = new Map<number, Product>();
-
-  for (const result of results) {
-    for (const product of result.products) {
-      if (!productsById.has(product.id)) {
-        productsById.set(product.id, product);
-      }
-    }
-  }
-
-  return {
-    products: [...productsById.values()],
-    pagination: {
-      currentPage: fallback.page,
-      lastPage: Math.max(
-        1,
-        ...results.map((result) => result.pagination.lastPage)
-      ),
-      perPage: fallback.perPage,
-      total: results.reduce(
-        (total, result) => total + result.pagination.total,
-        0
-      ),
-      from: results.some((result) => result.pagination.from > 0)
-        ? Math.min(
-            ...results
-              .map((result) => result.pagination.from)
-              .filter((value) => value > 0)
-          )
-        : 0,
-      to: results.reduce((total, result) => total + result.pagination.to, 0),
-    },
-    links: extractCollectionLinks(undefined),
-  };
-}
-
+/**
+ * `sort` carries the recency direction ("asc" | "desc") resolved by
+ * getProductsApiSort, or "random-position" for the shuffled home listing. Price
+ * ordering has no server-side parameter and is sorted client-side instead.
+ */
 function createProductQueryParams(
   page: number,
   perPage: number,
   sort: string | undefined
 ): URLSearchParams {
   const queryParams = createPageQueryParams(page, perPage);
-  queryParams.append(
-    "include",
-    "multimedia,productCategory,latestProductPrice,productPrices"
-  );
-  appendOptionalQueryParam(queryParams, "sort", sort);
+
+  if (sort === "random-position") {
+    queryParams.append("random", "1");
+  } else if (sort === "asc" || sort === "desc") {
+    queryParams.append("sort[createdAt]", sort);
+  }
+
   return queryParams;
 }
 
@@ -383,9 +392,9 @@ export async function fetchProducts(
   const { page = 1, perPage = 15, category, locale, search, slug, sort } = params;
   const queryParams = createProductQueryParams(page, perPage, sort);
   const normalizedSearch = search?.trim();
-  let path = "products";
+  const path = "catalog/products";
 
-  appendOptionalQueryParam(queryParams, "filter[slug]", slug);
+  appendOptionalQueryParam(queryParams, "slug", slug);
 
   if (category) {
     const categoryId = await resolveProductCategoryId(category, locale);
@@ -394,23 +403,11 @@ export async function fetchProducts(
       return emptyProductsResult(page, perPage);
     }
 
-    path = `product-categories/${categoryId}/products`;
+    queryParams.append("categoryId", categoryId);
   }
 
   if (normalizedSearch && !slug) {
-    const searchFilters = ["filter[name]", "filter[slug]", "filter[token]"];
-    const searchResults = await Promise.all(
-      searchFilters.map((filterKey) => {
-        const searchQueryParams = createProductQueryParams(page, perPage, sort);
-        searchQueryParams.append(filterKey, normalizedSearch);
-        return fetchProductCollection(path, searchQueryParams, {
-          page,
-          perPage,
-        }, locale);
-      })
-    );
-
-    return mergeProductResults(searchResults, { page, perPage });
+    queryParams.append("search", normalizedSearch);
   }
 
   return fetchProductCollection(path, queryParams, { page, perPage }, locale);
@@ -432,20 +429,17 @@ export async function fetchProduct(
   locale?: string
 ): Promise<Product | null> {
   try {
-    const response = await apiClient.get<ProductDto | ProductDto[]>(
-      `products/${id}`,
-      {
-        query: {
-          include: "multimedia,productCategory,latestProductPrice,productPrices",
-        },
+    const [response, categories] = await Promise.all([
+      apiClient.get<ProductDto | ProductDto[]>(`catalog/products/${id}`, {
         locale,
         next: { revalidate: 10 },
         mode: "cors",
         credentials: "omit",
-      }
-    );
+      }),
+      loadProductCategoryLookup(locale),
+    ]);
     const product = getFirstResource(response.data);
-    return product ? transformProduct(product) : null;
+    return product ? transformProduct(product, locale, categories) : null;
   } catch (error) {
     if (error instanceof ApiClientError && error.status === 404) return null;
     throw error;
@@ -499,11 +493,10 @@ export async function fetchProductBySlug(
 export const fetchProductCategories = cache(
   async (locale?: string): Promise<ProductCategory[]> => {
     const response = await apiClient.get<ProductCategoryDto[]>(
-      "product-categories",
+      "catalog/product-categories",
       {
         query: {
-          include: "multimedia",
-          "filter[status]": "1",
+          itemsPerPage: "100",
         },
         locale,
         next: { revalidate: 10 },
@@ -512,7 +505,7 @@ export const fetchProductCategories = cache(
       }
     );
 
-    return transformCategories(response.data);
+    return transformCategories(response.data, locale);
   }
 );
 
