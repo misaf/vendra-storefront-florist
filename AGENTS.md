@@ -15,9 +15,9 @@ Before making code changes, read the relevant guide indexes, then open only the 
 
 ### Project Context
 
-- This is the **Vendra storefront template**: one codebase that builds one image per property. `fa`/`en` today; more locales may be added later.
+- This is the **Vendra storefront template**: one shared image configured per property at container runtime. `fa`/`en` today; more locales may be added later.
 - **Nothing in `src/` may name a property.** Brand, contacts, socials, canonical origin, map pin and business type live in `properties/<slug>/property.config.json`, reached through `@/shared/property`. Brand-bearing copy goes in `properties/<slug>/messages/`, which is deep-merged over the brand-neutral base catalogue.
-- `properties/houshang-flowers/` is the bundled example property. Its `theme` field selects a build-time implementation from `src/themes/`; `default` is the bundled starter theme.
+- `properties/houshang-flowers/` is the bundled local-development fallback. Production injects the property configuration through `STOREFRONT_CONFIG_BASE64`; `default` is the bundled storefront theme.
 - Current surfaces: home, products listing, product detail, blog (list + post), about, contact, cart, and checkout.
 - Product, category, blog, and FAQ content is API-backed. Cart, favorites, and order history are **client-side localStorage state** in `src/modules/cart` and `src/modules/account`; the account panel and checkout run on that local state. Checkout payment is a **simulated demo flow** with no backend submission.
 - The Laravel backend API lives at `https://github.com/misaf/vendra`. Treat it as the source of truth for API contracts.

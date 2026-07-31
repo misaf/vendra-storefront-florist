@@ -125,8 +125,29 @@ docker compose -f docker-compose.traefik.yml down
 ## End-to-end property deployment
 
 A property needs two registrations: a backend tenant in Vendra and a
-property-specific storefront image in Vendra's deployment registry. Use the
-same slug and domain in both repositories.
+domain-routed container using the shared storefront image. Use the same slug
+and domain in both systems.
+
+### Automated creation from Vendra panels
+
+Vendra's Console property form can optionally request this storefront; its
+Reseller property form requires it. Both collect the complete property config
+and persist a deployment request. Configure Vendra's queue-facing provisioner:
+
+```dotenv
+STOREFRONT_PROVISIONER_URL=http://provisioner:8080/storefronts
+STOREFRONT_PROVISIONER_TOKEN=replace-with-a-secret-token
+STOREFRONT_IMAGE=ghcr.io/misaf/vendra-storefront-florist:1.x
+STOREFRONT_THEMES=default
+```
+
+The provisioner accepts the documented JSON request, starts a new container
+from the shared image, injects the property's runtime configuration, registers
+its domain router, and returns `status`, `reference`, and `image_digest`. Until
+both URL and token are configured, Vendra safely keeps
+the request in `pending`; it never runs Docker or shell commands in the web
+process. See Vendra's `deploy/README.md` for the provider contract and status
+lifecycle.
 
 The examples below use:
 

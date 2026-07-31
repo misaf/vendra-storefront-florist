@@ -10,16 +10,59 @@ export type {
   PropertySocial,
 } from "@/shared/property/types";
 
-/**
- * The property this build serves, selected by `scripts/select-property.mjs`.
- *
- * Safe to import from client components: the config is a static import, so it
- * is bundled rather than read from the filesystem at runtime.
- */
-export const property: PropertyConfig = propertyConfig;
+function isPropertyConfig(value: unknown): value is PropertyConfig {
+  if (typeof value !== "object" || value === null) return false;
 
-/** Per-locale message overrides for this property. */
-export const messageOverrides: PropertyMessages = propertyMessages;
+  const candidate = value as Partial<PropertyConfig>;
+
+  return (
+    typeof candidate.slug === "string" &&
+    candidate.slug.length > 0 &&
+    candidate.theme === "default" &&
+    typeof candidate.domain === "string" &&
+    typeof candidate.siteUrl === "string" &&
+    typeof candidate.name === "object" &&
+    candidate.name !== null &&
+    typeof candidate.businessType === "string" &&
+    typeof candidate.priceCurrency === "string" &&
+    typeof candidate.ogImage === "string" &&
+    typeof candidate.address === "object" &&
+    candidate.address !== null &&
+    typeof candidate.contact === "object" &&
+    candidate.contact !== null &&
+    typeof candidate.social === "object" &&
+    candidate.social !== null
+  );
+}
+
+function runtimeProperty(): PropertyConfig | null {
+  const encoded = process.env.STOREFRONT_CONFIG_BASE64?.trim();
+
+  if (!encoded) return null;
+
+  try {
+    const decoded: unknown = JSON.parse(
+      Buffer.from(encoded, "base64").toString("utf8")
+    );
+
+    if (!isPropertyConfig(decoded)) {
+      throw new Error("configuration is missing required fields");
+    }
+
+    return decoded;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    throw new Error(`Invalid STOREFRONT_CONFIG_BASE64: ${message}`);
+  }
+}
+
+/** Runtime property configuration, falling back to the bundled example locally. */
+export const property: PropertyConfig = runtimeProperty() ?? propertyConfig;
+
+/** Runtime storefronts use the brand-neutral catalogue; the example keeps its overrides. */
+export const messageOverrides: PropertyMessages = process.env.STOREFRONT_CONFIG_BASE64
+  ? {}
+  : propertyMessages;
 
 /** Brand name for a locale, falling back to the default locale then the slug. */
 export function getPropertyName(locale: string): string {

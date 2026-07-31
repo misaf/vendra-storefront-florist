@@ -15,10 +15,6 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 FROM base AS builder
-# Which properties/<slug>/ this image serves. Everything identifying the
-# storefront — brand, contacts, socials, canonical origin — comes from that
-# directory, so one image is one property.
-ARG PROPERTY
 # The canonical API, as an origin (https://api.<base>) or with the /api suffix.
 ARG VENDRA_API_URL
 ARG NEXT_PUBLIC_VENDRA_API_URL
@@ -30,7 +26,6 @@ ARG NEXT_PUBLIC_MAP_PROVIDER
 ARG NEXT_PUBLIC_NESHAN_MAP_KEY
 ARG NEXT_PUBLIC_NESHAN_MAP_TYPE
 
-ENV PROPERTY=$PROPERTY
 ENV VENDRA_API_URL=$VENDRA_API_URL
 ENV NEXT_PUBLIC_VENDRA_API_URL=$NEXT_PUBLIC_VENDRA_API_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
@@ -55,9 +50,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV NODE_OPTIONS=--use-system-ca
 
-# Server-side values are read at runtime, so the property's own config applies
-# unless the container overrides them. NEXT_PUBLIC_* values were inlined at
-# build time and cannot be changed here.
+# Every property runs this same image. Its base64-encoded JSON configuration and
+# server-side API origin are supplied by the deployment at container startup.
 ARG VENDRA_API_URL
 ENV VENDRA_API_URL=$VENDRA_API_URL
 

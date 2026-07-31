@@ -5,8 +5,7 @@ import { routing } from "@/shared/i18n/routing";
 import { absoluteUrl, localizedPath } from "@/shared/seo";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 
-// Revalidate the sitemap hourly so new products/posts get picked up.
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 const SITEMAP_PAGE_SIZE = 100;
 const MAX_PAGES = 50; // safety cap (≈5k entries per collection)

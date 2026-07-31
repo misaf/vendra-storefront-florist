@@ -8,7 +8,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Card } from "@/shared/components/ui/card";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { isRtlLocale } from "@/shared/lib/locale";
-import { property } from "@/shared/property";
+import { useProperty } from "@/shared/property/property-provider";
 import {
   Dialog,
   DialogContent,
@@ -64,12 +64,6 @@ interface ProductDetailClientProps {
   initialError: string | null;
 }
 
-const SOCIAL_SHARE_TARGETS = {
-  telegramUsername: property.social.telegramUsername,
-  // wa.me accepts digits only.
-  whatsappPhone: property.social.whatsappPhone.replace(/\D/g, ""),
-} as const;
-
 type SocialSharePlatform = "telegram" | "whatsapp";
 
 export default function ProductDetailClient({
@@ -78,6 +72,7 @@ export default function ProductDetailClient({
   initialError,
 }: ProductDetailClientProps) {
   const { t, locale } = useTranslations();
+  const property = useProperty();
   const { addToCart, openCart } = useCart();
   const { toggleFavorite, isFavorite } = useFavorites();
   const isRTL = isRtlLocale(locale);
@@ -151,7 +146,7 @@ export default function ProductDetailClient({
 
       if (platform === "whatsapp") {
         window.open(
-          `https://wa.me/${SOCIAL_SHARE_TARGETS.whatsappPhone}?text=${encodeURIComponent(
+          `https://wa.me/${property.social.whatsappPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
             message
           )}`,
           "_blank",
@@ -166,7 +161,7 @@ export default function ProductDetailClient({
       }
 
       window.open(
-        `https://t.me/${SOCIAL_SHARE_TARGETS.telegramUsername}`,
+        `https://t.me/${property.social.telegramUsername}`,
         "_blank",
         "noopener,noreferrer"
       );
