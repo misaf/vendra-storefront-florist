@@ -15,6 +15,8 @@ import { OrderProvider } from "@/modules/account";
 import { routing } from "@/shared/i18n/routing";
 import { ApiQueryProvider } from "@/shared/api/query-client";
 import { getSiteUrl } from "@/shared/lib/config";
+import { property } from "@/shared/property";
+import { PropertyProvider } from "@/shared/property/property-provider";
 import {
   SITE_NAME,
   buildMetadata,
@@ -34,6 +36,10 @@ const vazirmatn = Vazirmatn({
   weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
+
+// Every container supplies its property at runtime; no route may bake the
+// bundled development property into the shared production image.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -67,10 +73,6 @@ export async function generateMetadata({
       },
     },
   };
-}
-
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
 }
 
 export default async function LocaleLayout({
@@ -107,19 +109,21 @@ export default async function LocaleLayout({
           disableTransitionOnChange
         >
           <ApiQueryProvider>
-            <NextIntlClientProvider>
-              <CartProvider>
-                <FavoritesProvider>
-                  <OrderProvider>
-                    {children}
-                    <Cart />
-                    <Toaster
-                      position={direction === "rtl" ? "bottom-left" : "bottom-right"}
-                    />
-                  </OrderProvider>
-                </FavoritesProvider>
-              </CartProvider>
-            </NextIntlClientProvider>
+            <PropertyProvider value={property}>
+              <NextIntlClientProvider>
+                <CartProvider>
+                  <FavoritesProvider>
+                    <OrderProvider>
+                      {children}
+                      <Cart />
+                      <Toaster
+                        position={direction === "rtl" ? "bottom-left" : "bottom-right"}
+                      />
+                    </OrderProvider>
+                  </FavoritesProvider>
+                </CartProvider>
+              </NextIntlClientProvider>
+            </PropertyProvider>
           </ApiQueryProvider>
         </ThemeProvider>
       </body>
