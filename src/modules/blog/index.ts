@@ -16,6 +16,13 @@ export {
   usePost,
   usePosts,
 } from "./lib/queries";
+export {
+  getPost,
+  loadPostsPage,
+  loadRelatedPosts,
+  normalizeCategory,
+} from "./lib/load";
+export type { LoadPostsPageResult } from "./lib/load";
 export type {
   FetchBlogPostsParams,
   FetchBlogPostsResult,

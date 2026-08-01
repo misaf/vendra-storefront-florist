@@ -1,46 +1,21 @@
-import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
-import {
-  fetchBlogPostCategories,
-  fetchBlogPostsWithDetails,
-} from "@/modules/blog";
+import { fetchBlogPostCategories, fetchBlogPostsWithDetails } from "@/modules/blog";
 import type { Post as BlogPost, PostCategory } from "@/modules/blog";
 import {
   fetchProductCategories,
   fetchProductsWithDetails,
   type HomeProductCategory,
 } from "@/modules/products";
-import { buildMetadata } from "@/shared/seo";
-import StorefrontClient from "./components/storefront-client";
 
 const BLOG_PAGE_SIZE = 9;
 const HOME_PRODUCTS_PER_CATEGORY = 20;
 const HOME_CATEGORY_LIMIT = 3;
 
-export const dynamic = "force-dynamic";
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "home" });
-
-  return buildMetadata({
-    locale,
-    path: "",
-    title: t("metadataTitle"),
-    description: t("metadataDescription"),
-  });
-}
-
-interface InitialBlogData {
+export interface InitialBlogData {
   initialBlogPosts: BlogPost[];
   initialBlogCategory: PostCategory | null;
 }
 
-async function loadInitialBlog(locale: string): Promise<InitialBlogData> {
+export async function loadInitialBlog(locale: string): Promise<InitialBlogData> {
   let blogCategories: PostCategory[] = [];
 
   try {
@@ -70,7 +45,7 @@ async function loadInitialBlog(locale: string): Promise<InitialBlogData> {
   return { initialBlogPosts: [], initialBlogCategory: null };
 }
 
-async function loadInitialHomeProductCategories(
+export async function loadInitialHomeProductCategories(
   locale: string
 ): Promise<HomeProductCategory[]> {
   try {
@@ -109,26 +84,4 @@ async function loadInitialHomeProductCategories(
     console.error("Error loading initial home categories:", error);
     return [];
   }
-}
-
-export default async function StorefrontPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-
-  // Blog and product data are independent — load them concurrently.
-  const [blog, initialHomeProductCategories] = await Promise.all([
-    loadInitialBlog(locale),
-    loadInitialHomeProductCategories(locale),
-  ]);
-
-  return (
-    <StorefrontClient
-      initialBlogPosts={blog.initialBlogPosts}
-      initialBlogCategory={blog.initialBlogCategory}
-      initialHomeProductCategories={initialHomeProductCategories}
-    />
-  );
 }

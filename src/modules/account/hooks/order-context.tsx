@@ -1,13 +1,21 @@
 "use client";
 
 import React, { createContext, useContext } from "react";
-import type { CartItem } from "@/modules/cart";
 import { usePersistentState } from "@/shared/hooks/use-persistent-state";
+
+export interface OrderItem {
+  id: number;
+  name: string;
+  price: number;
+  formattedPrice?: string;
+  image: string;
+  quantity: number;
+}
 
 export interface Order {
   id: string;
   date: string;
-  items: CartItem[];
+  items: OrderItem[];
   total: number;
   subtotal: number;
   shipping: number;

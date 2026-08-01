@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
-import FaqClient from "./components/faq-client";
-import { fetchFaqCategories, fetchFaqs } from "./lib/queries";
-import type { Faq, FaqCategory } from "./types";
+import { FaqClient, fetchFaqCategories, fetchFaqs } from "@/modules/faq";
+import type { Faq, FaqCategory } from "@/modules/faq";
 import { JsonLd } from "@/shared/components/seo/json-ld";
 import { breadcrumbSchema, buildMetadata, faqPageSchema } from "@/shared/seo";
 

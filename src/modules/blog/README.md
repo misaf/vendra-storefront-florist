@@ -7,10 +7,6 @@ Import from `@/modules/blog` outside this module. Keep JSON:API mapping and
 placeholder handling in `lib/queries.ts`; keep rich text rendering/sanitization
 in shared components/utilities.
 
-Route server files:
-
-- `page.tsx`
-- `detail-page.tsx`
-
-These are imported by App Router wrappers and should not be exported from the
-client-used barrel.
+Server-side data loading lives in `lib/load.ts` (`getPost`, `loadPostsPage`,
+`loadRelatedPosts`). Route composition for the blog listing and detail pages
+lives in `src/themes/default/pages/`.

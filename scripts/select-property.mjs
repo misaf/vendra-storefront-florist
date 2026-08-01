@@ -12,35 +12,14 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validatePropertyConfig } from "./validate-property.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PROPERTIES_DIR = join(ROOT, "properties");
 const THEMES_DIR = join(ROOT, "src", "themes");
 const OUTPUT_FILE = join(ROOT, "src", "generated", "property.ts");
 const THEME_OUTPUT_FILE = join(ROOT, "src", "generated", "theme.ts");
-
-/** Fields every property.config.json must define, as dotted paths. */
-const REQUIRED_FIELDS = [
-  "slug",
-  "theme",
-  "domain",
-  "siteUrl",
-  "name",
-  "businessType",
-  "priceCurrency",
-  "ogImage",
-  "address.locality",
-  "address.country",
-  "contact.mobilePhone",
-  "contact.officePhone",
-  "contact.email",
-  "contact.hoursOpen",
-  "contact.hoursClose",
-  "contact.mapQuery",
-  "social.whatsappPhone",
-  "social.telegramUsername",
-  "social.instagramUsername",
-];
+const SCHEMA_FILE = join(PROPERTIES_DIR, "schema.json");
 
 function fail(message) {
   console.error(`[select-property] ${message}`);
@@ -78,20 +57,14 @@ function resolveSlug() {
   return requested;
 }
 
-function readValue(source, path) {
-  return path.split(".").reduce((value, key) => {
-    return value && typeof value === "object" ? value[key] : undefined;
-  }, source);
-}
-
 function validate(config, slug) {
-  const missing = REQUIRED_FIELDS.filter((field) => {
-    const value = readValue(config, field);
-    return value === undefined || value === null || value === "";
-  });
+  // Single source of truth: properties/schema.json, interpreted by the shared
+  // validator so build-time and runtime checks can never drift apart.
+  const schema = JSON.parse(readFileSync(SCHEMA_FILE, "utf8"));
+  const errors = validatePropertyConfig(config, schema);
 
-  if (missing.length > 0) {
-    fail(`properties/${slug}/property.config.json is missing: ${missing.join(", ")}.`);
+  if (errors.length > 0) {
+    fail(`properties/${slug}/property.config.json is invalid:\n  - ${errors.join("\n  - ")}`);
   }
 
   if (config.slug !== slug) {
@@ -110,16 +83,6 @@ function validate(config, slug) {
       `properties/${slug}/property.config.json selects unknown theme "${config.theme}". ` +
         `Available: ${available.join(", ") || "none"}.`
     );
-  }
-
-  if (typeof config.name !== "object" || Object.keys(config.name).length === 0) {
-    fail(`properties/${slug}/property.config.json needs a "name" entry per locale.`);
-  }
-
-  try {
-    new URL(config.siteUrl);
-  } catch {
-    fail(`properties/${slug}/property.config.json has an invalid siteUrl: ${config.siteUrl}.`);
   }
 }
 

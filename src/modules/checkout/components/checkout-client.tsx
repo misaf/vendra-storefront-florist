@@ -22,6 +22,7 @@ import {
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from "@/shared/components/ui/empty";
 import { useCart } from "@/modules/cart";
 import { useOrders } from "@/modules/account";
+import { useProperty } from "@/shared/property/property-provider";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { useHydrated } from "@/shared/hooks/use-hydrated";
 import { formatLocalizedPrice } from "@/shared/lib/utils";
@@ -41,12 +42,13 @@ const AddressMapPicker = dynamic(() => import("./address-map-picker"), {
   ),
 });
 
-const SHIPPING_FEE = 10.0;
-const TAX_RATE = 0.1;
-
-function getOrderTotals(subtotal: number) {
-  const shipping = SHIPPING_FEE;
-  const tax = subtotal * TAX_RATE;
+function getOrderTotals(
+  subtotal: number,
+  shippingFee: number,
+  taxRate: number
+) {
+  const shipping = shippingFee;
+  const tax = subtotal * taxRate;
   return { subtotal, shipping, tax, total: subtotal + shipping + tax };
 }
 
@@ -73,6 +75,7 @@ export default function CheckoutClient() {
   const { items, getTotalPrice, clearCart, openCart } = useCart();
   const { addOrder } = useOrders();
   const { t, locale } = useTranslations();
+  const property = useProperty();
   const hydrated = useHydrated();
 
   const checkoutFormSchema = useMemo(() => createCheckoutFormSchema(t), [t]);
@@ -111,7 +114,13 @@ export default function CheckoutClient() {
 
   const detectedCountry = form.watch("country");
 
-  const totals = useMemo(() => getOrderTotals(getTotalPrice()), [getTotalPrice]);
+  const shippingFee = property.checkout?.shippingFee ?? 10.0;
+  const taxRate = property.checkout?.taxRate ?? 0.1;
+
+  const totals = useMemo(
+    () => getOrderTotals(getTotalPrice(), shippingFee, taxRate),
+    [getTotalPrice, shippingFee, taxRate]
+  );
 
   const onSubmit = async (values: CheckoutFormValues) => {
     try {

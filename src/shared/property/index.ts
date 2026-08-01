@@ -1,39 +1,18 @@
 import { propertyConfig, propertyMessages } from "@/generated/property";
 import { routing } from "@/shared/i18n/routing";
 import type { PropertyConfig, PropertyMessages } from "@/shared/property/types";
+import { isPropertyConfig } from "@/shared/property/validation";
 
 export type {
   PropertyAddress,
+  PropertyCheckout,
   PropertyConfig,
   PropertyContact,
+  PropertyCurrency,
   PropertyMessages,
   PropertySocial,
+  PropertyTrustSeal,
 } from "@/shared/property/types";
-
-function isPropertyConfig(value: unknown): value is PropertyConfig {
-  if (typeof value !== "object" || value === null) return false;
-
-  const candidate = value as Partial<PropertyConfig>;
-
-  return (
-    typeof candidate.slug === "string" &&
-    candidate.slug.length > 0 &&
-    candidate.theme === "default" &&
-    typeof candidate.domain === "string" &&
-    typeof candidate.siteUrl === "string" &&
-    typeof candidate.name === "object" &&
-    candidate.name !== null &&
-    typeof candidate.businessType === "string" &&
-    typeof candidate.priceCurrency === "string" &&
-    typeof candidate.ogImage === "string" &&
-    typeof candidate.address === "object" &&
-    candidate.address !== null &&
-    typeof candidate.contact === "object" &&
-    candidate.contact !== null &&
-    typeof candidate.social === "object" &&
-    candidate.social !== null
-  );
-}
 
 function runtimeProperty(): PropertyConfig | null {
   const encoded = process.env.STOREFRONT_CONFIG_BASE64?.trim();
@@ -49,7 +28,7 @@ function runtimeProperty(): PropertyConfig | null {
       throw new Error("configuration is missing required fields");
     }
 
-    return decoded;
+    return decoded as PropertyConfig;
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown error";
     throw new Error(`Invalid STOREFRONT_CONFIG_BASE64: ${message}`);

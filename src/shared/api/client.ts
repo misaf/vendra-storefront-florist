@@ -1,10 +1,7 @@
 import Jsona from "jsona";
 import { getApiBaseUrl, getSiteUrl } from "@/shared/lib/config";
 import type { JsonApiLinks, JsonApiMeta } from "@/shared/api/types";
-import {
-  JSON_API_HEADERS,
-  getAcceptLanguageHeader,
-} from "@/shared/lib/network";
+import { createApiRequestHeaders } from "@/shared/lib/network";
 import { routing } from "@/shared/i18n/routing";
 
 const API_BASE_URL = getApiBaseUrl();
@@ -177,31 +174,17 @@ function createRequestHeaders({
   locale?: string;
   token?: string | null;
 }): Headers {
-  const requestHeaders = new Headers(JSON_API_HEADERS);
-  const acceptLanguage = getAcceptLanguageHeader(locale ?? getBrowserLocale());
-
-  if (acceptLanguage) {
-    requestHeaders.set("Accept-Language", acceptLanguage);
-  }
-
   // The canonical API serves every property from one host and picks the tenant
   // from the request origin. A browser sets Origin itself; a server-side render
   // has none, so the storefront states its own public origin.
-  if (typeof window === "undefined") {
-    requestHeaders.set("Origin", getSiteUrl());
-  }
+  const origin = typeof window === "undefined" ? getSiteUrl() : undefined;
 
-  if (token) {
-    requestHeaders.set("Authorization", `Bearer ${token}`);
-  }
-
-  if (headers) {
-    new Headers(headers).forEach((value, key) => {
-      requestHeaders.set(key, value);
-    });
-  }
-
-  return requestHeaders;
+  return createApiRequestHeaders({
+    headers,
+    locale: locale ?? getBrowserLocale(),
+    origin,
+    token,
+  });
 }
 
 async function apiRequest<TData>(

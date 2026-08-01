@@ -37,8 +37,10 @@ export function Footer({ showNewsletter = true }: FooterProps) {
   ] as const;
   const enamadContainerRef = useRef<HTMLDivElement | null>(null);
   const [showEnamadFallback, setShowEnamadFallback] = useState(true);
-  const enamadHtml =
-    "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=5767588&Code=a0tdleVtDMJCDPR9WxSCD59wOLhHcUyO'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=5767588&Code=a0tdleVtDMJCDPR9WxSCD59wOLhHcUyO' alt='' style='cursor:pointer' code='a0tdleVtDMJCDPR9WxSCD59wOLhHcUyO'></a>";
+  const trustSeal = property.trustSeal;
+  const enamadHtml = trustSeal
+    ? `<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=${trustSeal.id}&Code=${trustSeal.code}'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=${trustSeal.id}&Code=${trustSeal.code}' alt='' style='cursor:pointer' code='${trustSeal.code}'></a>`
+    : null;
 
   useEffect(() => {
     const imageElement = enamadContainerRef.current?.querySelector("img");
@@ -176,15 +178,19 @@ export function Footer({ showNewsletter = true }: FooterProps) {
           </div>
         </div>
         <div className="mt-10 border-t border-border pt-6">
-          <div
-            ref={enamadContainerRef}
-            className="mb-3 flex justify-center"
-            dangerouslySetInnerHTML={{ __html: enamadHtml }}
-          />
-          {showEnamadFallback ? (
-            <p className="mb-3 text-center text-xs text-muted-foreground">
-              {t("footer.enamadFallback")}
-            </p>
+          {enamadHtml ? (
+            <>
+              <div
+                ref={enamadContainerRef}
+                className="mb-3 flex justify-center"
+                dangerouslySetInnerHTML={{ __html: enamadHtml }}
+              />
+              {showEnamadFallback ? (
+                <p className="mb-3 text-center text-xs text-muted-foreground">
+                  {t("footer.enamadFallback")}
+                </p>
+              ) : null}
+            </>
           ) : null}
           <p className="text-center text-sm text-muted-foreground">
             {t("footer.copyright")}

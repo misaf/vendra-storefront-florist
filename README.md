@@ -279,13 +279,6 @@ bin/stack property rm <slug>
 Backend tenant deletion is a separate Vendra data operation and is not implied
 by removing the storefront deployment.
 
-## Project Notes
-
-- App routes are locale-first: `/{locale}/...`
-- Base translation messages live in `messages/en.json` and `messages/fa.json`; per-property overrides in `properties/<slug>/messages/`
-- Application source lives under `src/`, with feature code in `src/modules/` and shared infrastructure in `src/shared/`
-- Image hosts are configured in `next.config.ts` from the API and storage environment variables
-
 ## Tech Stack
 
 - Next.js 16.2

@@ -26,6 +26,47 @@ export function getAcceptLanguageHeader(
     : `${locale},${routing.defaultLocale};q=0.8`;
 }
 
+/**
+ * Shared JSON:API request headers. Applies the Accept-Language header, states
+ * the storefront's public origin (server-side calls have no browser Origin for
+ * the canonical API to resolve the tenant from), and attaches an optional
+ * bearer token. Used by the API client and the same-origin proxy route.
+ */
+export function createApiRequestHeaders({
+  headers,
+  locale,
+  origin,
+  token,
+}: {
+  headers?: HeadersInit;
+  locale?: string;
+  origin?: string;
+  token?: string | null;
+}): Headers {
+  const requestHeaders = new Headers(JSON_API_HEADERS);
+  const acceptLanguage = getAcceptLanguageHeader(locale);
+
+  if (acceptLanguage) {
+    requestHeaders.set("Accept-Language", acceptLanguage);
+  }
+
+  if (origin) {
+    requestHeaders.set("Origin", origin);
+  }
+
+  if (token) {
+    requestHeaders.set("Authorization", `Bearer ${token}`);
+  }
+
+  if (headers) {
+    new Headers(headers).forEach((value, key) => {
+      requestHeaders.set(key, value);
+    });
+  }
+
+  return requestHeaders;
+}
+
 export function getNetworkErrorStatus(error: Error): number {
   const message = error.message.toLowerCase();
 

@@ -2,7 +2,6 @@
 
 import {
   useLocale,
-  useMessages,
   useTranslations as useNextIntlTranslations,
 } from "next-intl";
 import { useCallback } from "react";
@@ -10,7 +9,6 @@ import type { Locale } from "@/shared/i18n/routing";
 
 export function useTranslations() {
   const locale = useLocale() as Locale;
-  const messages = useMessages();
   const translate = useNextIntlTranslations();
 
   const t = useCallback(
@@ -24,5 +22,5 @@ export function useTranslations() {
     [translate]
   );
 
-  return { t, locale, messages };
+  return { t, locale };
 }

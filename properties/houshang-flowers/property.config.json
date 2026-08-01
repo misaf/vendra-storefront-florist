@@ -26,5 +26,20 @@
     "whatsappPhone": "+989129333034",
     "telegramUsername": "houshangflowers",
     "instagramUsername": "houshangflower"
+  },
+  "checkout": {
+    "shippingFee": 10,
+    "taxRate": 0.1
+  },
+  "currency": {
+    "code": "IRR",
+    "label": {
+      "fa": "تومان",
+      "en": "IRR"
+    }
+  },
+  "trustSeal": {
+    "id": "5767588",
+    "code": "a0tdleVtDMJCDPR9WxSCD59wOLhHcUyO"
   }
 }

@@ -26,6 +26,12 @@ export interface PropertyConfig {
   address: PropertyAddress;
   contact: PropertyContact;
   social: PropertySocial;
+  /** Optional checkout pricing. Defaults to the demo constants when unset. */
+  checkout?: PropertyCheckout;
+  /** Optional currency overrides. Defaults to `priceCurrency` + per-locale label. */
+  currency?: PropertyCurrency;
+  /** Optional Iranian trust seal (enamad). Hidden when unset. */
+  trustSeal?: PropertyTrustSeal;
 }
 
 export interface PropertyAddress {
@@ -50,6 +56,27 @@ export interface PropertySocial {
   whatsappPhone: string;
   telegramUsername: string;
   instagramUsername: string;
+}
+
+export interface PropertyCheckout {
+  /** Fixed delivery fee in `priceCurrency`. Defaults to 10. */
+  shippingFee?: number;
+  /** Tax rate as a fraction of the subtotal (0.1 = 10%). Defaults to 0.1. */
+  taxRate?: number;
+}
+
+export interface PropertyCurrency {
+  /** ISO 4217 code used for formatting, e.g. "IRR". Defaults to `priceCurrency`. */
+  code?: string;
+  /** Per-locale display label, e.g. { fa: "تومان", en: "IRR" }. */
+  label?: Record<string, string>;
+}
+
+export interface PropertyTrustSeal {
+  /** Trust seal id, e.g. the enamad id. */
+  id: string;
+  /** Trust seal code, e.g. the enamad code. */
+  code: string;
 }
 
 /** Per-locale message overrides, deep-merged over the base `messages/`. */

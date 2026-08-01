@@ -1,4 +1,4 @@
-import { cache, Suspense } from "react";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/shared/i18n/navigation";
@@ -9,10 +9,10 @@ import { SafeImage } from "@/shared/components/ui/safe-image";
 import { RichText } from "@/shared/components/rich-text";
 import { Calendar, ArrowLeft, ArrowRight } from "lucide-react";
 import { isRtlLocale } from "@/shared/lib/locale";
-import { fetchBlogPost, fetchBlogPostsWithDetails } from "./lib/queries";
-import type { Post as BlogPost } from "./types";
+import { getPost, loadRelatedPosts } from "@/modules/blog";
+import type { Post as BlogPost } from "@/modules/blog";
+import { RelatedEntries } from "@/modules/blog";
 import { PLACEHOLDER_IMAGE } from "@/shared/lib/image";
-import { RelatedEntries } from "./components/related-entries";
 import type { Locale } from "@/shared/i18n/routing";
 import { formatLocaleDate } from "@/shared/lib/date";
 import {
@@ -21,31 +21,6 @@ import {
   buildMetadata,
   plainText,
 } from "@/shared/seo";
-
-// Deduplicate the post fetch across generateMetadata + the page render.
-const getPost = cache((slug: string, locale: string) =>
-  fetchBlogPost(slug, locale)
-);
-
-// The latest entries close the article — fetched without blocking the render
-// and streamed in via <Suspense>. Errors degrade to an empty list.
-async function loadRelatedPosts(
-  currentPostId: number,
-  locale: string
-): Promise<BlogPost[]> {
-  try {
-    const result = await fetchBlogPostsWithDetails({
-      page: 1,
-      perPage: 4,
-      locale,
-    });
-    return result.posts
-      .filter((entry) => entry.id !== currentPostId)
-      .slice(0, 3);
-  } catch {
-    return [];
-  }
-}
 
 export async function generateMetadata({
   params,

@@ -1,10 +1,8 @@
-import { cache } from "react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import ProductDetailClient from "./components/product-detail-client";
+import { ProductDetailClient, getProduct, loadRelatedProducts } from "@/modules/products";
+import type { Product } from "@/modules/products";
 import { JsonLd } from "@/shared/components/seo/json-ld";
-import { fetchProductBySlug, fetchProductsWithDetails } from "./lib/queries";
-import type { Product } from "./types";
 import {
   breadcrumbSchema,
   buildMetadata,
@@ -12,54 +10,6 @@ import {
   productSchema,
 } from "@/shared/seo";
 import { stringifyRichText } from "@/shared/lib/rich-text";
-
-// Deduplicate the product fetch across generateMetadata + the page render.
-const getProduct = cache((slug: string, locale: string) =>
-  fetchProductBySlug(slug, locale)
-);
-
-// Related products are secondary — fetched without blocking the product render
-// and streamed in via <Suspense> on the client. Errors degrade to an empty list.
-async function loadRelatedProducts(
-  product: Product,
-  locale: string
-): Promise<Product[]> {
-  try {
-    const currentProductId = product.id;
-    const relatedResult = await fetchProductsWithDetails({
-      page: 1,
-      perPage: 16,
-      category: product.categorySlug,
-      locale,
-      sort: "random-position",
-    });
-
-    const relatedProducts = relatedResult.products.filter(
-      (candidate) => candidate.id !== currentProductId
-    );
-
-    if (relatedProducts.length < 8) {
-      const fallbackResult = await fetchProductsWithDetails({
-        page: 1,
-        perPage: 16,
-        locale,
-        sort: "random-position",
-      });
-      const relatedIds = new Set(relatedProducts.map((item) => item.id));
-      for (const candidate of fallbackResult.products) {
-        if (candidate.id === currentProductId || relatedIds.has(candidate.id)) {
-          continue;
-        }
-        relatedIds.add(candidate.id);
-        relatedProducts.push(candidate);
-      }
-    }
-
-    return relatedProducts.slice(0, 12);
-  } catch {
-    return [];
-  }
-}
 
 export async function generateMetadata({
   params,

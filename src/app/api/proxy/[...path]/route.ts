@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiBaseUrl, getSiteUrl } from "@/shared/lib/config";
-import { JSON_API_HEADERS, getNetworkErrorStatus } from "@/shared/lib/network";
+import { createApiRequestHeaders, getNetworkErrorStatus } from "@/shared/lib/network";
 
 const API_BASE_URL = getApiBaseUrl();
 
 function createProxyHeaders(request: NextRequest): Headers {
-  const headers = new Headers(JSON_API_HEADERS);
-  const acceptLanguage = request.headers.get("Accept-Language");
-
-  if (acceptLanguage) {
-    headers.set("Accept-Language", acceptLanguage);
-  }
-
   // The browser's own origin is this storefront's runtime host, which in
   // development is localhost. The canonical API selects the tenant by origin,
-  // so the proxy forwards the configured public origin instead.
-  headers.set("Origin", getSiteUrl());
+  // so the proxy forwards the configured public origin instead. The browser's
+  // Accept-Language header is forwarded verbatim.
+  const acceptLanguage = request.headers.get("Accept-Language");
 
-  return headers;
+  return createApiRequestHeaders({
+    origin: getSiteUrl(),
+    headers: acceptLanguage ? { "Accept-Language": acceptLanguage } : undefined,
+  });
 }
 
 export async function GET(

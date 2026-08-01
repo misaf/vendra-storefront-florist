@@ -119,7 +119,8 @@ function NewsletterForm({ compact = false }: { compact?: boolean }) {
   const onSubmit = async () => {
     setError(null);
     try {
-      // TODO: Replace with POST to /api/newsletter/subscribe (body: { email })
+      // Simulated demo flow, matching the checkout module: no backend route is
+      // called and no data leaves the browser.
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setIsSubmitted(true);

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://vendra.dev/property.schema.json",
+  "title": "Vendra Storefront Property Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "slug",
+    "theme",
+    "domain",
+    "siteUrl",
+    "name",
+    "businessType",
+    "priceCurrency",
+    "ogImage",
+    "address",
+    "contact",
+    "social"
+  ],
+  "properties": {
+    "slug": { "type": "string", "minLength": 1 },
+    "theme": { "type": "string", "minLength": 1 },
+    "domain": { "type": "string", "minLength": 1 },
+    "siteUrl": { "type": "string", "format": "uri", "minLength": 1 },
+    "businessType": { "type": "string", "minLength": 1 },
+    "priceCurrency": { "type": "string", "minLength": 1 },
+    "ogImage": { "type": "string", "minLength": 1 },
+    "name": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "address": {
+      "type": "object",
+      "required": ["locality", "country"],
+      "properties": {
+        "locality": { "type": "string", "minLength": 1 },
+        "country": { "type": "string", "minLength": 1 }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "required": [
+        "mobilePhone",
+        "officePhone",
+        "email",
+        "hoursOpen",
+        "hoursClose",
+        "mapQuery"
+      ],
+      "properties": {
+        "mobilePhone": { "type": "string", "minLength": 1 },
+        "officePhone": { "type": "string", "minLength": 1 },
+        "email": { "type": "string", "format": "email", "minLength": 1 },
+        "hoursOpen": { "type": "string", "minLength": 1 },
+        "hoursClose": { "type": "string", "minLength": 1 },
+        "mapQuery": { "type": "string", "minLength": 1 }
+      }
+    },
+    "social": {
+      "type": "object",
+      "required": ["whatsappPhone", "telegramUsername", "instagramUsername"],
+      "properties": {
+        "whatsappPhone": { "type": "string", "minLength": 1 },
+        "telegramUsername": { "type": "string", "minLength": 1 },
+        "instagramUsername": { "type": "string", "minLength": 1 }
+      }
+    },
+    "checkout": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shippingFee": { "type": "number", "exclusiveMinimum": 0 },
+        "taxRate": { "type": "number", "minimum": 0 }
+      }
+    },
+    "currency": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "label": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "trustSeal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "code"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "code": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
