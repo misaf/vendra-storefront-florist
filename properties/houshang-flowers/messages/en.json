@@ -8,23 +8,69 @@
     "heroWhatsAppLabel": "Open Houshang Flowers on WhatsApp",
     "heroTelegramLabel": "Open Houshang Flowers on Telegram",
     "heroInstagramLabel": "Open Houshang Flowers on Instagram",
-    "heroAddress": "Tehran - Jordan - West Atefi corner"
+    "heroAddress": "Tehran - Jordan - West Atefi corner",
+    "metadataTitle": "Fresh Flowers, Plants & Floral Arrangements",
+    "title": "Fresh Flowers, Designed for Meaningful Moments",
+    "subtitle": "Shop elegant bouquets, premium plants, and occasion-ready floral arrangements prepared with careful design and daily fresh stems.",
+    "featuredProducts": "Featured Flowers",
+    "featuredProductsSubtitle": "Handpicked selection of our most beautiful arrangements",
+    "heroQuality": "Daily fresh stems",
+    "heroConsult": "Occasion guidance",
+    "heroSignature": "Bouquets, premium plants, and quick occasion orders",
+    "servicesTitle": "Ordering flowers should feel simple, fast, and reliable",
+    "serviceDesignTitle": "Custom floral design",
+    "serviceDesignText": "Color and style matched to your request",
+    "serviceFreshnessTitle": "Freshness focused",
+    "serviceFreshnessText": "Daily selection of healthy, vibrant stems",
+    "heroCraft": "Custom arrangements"
   },
   "products": {
-    "metadataDescription": "Discover beautiful fresh flowers and arrangements. Houshang Flowers offers premium quality bouquets, plants, and floral arrangements for every occasion."
+    "metadataDescription": "Discover beautiful fresh flowers and arrangements. Houshang Flowers offers premium quality bouquets, plants, and floral arrangements for every occasion.",
+    "title": "Our Flowers",
+    "subtitle": "Browse our complete collection of fresh flowers and arrangements.",
+    "statCollections": "Fresh collections"
   },
   "about": {
     "heroSubtitle": "Houshang Flowers designs arrangements for gifting, celebration, and everyday beauty with careful flower selection, balanced composition, and personal attention to each order.",
     "storyBody1": "Houshang Flowers is built around a simple belief: flowers should feel personal, considered, and beautifully prepared for the moment they are chosen for.",
     "metadataTitle": "About Houshang Flowers",
-    "metadataDescription": "Learn about Houshang Flowers, a premium flower shop focused on fresh blooms, elegant floral design, and thoughtful customer service."
+    "metadataDescription": "Learn about Houshang Flowers, a premium flower shop focused on fresh blooms, elegant floral design, and thoughtful customer service.",
+    "heroTitle": "A flower shop shaped by freshness, craft, and thoughtful service.",
+    "heroImageAlt": "Florist preparing fresh flower arrangements in the studio",
+    "storyTitle": "A floral point of view, made for meaningful moments",
+    "storyBody2": "From the first conversation to the final wrap, we focus on flower quality, balanced composition, and practical guidance so each order feels thoughtful without becoming complicated.",
+    "missionBody": "Our mission is to make choosing flowers feel calm, beautiful, and reliable by pairing fresh blooms with elegant design and helpful customer care.",
+    "missionImageAlt": "Customer consulting with a florist about a flower arrangement",
+    "valuesSubtitle": "These standards guide how we select flowers, design arrangements, and support each customer.",
+    "valueFreshnessTitle": "Freshness",
+    "valueFreshnessDesc": "We give flower quality close attention so each design begins with blooms that feel alive and expressive.",
+    "valueCraftDesc": "Every arrangement is shaped by balance, color, texture, and the feeling behind the occasion.",
+    "valueDetailDesc": "Presentation, packaging, and finishing touches are treated as part of the floral experience.",
+    "processSubtitle": "Each arrangement follows a simple, careful flow from flower selection to handoff.",
+    "processStep1Title": "Select Fresh Flowers",
+    "processStep1Desc": "We start by choosing flowers that suit the design, season, and intended feeling of the arrangement.",
+    "processStep3Title": "Handcraft the Arrangement",
+    "processStep3Desc": "Stems are trimmed, placed, and balanced by hand so the final piece feels natural and polished.",
+    "trustBody": "The page stays focused on what customers can experience directly: fresh-looking flowers, careful arrangement, and clear help choosing the right piece.",
+    "trustPoint1": "Flower selection is treated as the foundation of each arrangement.",
+    "trustPoint2": "Design choices are guided by color, texture, scale, and occasion.",
+    "trustPoint3": "Orders are prepared and packaged with attention to presentation.",
+    "trustImageAlt": "Florist preparing a flower order for careful handoff",
+    "finalCtaTitle": "Find the arrangement that fits your moment.",
+    "finalCtaSubtitle": "Browse flowers for gifting, celebrations, and everyday beauty, or contact the shop for help choosing.",
+    "finalCtaPrimary": "Shop Flowers",
+    "plate2": "Choosing the arrangement"
   },
   "contact": {
     "mapLabel": "Map showing the location of Houshang Flowers",
     "metadataDescription": "Discover beautiful fresh flowers and arrangements. Houshang Flowers offers premium quality bouquets, plants, and floral arrangements for every occasion.",
     "addressValue": "Tehran - Jordan - Corner of West Atefi",
     "visitTitle": "Find us in Jordan",
-    "visitDescription": "We're on the corner of West Atefi in Tehran's Jordan district. Drop in to choose stems in person, collect an order, or plan an occasion with the team."
+    "visitDescription": "We're on the corner of West Atefi in Tehran's Jordan district. Drop in to choose stems in person, collect an order, or plan an occasion with the team.",
+    "weLoveToHear": "Tell us what you need for your flowers, occasion, or order, and choose the easiest way to reach the team.",
+    "supportNoteProducts": "Product guidance for bouquets, plants, and floral arrangements.",
+    "supportNoteCustom": "Support for custom floral arrangements and special occasions.",
+    "visitEyebrow": "Visit the studio"
   },
   "footer": {
     "copyright": "© 2024 Houshang Flowers. All rights reserved."
@@ -34,5 +80,12 @@
   },
   "faq": {
     "metadataDescription": "Find answers to common questions about Houshang Flowers — orders, delivery, flower care, and more."
+  },
+  "common": {
+    "bouquets": "Bouquets",
+    "arrangements": "Arrangements",
+    "plants": "Plants",
+    "storeTagline": "Fresh floral studio",
+    "mobileStoreTagline": "Fast flower and plant shopping"
   }
 }
