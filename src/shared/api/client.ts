@@ -1,5 +1,11 @@
 import Jsona from "jsona";
-import { getApiBaseUrl, getSiteUrl } from "@/shared/lib/config";
+import {
+  getApiBaseUrl,
+  getSiteUrl,
+  getStorefrontDomain,
+  getStorefrontKey,
+  getStorefrontKeyHeader,
+} from "@/shared/lib/config";
 import type { JsonApiLinks, JsonApiMeta } from "@/shared/api/types";
 import { createApiRequestHeaders } from "@/shared/lib/network";
 import { routing } from "@/shared/i18n/routing";
@@ -174,15 +180,21 @@ function createRequestHeaders({
   locale?: string;
   token?: string | null;
 }): Headers {
-  // The canonical API serves every property from one host and picks the tenant
-  // from the request origin. A browser sets Origin itself; a server-side render
-  // has none, so the storefront states its own public origin.
-  const origin = typeof window === "undefined" ? getSiteUrl() : undefined;
+  // The canonical API serves every property from one host, so the request Host
+  // no longer identifies the tenant. A browser sets Origin itself; a
+  // server-side render has none, so the storefront states its own public origin
+  // and attaches its tenant credential. Browser requests carry neither — their
+  // GETs go through the same-origin proxy, which adds both server-side, and the
+  // credential must never be reachable from the client bundle.
+  const isServer = typeof window === "undefined";
 
   return createApiRequestHeaders({
     headers,
     locale: locale ?? getBrowserLocale(),
-    origin,
+    origin: isServer ? getSiteUrl() : undefined,
+    storefrontDomain: isServer ? getStorefrontDomain() : undefined,
+    storefrontKey: isServer ? getStorefrontKey() : undefined,
+    storefrontKeyHeader: isServer ? getStorefrontKeyHeader() : undefined,
     token,
   });
 }

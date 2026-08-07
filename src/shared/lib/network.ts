@@ -31,16 +31,27 @@ export function getAcceptLanguageHeader(
  * the storefront's public origin (server-side calls have no browser Origin for
  * the canonical API to resolve the tenant from), and attaches an optional
  * bearer token. Used by the API client and the same-origin proxy route.
+ *
+ * Two independent identities can ride one request and must not share a header:
+ * `token` is the *end user* (Authorization: Bearer), while
+ * `storefrontKey`/`storefrontDomain` are the *tenant*. The domain is a hint the
+ * backend may only act on after it has verified the key — never on its own.
  */
 export function createApiRequestHeaders({
   headers,
   locale,
   origin,
+  storefrontDomain,
+  storefrontKey,
+  storefrontKeyHeader,
   token,
 }: {
   headers?: HeadersInit;
   locale?: string;
   origin?: string;
+  storefrontDomain?: string | null;
+  storefrontKey?: string | null;
+  storefrontKeyHeader?: string;
   token?: string | null;
 }): Headers {
   const requestHeaders = new Headers(JSON_API_HEADERS);
@@ -52,6 +63,14 @@ export function createApiRequestHeaders({
 
   if (origin) {
     requestHeaders.set("Origin", origin);
+  }
+
+  if (storefrontKey) {
+    requestHeaders.set(storefrontKeyHeader || "X-Storefront-Key", storefrontKey);
+  }
+
+  if (storefrontDomain) {
+    requestHeaders.set("X-Storefront-Domain", storefrontDomain);
   }
 
   if (token) {

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getApiBaseUrl, getSiteUrl } from "@/shared/lib/config";
+import {
+  getApiBaseUrl,
+  getSiteUrl,
+  getStorefrontDomain,
+  getStorefrontKey,
+  getStorefrontKeyHeader,
+} from "@/shared/lib/config";
 import { createApiRequestHeaders, getNetworkErrorStatus } from "@/shared/lib/network";
 
 const API_BASE_URL = getApiBaseUrl();
@@ -9,11 +15,22 @@ function createProxyHeaders(request: NextRequest): Headers {
   // development is localhost. The canonical API selects the tenant by origin,
   // so the proxy forwards the configured public origin instead. The browser's
   // Accept-Language header is forwarded verbatim.
+  //
+  // This hop is also where the tenant credential is attached: it keeps the
+  // secret server-side while still letting browser reads be credentialed.
   const acceptLanguage = request.headers.get("Accept-Language");
+  const authorization = request.headers.get("Authorization");
+  const headers = new Headers();
+
+  if (acceptLanguage) headers.set("Accept-Language", acceptLanguage);
+  if (authorization) headers.set("Authorization", authorization);
 
   return createApiRequestHeaders({
     origin: getSiteUrl(),
-    headers: acceptLanguage ? { "Accept-Language": acceptLanguage } : undefined,
+    storefrontDomain: getStorefrontDomain(),
+    storefrontKey: getStorefrontKey(),
+    storefrontKeyHeader: getStorefrontKeyHeader(),
+    headers,
   });
 }
 
