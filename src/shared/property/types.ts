@@ -23,6 +23,18 @@ export interface PropertyConfig {
   priceCurrency: string;
   /** Site-root-relative default social-share image. */
   ogImage: string;
+  /** Optional site-root-relative hero image. Defaults to the theme's own. */
+  heroImage?: string;
+  /** Optional site-root-relative About/newsletter image. Defaults to the theme's own. */
+  aboutImage?: string;
+  /**
+   * Optional per-locale message overrides, deep-merged over `messages/`.
+   *
+   * This is how a runtime property supplies its own copy: it travels inside
+   * `STOREFRONT_CONFIG_BASE64` because the shared image has no per-tenant files
+   * to read from. Build-time properties use `properties/<slug>/messages/` instead.
+   */
+  messages?: PropertyMessages;
   address: PropertyAddress;
   contact: PropertyContact;
   social: PropertySocial;

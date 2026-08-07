@@ -25,11 +25,12 @@ import { useOrders } from "@/modules/account";
 import { useProperty } from "@/shared/property/property-provider";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { useHydrated } from "@/shared/hooks/use-hydrated";
-import { formatLocalizedPrice } from "@/shared/lib/utils";
+
 import { ShoppingBag, MapPin, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { SafeImage } from "@/shared/components/ui/safe-image";
 import { toast } from "sonner";
 import type { ResolvedLocation } from "./address-map-picker";
+import { useFormatPrice } from "@/shared/property/use-format-price";
 
 // Leaflet touches `window` on import, so the picker is client-only.
 const AddressMapPicker = dynamic(() => import("./address-map-picker"), {
@@ -71,6 +72,7 @@ function createCheckoutFormSchema(t: (key: string) => string) {
 type CheckoutFormValues = z.infer<ReturnType<typeof createCheckoutFormSchema>>;
 
 export default function CheckoutClient() {
+  const formatPrice = useFormatPrice();
   const router = useRouter();
   const { items, getTotalPrice, clearCart, openCart } = useCart();
   const { addOrder } = useOrders();
@@ -406,10 +408,7 @@ export default function CheckoutClient() {
                             {t("common.quantity")}: {item.quantity}
                           </p>
                           <p className="mt-1 text-sm font-medium text-card-foreground" dir="ltr">
-                            {formatLocalizedPrice(
-                              item.price * item.quantity,
-                              locale
-                            )}
+                            {formatPrice(item.price * item.quantity)}
                           </p>
                         </div>
                       </div>
@@ -421,25 +420,25 @@ export default function CheckoutClient() {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{t("checkout.subtotal")}</span>
                         <span className="text-card-foreground" dir="ltr">
-                          {formatLocalizedPrice(subtotal, locale)}
+                          {formatPrice(subtotal)}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{t("checkout.shipping")}</span>
                         <span className="text-card-foreground" dir="ltr">
-                          {formatLocalizedPrice(shipping, locale)}
+                          {formatPrice(shipping)}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{t("checkout.tax")}</span>
                         <span className="text-card-foreground" dir="ltr">
-                          {formatLocalizedPrice(tax, locale)}
+                          {formatPrice(tax)}
                         </span>
                       </div>
                       <div className="flex justify-between border-t border-border pt-2 text-lg font-bold">
                         <span className="text-card-foreground">{t("common.total")}</span>
                         <span className="text-card-foreground" dir="ltr">
-                          {formatLocalizedPrice(total, locale)}
+                          {formatPrice(total)}
                         </span>
                       </div>
                     </div>
@@ -458,10 +457,7 @@ export default function CheckoutClient() {
                       </>
                     ) : (
                       <>
-                        {`${t("checkout.completeOrder")} - ${formatLocalizedPrice(
-                          total,
-                          locale
-                        )}`}
+                        {`${t("checkout.completeOrder")} - ${formatPrice(total)}`}
                         <ArrowRight className="size-4 rtl:rotate-180" />
                       </>
                     )}

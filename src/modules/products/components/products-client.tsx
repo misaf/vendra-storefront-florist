@@ -27,7 +27,6 @@ import {
   ArrowUpDown,
   ChevronDown,
   Clock,
-  Flower2,
   ImageOff,
   Loader2,
   Package,
@@ -40,8 +39,10 @@ import { useProductCategories } from "@/modules/products";
 import type { Product } from "@/modules/products";
 import { buildProductsQueryKey, getProductsApiSort } from "../lib/keys";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
-import { cn, formatLocalizedPrice, normalizeImageUrl } from "@/shared/lib/utils";
+import {cn, normalizeImageUrl} from "@/shared/lib/utils";
 import { RichText, hasRichTextContent } from "@/shared/components/rich-text";
+import { useBrandIcon } from "@/shared/property/use-brand-icon";
+import { useFormatPrice } from "@/shared/property/use-format-price";
 
 type SortValue = "newest" | "oldest" | "price-asc" | "price-desc";
 type EffectiveSortValue = SortValue | "api-order";
@@ -142,7 +143,9 @@ export default function ProductsClient({
   initialError,
   initialQueryKey,
 }: ProductsClientProps) {
+  const formatPrice = useFormatPrice();
   const { t, locale } = useTranslations();
+  const BrandIcon = useBrandIcon();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: apiCategories = [], isLoading: categoriesLoading } =
@@ -498,7 +501,7 @@ export default function ProductsClient({
                       >
                         <span className="truncate">{option.label}</span>
                         {isActive && (
-                          <Flower2 className="h-3.5 w-3.5 shrink-0" />
+                          <BrandIcon className="h-3.5 w-3.5 shrink-0" />
                         )}
                       </button>
                     );
@@ -647,11 +650,7 @@ export default function ProductsClient({
 	                  )}`;
 	                  const inStock = product.inStock !== false;
                   const hasPrice = Number(product.price) > 0 && inStock;
-                  const displayPrice = formatLocalizedPrice(
-                    product.price,
-                    locale,
-                    product.formattedPrice
-                  );
+                  const displayPrice = formatPrice(product.price, product.formattedPrice);
 
                   return (
 	                    <div

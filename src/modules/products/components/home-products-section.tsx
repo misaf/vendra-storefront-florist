@@ -2,7 +2,7 @@
 
 import { Link } from "@/shared/i18n/navigation";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Flower2, ImageOff } from "lucide-react";
+import { ArrowLeft, ArrowRight, ImageOff } from "lucide-react";
 import { ThemedProductImage } from "@/modules/products";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -20,11 +20,13 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/shared/components/ui/carousel";
-import { cn, formatLocalizedPrice, normalizeImageUrl } from "@/shared/lib/utils";
+import {cn, normalizeImageUrl} from "@/shared/lib/utils";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 import { formatRemainingQuantity } from "../lib/format";
 import { isRtlLocale } from "@/shared/lib/locale";
 import type { Product } from "@/modules/products";
+import { useBrandIcon } from "@/shared/property/use-brand-icon";
+import { useFormatPrice } from "@/shared/property/use-format-price";
 
 export interface HomeProductCategory {
   slug: string;
@@ -47,6 +49,7 @@ interface HomeProductCardProps {
 }
 
 function HomeProductCard({ product, locale, t }: HomeProductCardProps) {
+  const formatPrice = useFormatPrice();
   const [hasImageError, setHasImageError] = useState(false);
   const detailHref = `/products/${createReadableResourcePath(
     product.id,
@@ -54,11 +57,7 @@ function HomeProductCard({ product, locale, t }: HomeProductCardProps) {
   )}`;
   const inStock = product.inStock !== false;
   const hasPrice = Number(product.price) > 0 && inStock;
-  const displayPrice = formatLocalizedPrice(
-    product.price,
-    locale,
-    product.formattedPrice
-  );
+  const displayPrice = formatPrice(product.price, product.formattedPrice);
   const isLowQuantity = product.quantity != null && product.quantity < 2;
 
   return (
@@ -247,6 +246,7 @@ export function HomeProductsSection({
   t,
   categories,
 }: HomeProductsSectionProps) {
+  const BrandIcon = useBrandIcon();
   const isRTL = isRtlLocale(locale);
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
 
@@ -257,7 +257,7 @@ export function HomeProductsSection({
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <Flower2 className="h-6 w-6" />
+                <BrandIcon className="h-6 w-6" />
               </EmptyMedia>
               <EmptyTitle>{t("products.noProducts") || "No products found"}</EmptyTitle>
               <EmptyDescription>

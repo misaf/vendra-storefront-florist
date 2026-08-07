@@ -31,11 +31,12 @@ import {
 } from "lucide-react";
 import type { ComponentProps } from "react";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { formatLocalizedPrice } from "@/shared/lib/utils";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { formatLocaleDate } from "@/shared/lib/date";
 import { SafeImage } from "@/shared/components/ui/safe-image";
 import { toast } from "sonner";
+import { useFormatPrice } from "@/shared/property/use-format-price";
 
 interface UserPanelProps {
   open: boolean;
@@ -88,6 +89,7 @@ function EmptyTab({
 }
 
 export function UserPanel({ open, onOpenChange }: UserPanelProps) {
+  const formatPrice = useFormatPrice();
   const { favorites, removeFromFavorites, addToFavorites } = useFavorites();
   const { orders } = useOrders();
   const { addToCart, openCart } = useCart();
@@ -150,11 +152,7 @@ export function UserPanel({ open, onOpenChange }: UserPanelProps) {
                             {item.name}
                           </h3>
                           <p className="text-sm text-muted-foreground" dir="ltr">
-                            {formatLocalizedPrice(
-                              item.price,
-                              locale,
-                              item.formattedPrice
-                            )}
+                            {formatPrice(item.price, item.formattedPrice)}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -255,11 +253,7 @@ export function UserPanel({ open, onOpenChange }: UserPanelProps) {
                                 <p className="text-xs text-muted-foreground">
                                   {t("common.quantity")}: {item.quantity} ×{" "}
                                   <span dir="ltr">
-                                    {formatLocalizedPrice(
-                                      item.price,
-                                      locale,
-                                      item.formattedPrice
-                                    )}
+                                    {formatPrice(item.price, item.formattedPrice)}
                                   </span>
                                 </p>
                               </div>
@@ -276,7 +270,7 @@ export function UserPanel({ open, onOpenChange }: UserPanelProps) {
                             {t("common.orderTotal")}:
                           </span>
                           <span className="text-lg font-bold text-card-foreground" dir="ltr">
-                            {formatLocalizedPrice(order.total, locale)}
+                            {formatPrice(order.total)}
                           </span>
                         </div>
                       </CardContent>

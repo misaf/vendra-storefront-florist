@@ -12,6 +12,7 @@
     "check": "npm run lint && npm run typecheck && npm run build",
     "check:strict": "npm run lint:strict && npm run typecheck",
     "property": "node scripts/select-property.mjs",
+    "property:config": "node scripts/property-config.mjs",
     "predev": "npm run property",
     "prebuild": "npm run property",
     "pretypecheck": "npm run property"

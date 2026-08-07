@@ -15,16 +15,18 @@ import { fetchProductsWithDetails } from "@/modules/products";
 import type { Product } from "@/modules/products";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 import { Search, Loader2 } from "lucide-react";
-import { formatLocalizedPrice } from "@/shared/lib/utils";
+
 import { SafeImage } from "@/shared/components/ui/safe-image";
+import { useFormatPrice } from "@/shared/property/use-format-price";
 
 export function GlobalSearch() {
+  const formatPrice = useFormatPrice();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [isMac, setIsMac] = useState(false);
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
   const router = useRouter();
   const trimmedQuery = searchQuery.trim();
 
@@ -192,11 +194,7 @@ export function GlobalSearch() {
                       ) : null}
                       <div className="mt-0.5 truncate text-xs font-semibold leading-4" dir="ltr">
                         {Number(product.price) > 0 && product.inStock !== false
-                          ? formatLocalizedPrice(
-                              product.price,
-                              locale,
-                              product.formattedPrice
-                            )
+                          ? formatPrice(product.price, product.formattedPrice)
                           : t("products.priceOnRequest")}
                       </div>
                     </div>

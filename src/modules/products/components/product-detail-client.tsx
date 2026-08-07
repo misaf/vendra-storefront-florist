@@ -53,10 +53,11 @@ import { useTranslations } from "@/shared/hooks/use-translations";
 import type { Product } from "@/modules/products";
 import { formatRemainingQuantity } from "../lib/format";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
-import { cn, formatLocalizedPrice, normalizeImageUrl } from "@/shared/lib/utils";
+import {cn, normalizeImageUrl} from "@/shared/lib/utils";
 import { PLACEHOLDER_IMAGE } from "@/shared/lib/image";
 import { RichText, hasRichTextContent } from "@/shared/components/rich-text";
 import { toast } from "sonner";
+import { useFormatPrice } from "@/shared/property/use-format-price";
 
 interface ProductDetailClientProps {
   initialProduct: Product | null;
@@ -71,6 +72,7 @@ export default function ProductDetailClient({
   relatedProductsPromise,
   initialError,
 }: ProductDetailClientProps) {
+  const formatPrice = useFormatPrice();
   const { t, locale } = useTranslations();
   const property = useProperty();
   const { addToCart, openCart } = useCart();
@@ -374,11 +376,7 @@ export default function ProductDetailClient({
                     {product.inStock !== false ? (
                       <p className="text-3xl font-bold text-card-foreground">
                         {Number(product.price) > 0
-                          ? formatLocalizedPrice(
-                              product.price,
-                              locale,
-                              product.formattedPrice
-                            )
+                          ? formatPrice(product.price, product.formattedPrice)
                           : t("products.priceOnRequest")}
                       </p>
                     ) : null}
@@ -563,6 +561,7 @@ function RelatedProductsContent({
   promise: Promise<Product[]>;
   isRTL: boolean;
 }) {
+  const formatPrice = useFormatPrice();
   const relatedProducts = use(promise);
   const { t, locale } = useTranslations();
   const [relatedImageErrorIds, setRelatedImageErrorIds] = useState<Set<number>>(
@@ -600,11 +599,7 @@ function RelatedProductsContent({
           const hasRelatedImageError = relatedImageErrorIds.has(relatedProduct.id);
           const inStock = relatedProduct.inStock !== false;
           const hasPrice = Number(relatedProduct.price) > 0 && inStock;
-          const displayPrice = formatLocalizedPrice(
-            relatedProduct.price,
-            locale,
-            relatedProduct.formattedPrice
-          );
+          const displayPrice = formatPrice(relatedProduct.price, relatedProduct.formattedPrice);
 
           return (
             <CarouselItem

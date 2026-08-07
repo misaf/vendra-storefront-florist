@@ -234,7 +234,7 @@ export function Hero({ title, subtitle, showButtons = true }: HeroProps) {
             style={{ animationDelay: "200ms" }}
           >
             <Image
-              src="/hero-florist-studio-storefront.webp"
+              src={property.heroImage ?? "/hero-florist-studio-storefront.webp"}
               alt={storeName}
               fill
               sizes="(min-width: 1024px) 45vw, 100vw"

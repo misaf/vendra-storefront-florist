@@ -28,7 +28,6 @@ import {
   ArrowLeft,
   ArrowRight,
   ChevronDown,
-  Flower2,
   HelpCircle,
   Home,
   Menu,
@@ -36,6 +35,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useBrandIcon } from "@/shared/property/use-brand-icon";
 
 interface HeaderProps {
   showNav?: boolean;
@@ -115,6 +115,7 @@ function NavLink({
 
 export function Header({ showNav = true }: HeaderProps) {
   const { t, locale } = useTranslations();
+  const BrandIcon = useBrandIcon();
   const storeName = usePropertyName();
   const pathname = usePathname();
   const { data: apiCategories = [] } = useProductCategories();
@@ -156,7 +157,7 @@ export function Header({ showNav = true }: HeaderProps) {
             className="group flex min-w-0 items-center gap-3 rounded-full py-1.5 pe-2 ps-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-foreground/20 ring-2 ring-border transition-transform group-hover:-translate-y-0.5">
-              <Flower2 className="size-5" />
+              <BrandIcon className="size-5" />
             </span>
             <div className="min-w-0 leading-none">
               <span className="font-display block truncate text-lg font-medium text-foreground dark:text-white sm:text-xl">
@@ -223,7 +224,7 @@ export function Header({ showNav = true }: HeaderProps) {
                   <SheetHeader className="border-b border-border bg-card/38 p-5 text-start dark:bg-white/5">
                     <div className="flex items-center gap-3">
                       <span className="flex size-11 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                        <Flower2 className="size-5" />
+                        <BrandIcon className="size-5" />
                       </span>
                       <div>
                         <SheetTitle>{storeName}</SheetTitle>

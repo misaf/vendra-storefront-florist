@@ -33,7 +33,6 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock,
-  Flower2,
   HelpCircle,
   Loader2,
   MapPin,
@@ -41,6 +40,7 @@ import {
   Smartphone,
   Send,
 } from "lucide-react";
+import { useBrandIcon } from "@/shared/property/use-brand-icon";
 
 function createContactFormSchema(t: (key: string) => string) {
   return z.object({
@@ -69,6 +69,7 @@ type ContactFormValues = z.infer<ReturnType<typeof createContactFormSchema>>;
 
 export default function ContactClient({ contactInfo }: { contactInfo: ContactInfo }) {
   const { t, locale } = useTranslations();
+  const BrandIcon = useBrandIcon();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const contactFormSchema = useMemo(() => createContactFormSchema(t), [t]);
 
@@ -205,7 +206,7 @@ export default function ContactClient({ contactInfo }: { contactInfo: ContactInf
             <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
               <Card className="rounded-lg border-primary/10 bg-primary text-primary-foreground shadow-sm dark:border-white/10">
                 <CardContent className="p-5">
-                  <Flower2 className="size-6 text-primary-foreground/80" />
+                  <BrandIcon className="size-6 text-primary-foreground/80" />
                   <h2 className="mt-4 text-lg font-semibold">{t("contact.customerHelpTitle")}</h2>
                   <div className="mt-4 space-y-3">
                     {guidanceItems.map((item) => (

@@ -10,6 +10,8 @@
   "businessType": "Florist",
   "priceCurrency": "IRR",
   "ogImage": "/hero-florist-studio.webp",
+  "heroImage": "/hero-florist-studio-storefront.webp",
+  "aboutImage": "/hero-florist-studio.webp",
   "address": {
     "locality": "Tehran",
     "country": "IR"

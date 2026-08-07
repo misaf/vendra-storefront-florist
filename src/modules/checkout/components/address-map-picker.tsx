@@ -9,6 +9,7 @@ import {
   getNeshanMapKey,
   getNeshanMapType,
 } from "@/shared/lib/map-config";
+import { useProperty } from "@/shared/property/property-provider";
 
 /** The slice of a resolved pin the checkout form cares about. */
 export interface ResolvedLocation {
@@ -42,8 +43,18 @@ interface LeafletLikeMap {
   remove(): void;
 }
 
-// Tehran — a sensible opening view for an Iran-based florist.
-const DEFAULT_CENTER: [number, number] = [35.6892, 51.389];
+// Last-resort opening view when the property's pin is a place query rather
+// than coordinates. Tehran, matching the fleet's primary market.
+const FALLBACK_CENTER: [number, number] = [35.6892, 51.389];
+
+/** The property's own pin when it is "lat,lng"; otherwise the fallback. */
+function parseMapCenter(mapQuery: string): [number, number] {
+  const [lat, lng] = mapQuery.split(",").map((part) => Number(part.trim()));
+
+  return Number.isFinite(lat) && Number.isFinite(lng)
+    ? [lat, lng]
+    : FALLBACK_CENTER;
+}
 const DEFAULT_ZOOM = 12;
 const RESOLVED_ZOOM = 16;
 const SETTLE_DELAY = 700;
@@ -80,6 +91,7 @@ export default function AddressMapPicker({
   locale,
   t,
 }: AddressMapPickerProps) {
+  const defaultCenter = parseMapCenter(useProperty().contact.mapQuery);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletLikeMap | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -179,7 +191,7 @@ export default function AddressMapPicker({
       if (!containerRef.current || mapRef.current) return;
       const start: [number, number] = value
         ? [value.latitude, value.longitude]
-        : DEFAULT_CENTER;
+        : defaultCenter;
       const zoom = value ? RESOLVED_ZOOM : DEFAULT_ZOOM;
 
       try {

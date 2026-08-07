@@ -15,7 +15,7 @@ import { OrderProvider } from "@/modules/account";
 import { routing } from "@/shared/i18n/routing";
 import { ApiQueryProvider } from "@/shared/api/query-client";
 import { getSiteUrl } from "@/shared/lib/config";
-import { property } from "@/shared/property";
+import { getProperty } from "@/shared/property";
 import { PropertyProvider } from "@/shared/property/property-provider";
 import {
   SITE_NAME,
@@ -109,7 +109,7 @@ export default async function LocaleLayout({
           disableTransitionOnChange
         >
           <ApiQueryProvider>
-            <PropertyProvider value={property}>
+            <PropertyProvider value={getProperty()}>
               <NextIntlClientProvider>
                 <CartProvider>
                   <FavoritesProvider>

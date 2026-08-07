@@ -21,12 +21,15 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from "@/shared/components/ui/empty";
 import { Link } from "@/shared/i18n/navigation";
-import { Minus, Plus, Trash2, ShoppingBag, Flower2, ArrowRight } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { formatLocalizedPrice } from "@/shared/lib/utils";
+
 import { SafeImage } from "@/shared/components/ui/safe-image";
+import { useBrandIcon } from "@/shared/property/use-brand-icon";
+import { useFormatPrice } from "@/shared/property/use-format-price";
 
 export function Cart() {
+  const formatPrice = useFormatPrice();
   const {
     items,
     removeFromCart,
@@ -37,7 +40,8 @@ export function Cart() {
     isCartOpen,
     setCartOpen,
   } = useCart();
-  const { t, locale } = useTranslations();
+  const BrandIcon = useBrandIcon();
+  const { t } = useTranslations();
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   return (
@@ -58,7 +62,7 @@ export function Cart() {
                   variant="icon"
                   className="size-14 rounded-full bg-secondary text-muted-foreground ring-1 ring-border"
                 >
-                  <Flower2 className="h-6 w-6" />
+                  <BrandIcon className="h-6 w-6" />
                 </EmptyMedia>
                 <EmptyTitle>{t("common.emptyCart")}</EmptyTitle>
                 <EmptyDescription>
@@ -98,11 +102,7 @@ export function Cart() {
                         {item.name}
                       </h3>
                       <p className="text-sm text-muted-foreground" dir="ltr">
-                        {formatLocalizedPrice(
-                          item.price,
-                          locale,
-                          item.formattedPrice
-                        )}
+                        {formatPrice(item.price, item.formattedPrice)}
                       </p>
                     </div>
                     <div className="flex items-center justify-between">
@@ -143,10 +143,7 @@ export function Cart() {
                       </Button>
                     </div>
                     <p className="text-sm font-medium text-card-foreground" dir="ltr">
-                      {formatLocalizedPrice(
-                        Number(item.price) * item.quantity,
-                        locale
-                      )}
+                      {formatPrice(Number(item.price) * item.quantity)}
                     </p>
                   </div>
                 </div>
@@ -162,7 +159,7 @@ export function Cart() {
                 {t("common.total")}:
               </span>
               <span className="text-xl font-bold text-foreground" dir="ltr">
-                {formatLocalizedPrice(getTotalPrice(), locale)}
+                {formatPrice(getTotalPrice())}
               </span>
             </div>
             <div className="flex w-full gap-2">

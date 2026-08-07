@@ -16,7 +16,6 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { 
   ChevronDown, 
-  Flower2,
   Sparkles,
   Leaf,
   Grid3x3,
@@ -29,6 +28,7 @@ import {
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/shared/lib/utils";
 import { useProductCategories } from "@/modules/products";
+import { useBrandIcon } from "@/shared/property/use-brand-icon";
 
 interface CategoryDisplayItem {
   value: string;
@@ -39,10 +39,11 @@ interface CategoryDisplayItem {
   image?: string;
 }
 
-const CATEGORY_ICONS = [Flower2, Sparkles, Leaf];
-
 export function CategoryMenu() {
   const { t, locale } = useTranslations();
+  const BrandIcon = useBrandIcon();
+  // Built here, not at module scope: the brand mark comes from the runtime property.
+  const categoryIcons = useMemo(() => [BrandIcon, Sparkles, Leaf], [BrandIcon]);
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const currentCategory = searchParams?.get("category") || "all";
@@ -55,7 +56,7 @@ export function CategoryMenu() {
     return apiCategories.map((cat, index) => ({
       value: cat.slug,
       name: cat.name,
-      icon: CATEGORY_ICONS[index % CATEGORY_ICONS.length],
+      icon: categoryIcons[index % categoryIcons.length],
       description: cat.description || undefined,
       featured: index < 3,
       image: cat.image,

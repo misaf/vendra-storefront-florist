@@ -3,7 +3,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowLeft,
   ArrowRight,
-  Flower2,
   HandHeart,
   Leaf,
   PackageCheck,
@@ -15,6 +14,8 @@ import { Button } from "@/shared/components/ui/button";
 import { Link } from "@/shared/i18n/navigation";
 import { isRtlLocale } from "@/shared/lib/locale";
 import { cn } from "@/shared/lib/utils";
+import { getProperty } from "@/shared/property";
+import { getBrandIcon } from "@/shared/property/brand-icon";
 
 const valueKeys = ["valueFreshness", "valueCraft", "valueService", "valueDetail"];
 const processKeys = [
@@ -25,9 +26,11 @@ const processKeys = [
   "processStep5",
 ];
 
-const valueIcons = [Leaf, Flower2, HandHeart, ScanHeart];
+const BrandIcon = getBrandIcon(getProperty().businessType);
+
+const valueIcons = [Leaf, BrandIcon, HandHeart, ScanHeart];
 const trustKeys = ["trustPoint1", "trustPoint2", "trustPoint3"];
-const trustIcons = [Flower2, Sparkles, PackageCheck];
+const trustIcons = [BrandIcon, Sparkles, PackageCheck];
 
 // Shared brand-band CTA button styles, used by the hero and final-CTA pairs.
 // Height comes from the global 44px button floor in globals.css.
@@ -115,7 +118,7 @@ export default async function AboutUs() {
               />
               <div className="relative aspect-[5/4] overflow-hidden rounded-lg border border-storefront-brand-foreground/15 bg-storefront-brand-soft shadow-2xl shadow-black/25">
                 <Image
-                  src="/hero-florist-studio.webp"
+                  src={getProperty().aboutImage ?? "/hero-florist-studio.webp"}
                   alt={t("about.heroImageAlt")}
                   fill
                   priority

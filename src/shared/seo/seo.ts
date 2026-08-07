@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getContactInfo, getSiteUrl } from "@/shared/lib/config";
-import { getPropertyName, property } from "@/shared/property";
+import { getProperty, getPropertyName } from "@/shared/property";
 import { routing, type Locale } from "@/shared/i18n/routing";
 
 /** Brand name per locale (used for OG site name, JSON-LD, title templates). */
@@ -9,10 +9,23 @@ export const SITE_NAME: Record<Locale, string> = Object.fromEntries(
 ) as Record<Locale, string>;
 
 /** Default social-share image, resolved against `metadataBase`. */
-export const DEFAULT_OG_IMAGE = property.ogImage;
+/**
+ * Default social-share image.
+ *
+ * Vendra's console sends `ogImage: ""` rather than omitting the key when a
+ * property has no share image, so an empty value is a normal input, not a
+ * misconfiguration — treat it as "unset" and fall back.
+ */
+export const DEFAULT_OG_IMAGE =
+  getProperty().ogImage?.trim() ||
+  getProperty().heroImage?.trim() ||
+  // TODO: no brand-neutral share image ships in public/ yet, so this last
+  // fallback is the bundled example's. A runtime tenant that sets neither
+  // ogImage nor heroImage gets it — see deploy/CONTRACT.md.
+  "/hero-florist-studio.webp";
 
 /** Currency used in Product JSON-LD offers (ISO 4217). */
-export const PRICE_CURRENCY = property.priceCurrency;
+export const PRICE_CURRENCY = getProperty().priceCurrency;
 
 const OG_LOCALE: Record<Locale, string> = {
   fa: "fa_IR",
@@ -165,7 +178,7 @@ export function organizationSchema(locale: string): JsonLd {
   const contact = getContactInfo();
   return {
     "@context": "https://schema.org",
-    "@type": property.businessType,
+    "@type": getProperty().businessType,
     "@id": `${getSiteUrl()}/#organization`,
     name: siteName(locale),
     url: getSiteUrl(),
@@ -175,8 +188,8 @@ export function organizationSchema(locale: string): JsonLd {
     email: contact.email,
     address: {
       "@type": "PostalAddress",
-      addressLocality: property.address.locality,
-      addressCountry: property.address.country,
+      addressLocality: getProperty().address.locality,
+      addressCountry: getProperty().address.country,
     },
     openingHours: `Mo-Su ${contact.hoursOpen}-${contact.hoursClose}`,
     contactPoint: [

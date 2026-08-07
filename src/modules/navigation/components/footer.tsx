@@ -6,7 +6,8 @@ import { useTranslations } from "@/shared/hooks/use-translations";
 import { useProperty } from "@/shared/property/property-provider";
 import { usePropertyName } from "@/shared/property/use-property-name";
 import { Newsletter } from "@/modules/newsletter";
-import { Flower2, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { useBrandIcon } from "@/shared/property/use-brand-icon";
 
 const linkClassName = "text-sm text-muted-foreground transition-colors hover:text-primary";
 
@@ -15,6 +16,7 @@ interface FooterProps {
 }
 
 export function Footer({ showNewsletter = true }: FooterProps) {
+  const BrandIcon = useBrandIcon();
   const { t } = useTranslations();
   const property = useProperty();
   const storeName = usePropertyName();
@@ -100,7 +102,7 @@ export function Footer({ showNewsletter = true }: FooterProps) {
           <div>
             <Link href="/" className="inline-flex items-center gap-3">
               <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground ring-2 ring-border">
-                <Flower2 className="size-5" />
+                <BrandIcon className="size-5" />
               </span>
               <span className="font-display text-xl font-medium text-foreground">
                 {storeName}
