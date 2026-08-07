@@ -30,6 +30,7 @@ jobs:
             type=semver,pattern={{version}}
             type=sha
       - uses: docker/build-push-action@v6
+        id: build
         with:
           context: .
           push: true
@@ -37,3 +38,14 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      # Properties are pinned by digest, never by a moving tag, so the digest is
+      # the one output an operator actually needs from this run.
+      - name: Report digest
+        run: |
+          {
+            echo "### Storefront image"
+            echo
+            echo '```'
+            echo "ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

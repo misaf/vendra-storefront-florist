@@ -17,20 +17,18 @@ RUN npm ci
 FROM base AS builder
 # The canonical API, as an origin (https://api.<base>) or with the /api suffix.
 ARG VENDRA_API_URL
-ARG NEXT_PUBLIC_VENDRA_API_URL
-# Optional overrides. Left empty, the property config decides.
-ARG NEXT_PUBLIC_SITE_URL
+# Optional fleet-wide storage override. Left empty, the API origin applies.
 ARG STORAGE_BASE_URL
-ARG NEXT_PUBLIC_STORAGE_BASE_URL
+# Browser-side and fleet-wide, so safe to bake in. There is deliberately no
+# NEXT_PUBLIC_ API or storage URL: NEXT_PUBLIC_* is inlined at build time, so
+# one would freeze a single tenant's host into the shared image. The browser
+# never needs them — reads go through same-origin /api/proxy and /api/storage.
 ARG NEXT_PUBLIC_MAP_PROVIDER
 ARG NEXT_PUBLIC_NESHAN_MAP_KEY
 ARG NEXT_PUBLIC_NESHAN_MAP_TYPE
 
 ENV VENDRA_API_URL=$VENDRA_API_URL
-ENV NEXT_PUBLIC_VENDRA_API_URL=$NEXT_PUBLIC_VENDRA_API_URL
-ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV STORAGE_BASE_URL=$STORAGE_BASE_URL
-ENV NEXT_PUBLIC_STORAGE_BASE_URL=$NEXT_PUBLIC_STORAGE_BASE_URL
 ENV NEXT_PUBLIC_MAP_PROVIDER=$NEXT_PUBLIC_MAP_PROVIDER
 ENV NEXT_PUBLIC_NESHAN_MAP_KEY=$NEXT_PUBLIC_NESHAN_MAP_KEY
 ENV NEXT_PUBLIC_NESHAN_MAP_TYPE=$NEXT_PUBLIC_NESHAN_MAP_TYPE
@@ -62,5 +60,8 @@ COPY --from=builder --chown=nextjs:nextjs /app/public ./public
 USER nextjs
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1
 
 CMD ["node", "server.js"]
