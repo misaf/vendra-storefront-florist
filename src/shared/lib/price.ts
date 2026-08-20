@@ -15,12 +15,6 @@ export function currencyLabel(
   );
 }
 
-function formatPrice(price: number | string | null | undefined): string {
-  const parsedPrice =
-    typeof price === "number" ? price : Number.parseFloat(String(price ?? ""));
-  return Number.isFinite(parsedPrice) ? parsedPrice.toFixed(2) : "0.00";
-}
-
 function parsePrice(price: number | string | null | undefined): number {
   return typeof price === "number"
     ? price
@@ -33,6 +27,14 @@ const FA_PRICE_FORMAT_INTEGER = new Intl.NumberFormat("fa-IR", {
   minimumFractionDigits: 0,
 });
 const FA_PRICE_FORMAT_DECIMAL = new Intl.NumberFormat("fa-IR", {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+});
+const EN_PRICE_FORMAT_INTEGER = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 0,
+});
+const EN_PRICE_FORMAT_DECIMAL = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 });
@@ -54,18 +56,14 @@ export function formatLocalizedPrice(
 ): string {
   const isPersian = locale === "fa";
 
-  if (formattedPrice) {
-    // A backend-formatted price (e.g. "1,200,000 IRT") — swap in the
-    // configured per-locale currency label.
-    return isPersian
-      ? formattedPrice.replace(/\bIRT\b/gi, label)
-      : formattedPrice;
-  }
-
-  const parsedPrice = parsePrice(price);
+  // Persian storefront prices should use Persian digits and separators. The
+  // numeric catalog value is also preferable to a backend display string: the
+  // property owns the customer-facing currency label in every locale, while a
+  // backend string may use a conflicting code.
+  const parsedPrice = parsePrice(price ?? formattedPrice);
 
   if (!Number.isFinite(parsedPrice)) {
-    return isPersian ? `۰ ${label}` : `${label} 0.00`;
+    return isPersian ? `۰ ${label}` : `${label} 0`;
   }
 
   if (isPersian) {
@@ -76,5 +74,9 @@ export function formatLocalizedPrice(
     return `${formatter.format(parsedPrice)} ${label}`;
   }
 
-  return `${label} ${formatPrice(parsedPrice)}`;
+  const formatter = Number.isInteger(parsedPrice)
+    ? EN_PRICE_FORMAT_INTEGER
+    : EN_PRICE_FORMAT_DECIMAL;
+
+  return `${label} ${formatter.format(parsedPrice)}`;
 }

@@ -10,7 +10,7 @@ import { ArrowLeft, ArrowRight, Calendar, ImageOff } from "lucide-react";
 import { cn, normalizeImageUrl } from "@/shared/lib/utils";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 import { isRtlLocale } from "@/shared/lib/locale";
-import type { Post as BlogPost } from "@/modules/blog";
+import type { Post as BlogPost } from "../types";
 
 interface BlogPostCardProps {
   post: BlogPost;
@@ -40,20 +40,20 @@ export function BlogPostCard({
   return (
     <Link
       href={`/blog/${createReadableResourcePath(post.id, post.slug)}`}
-      className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="block rounded-xl"
     >
       <Card
         className={cn(
           "group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1",
           compact
             ? "gap-2 rounded-xl border-0 bg-transparent py-0 shadow-none"
-            : "border-border bg-card text-card-foreground shadow-sm hover:border-foreground/25 hover:shadow-xl hover:shadow-foreground/10"
+            : "gap-3 rounded-none border-0 bg-transparent py-0 text-card-foreground shadow-none"
         )}
       >
         <div
           className={cn(
             "relative overflow-hidden bg-muted",
-            compact ? "aspect-[3/2] rounded-xl" : "aspect-[16/10]"
+            compact ? "aspect-[3/2] rounded-xl" : "aspect-[4/3] rounded-xl"
           )}
         >
           {hasImageError ? (
@@ -71,18 +71,19 @@ export function BlogPostCard({
               alt={post.title}
               width={400}
               height={225}
+              sizes={compact ? "(min-width: 1024px) 18rem, 45vw" : "(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               unoptimized
               onError={() => setHasImageError(true)}
             />
           )}
           {showCategory && post.category && (
-            <Badge variant="secondary" className="absolute start-3 top-3 bg-card/90 text-primary shadow-sm backdrop-blur">
+            <Badge variant="secondary" dir="auto" className="store-dynamic-text absolute start-3 top-3 max-w-[calc(100%-1.5rem)] whitespace-normal bg-card/90 text-primary shadow-sm backdrop-blur">
               {post.category}
             </Badge>
           )}
         </div>
-        <CardHeader className={cn("flex-1", compact ? "gap-1 px-0.5 py-0" : "px-5")}>
+        <CardHeader className={cn("flex-1", compact ? "gap-1 px-0.5 py-0" : "gap-2 px-0 py-0")}>
           {showDate ? (
             <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" aria-hidden="true" />
@@ -92,11 +93,12 @@ export function BlogPostCard({
             </div>
           ) : null}
           <CardTitle
+            dir="auto"
             className={cn(
-              "line-clamp-2 transition-colors",
+              "store-dynamic-text line-clamp-2 transition-colors",
               compact
                 ? "text-sm leading-5 text-storefront-brand-foreground group-hover:text-storefront-brand-foreground/70 dark:text-foreground dark:group-hover:text-muted-foreground"
-                : "font-display text-xl font-medium leading-7 group-hover:text-muted-foreground"
+                : "font-display text-2xl font-medium leading-7 group-hover:text-rose [.locale-fa_&]:leading-[1.65]"
             )}
           >
             {post.title}
@@ -108,7 +110,7 @@ export function BlogPostCard({
           ) : null}
         </CardHeader>
         {showReadMore ? (
-          <CardFooter className="px-5 pb-5">
+          <CardFooter className="px-0 pb-0">
             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {readMoreText}
               <ArrowIcon className="size-3.5" />

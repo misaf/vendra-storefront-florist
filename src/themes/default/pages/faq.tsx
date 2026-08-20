@@ -70,6 +70,7 @@ export default async function FaqPage({
       <JsonLd data={structuredData} />
       <Suspense fallback={null}>
         <FaqClient
+          key={locale}
           initialFaqs={initialFaqs}
           initialCategories={initialCategories}
           initialError={initialError}

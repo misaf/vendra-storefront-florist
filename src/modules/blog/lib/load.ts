@@ -54,7 +54,11 @@ export async function loadPostsPage({
 }): Promise<LoadPostsPageResult> {
   const selectedCategory = normalizeCategory(category);
   const searchQuery = search.trim();
-  const initialQueryKey = buildBlogQueryKey(selectedCategory, searchQuery);
+  const initialQueryKey = buildBlogQueryKey(
+    locale,
+    selectedCategory,
+    searchQuery
+  );
 
   let initialPosts: BlogPost[] = [];
   let initialPagination: FetchBlogPostsResult["pagination"] | null = null;

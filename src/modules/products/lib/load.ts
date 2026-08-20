@@ -96,7 +96,12 @@ export async function loadProductsPage({
   sort: ProductSortValue | undefined;
 }): Promise<LoadProductsPageResult> {
   const apiSort = getProductsApiSort(sort);
-  const initialQueryKey = buildProductsQueryKey(category, search, apiSort);
+  const initialQueryKey = buildProductsQueryKey(
+    locale,
+    category,
+    search,
+    apiSort
+  );
 
   let initialProducts: Product[] = [];
   let initialPagination: FetchProductsResult["pagination"] | null = null;

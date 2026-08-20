@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { Product } from "@/modules/products";
@@ -17,6 +18,7 @@ export interface CartItem extends Product {
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: Product) => void;
+  restoreCartItem: (item: CartItem) => void;
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
@@ -28,13 +30,27 @@ interface CartContextType {
   setCartOpen: (open: boolean) => void;
   openCart: () => void;
   closeCart: () => void;
+  /** The element that opened the cart, so focus can return there on close. */
+  cartOpenerRef: React.RefObject<HTMLElement | null>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = usePersistentState<CartItem[]>("cart", []);
-  const [isCartOpen, setCartOpen] = useState(false);
+  const [isCartOpen, setCartOpenState] = useState(false);
+  // The drawer is opened programmatically from several places and has no
+  // Radix trigger, so Radix has nothing to hand focus back to on close. Record
+  // whatever had focus at open time and restore it ourselves.
+  const cartOpenerRef = useRef<HTMLElement | null>(null);
+
+  const setCartOpen = useCallback((open: boolean) => {
+    if (open && typeof document !== "undefined") {
+      const active = document.activeElement;
+      cartOpenerRef.current = active instanceof HTMLElement ? active : null;
+    }
+    setCartOpenState(open);
+  }, []);
 
   const addToCart = useCallback(
     (product: Product) => {
@@ -56,6 +72,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const removeFromCart = useCallback(
     (productId: number) => {
       setItems((prevItems) => prevItems.filter((item) => item.id !== productId));
+    },
+    [setItems]
+  );
+
+  const restoreCartItem = useCallback(
+    (item: CartItem) => {
+      setItems((prevItems) => {
+        const existingItem = prevItems.find(
+          (cartItem) => cartItem.id === item.id
+        );
+
+        if (existingItem) {
+          return prevItems.map((cartItem) =>
+            cartItem.id === item.id ? item : cartItem
+          );
+        }
+
+        return [...prevItems, item];
+      });
     },
     [setItems]
   );
@@ -87,13 +122,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [items]
   );
 
-  const openCart = useCallback(() => setCartOpen(true), []);
-  const closeCart = useCallback(() => setCartOpen(false), []);
+  const openCart = useCallback(() => setCartOpen(true), [setCartOpen]);
+  const closeCart = useCallback(() => setCartOpen(false), [setCartOpen]);
 
   const value = useMemo(
     () => ({
       items,
       addToCart,
+      restoreCartItem,
       removeFromCart,
       updateQuantity,
       clearCart,
@@ -103,16 +139,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setCartOpen,
       openCart,
       closeCart,
+      cartOpenerRef,
     }),
     [
       items,
       addToCart,
+      restoreCartItem,
       removeFromCart,
       updateQuantity,
       clearCart,
       getTotalPrice,
       getTotalItems,
       isCartOpen,
+      setCartOpen,
       openCart,
       closeCart,
     ]

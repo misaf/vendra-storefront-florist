@@ -1,10 +1,15 @@
-export { CategoryMediaImage } from "./components/category-media-image";
 export { CategoryMenu } from "./components/category-menu";
 export {
   HomeProductsSection,
   type HomeProductCategory,
 } from "./components/home-products-section";
 export { default as ProductDetailClient } from "./components/product-detail-client";
+export {
+  PRODUCT_GRID_IMAGE_SIZES,
+  ProductCardSkeleton,
+  ProductGrid,
+  ProductGridSkeleton,
+} from "./components/product-grid";
 export { default as ProductsClient } from "./components/products-client";
 export { ThemedProductImage } from "./components/themed-product-image";
 export {
@@ -13,6 +18,7 @@ export {
   fetchProductCategories,
   fetchProducts,
   fetchProductsWithDetails,
+  searchCatalogProducts,
   transformProduct,
   useProduct,
   useProductCategories,

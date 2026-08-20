@@ -46,6 +46,7 @@ export default async function BlogPosts({
   return (
     <Suspense fallback={null}>
       <BlogPostsClient
+        key={locale}
         initialPosts={initial.initialPosts}
         initialPagination={initial.initialPagination}
         initialError={initial.initialError}

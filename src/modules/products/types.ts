@@ -60,6 +60,12 @@ export interface ProductDto extends ApiResource {
   quantity?: number | null;
   in_stock?: boolean;
   inStock?: boolean;
+  /** Count at or below which the catalogue considers stock low. */
+  stockThreshold?: number | null;
+  stock_threshold?: number | null;
+  /** Set by the catalogue when a sold-out product is expected back. */
+  availableSoon?: boolean;
+  available_soon?: boolean;
   created_at?: string;
   updated_at?: string;
   createdAt?: string;
@@ -105,6 +111,8 @@ export interface Product {
   name: string;
   price: number;
   formattedPrice?: string;
+  originalPrice?: number;
+  formattedOriginalPrice?: string;
   image: string;
   images?: string[];
   description: string;
@@ -115,6 +123,10 @@ export interface Product {
   token?: string;
   inStock?: boolean;
   quantity?: number | null;
+  /** Count at or below which stock counts as low. 0/absent means untracked. */
+  stockThreshold?: number | null;
+  /** A sold-out product the catalogue expects to restock. */
+  availableSoon?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

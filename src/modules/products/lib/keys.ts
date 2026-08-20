@@ -11,12 +11,13 @@ export function getProductsApiSort(
 }
 
 export function buildProductsQueryKey(
+  locale: string,
   category: string | undefined,
   search: string,
   apiSort: string | undefined
 ): string {
   const order = apiSort ?? "client-sort";
-  return `${category ?? "all"}|${search}|${order}`;
+  return `${locale}|${category ?? "all"}|${search}|${order}`;
 }
 
 export const productKeys = {
@@ -25,6 +26,8 @@ export const productKeys = {
   list: (params: FetchProductsParams = {}) =>
     [...productKeys.lists(), params] as const,
   details: () => [...productKeys.all, "detail"] as const,
-  detail: (id: string | number) => [...productKeys.details(), String(id)] as const,
-  categories: () => [...productKeys.all, "categories"] as const,
+  detail: (locale: string, id: string | number) =>
+    [...productKeys.details(), locale, String(id)] as const,
+  categories: (locale: string) =>
+    [...productKeys.all, "categories", locale] as const,
 };

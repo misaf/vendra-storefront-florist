@@ -14,6 +14,17 @@ FROM base AS deps
 COPY package.json package-lock.json ./
 RUN npm ci
 
+FROM deps AS development
+
+COPY --chown=node:node . .
+RUN mkdir -p .next && chown node:node .next
+
+ENV NODE_ENV=development
+
+USER node
+
+CMD ["npm", "run", "dev"]
+
 FROM base AS builder
 # The canonical API, as an origin (https://api.<base>) or with the /api suffix.
 ARG VENDRA_API_URL

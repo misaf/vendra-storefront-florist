@@ -1,0 +1,17 @@
+# Shared live-development override. The development image supplies Linux
+# node_modules; the checkout and generated Next state are mounted separately.
+services:
+  app:
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+    command: ["npm", "run", "dev"]
+    volumes:
+      - ".:/app"
+      - "node-modules:/app/node_modules"
+      - "next-cache:/app/.next"
+
+volumes:
+  node-modules: {}
+  next-cache: {}

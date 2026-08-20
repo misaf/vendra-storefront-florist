@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { fetchProductsWithDetails } from "@/modules/products";
 import { fetchBlogPostsWithDetails } from "@/modules/blog";
-import { routing } from "@/shared/i18n/routing";
+import { routing, type Locale } from "@/shared/i18n/routing";
 import { absoluteUrl, localizedPath } from "@/shared/seo";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 
@@ -33,6 +33,49 @@ function entry(
 }
 
 type SlugEntry = { id: string | number; slug: string; updatedAt?: string };
+type LocalizedPaths = Partial<Record<Locale, string>>;
+type LocalizedSlugEntry = {
+  id: string | number;
+  slugs: Partial<Record<Locale, string>>;
+  updatedAt?: string;
+};
+
+/** One entry whose hreflang URLs may use different localized slugs. */
+function localizedEntry(
+  paths: LocalizedPaths,
+  options: {
+    lastModified?: string | Date;
+    changeFrequency?: ChangeFreq;
+    priority?: number;
+  } = {}
+): MetadataRoute.Sitemap[number] | null {
+  const defaultPath =
+    paths[routing.defaultLocale] ??
+    routing.locales.map((locale) => paths[locale]).find(Boolean);
+
+  if (!defaultPath) {
+    return null;
+  }
+
+  const languages: Record<string, string> = {};
+  for (const locale of routing.locales) {
+    const path = paths[locale];
+    if (path) {
+      languages[locale] = absoluteUrl(localizedPath(locale, path));
+    }
+  }
+  languages["x-default"] = absoluteUrl(
+    localizedPath(routing.defaultLocale, defaultPath)
+  );
+
+  return {
+    url: absoluteUrl(localizedPath(routing.defaultLocale, defaultPath)),
+    lastModified: options.lastModified,
+    changeFrequency: options.changeFrequency,
+    priority: options.priority,
+    alternates: { languages },
+  };
+}
 
 /** Paginate a collection, accumulating every entry with a slug. */
 async function collectSlugs(
@@ -61,6 +104,58 @@ async function collectSlugs(
   return items;
 }
 
+/** Load and merge the localized slug for every resource id. */
+async function collectLocalizedSlugs(
+  label: string,
+  loadPage: (
+    locale: Locale,
+    page: number
+  ) => Promise<{
+    entries: { id: string | number; slug?: string; updatedAt?: string }[];
+    lastPage: number;
+  }>
+): Promise<LocalizedSlugEntry[]> {
+  const byId = new Map<string, LocalizedSlugEntry>();
+
+  await Promise.all(
+    routing.locales.map(async (locale) => {
+      const items = await collectSlugs(`${label} (${locale})`, (page) =>
+        loadPage(locale, page)
+      );
+
+      for (const item of items) {
+        const key = String(item.id);
+        const existing = byId.get(key) ?? {
+          id: item.id,
+          slugs: {},
+          updatedAt: item.updatedAt,
+        };
+        existing.slugs[locale] = item.slug;
+        existing.updatedAt ??= item.updatedAt;
+        byId.set(key, existing);
+      }
+    })
+  );
+
+  return [...byId.values()];
+}
+
+function localizedResourcePaths(
+  prefix: "/products" | "/blog",
+  item: LocalizedSlugEntry
+): LocalizedPaths {
+  const paths: LocalizedPaths = {};
+
+  for (const locale of routing.locales) {
+    const slug = item.slugs[locale];
+    if (slug) {
+      paths[locale] = `${prefix}/${createReadableResourcePath(item.id, slug)}`;
+    }
+  }
+
+  return paths;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
@@ -74,31 +169,43 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const [products, posts] = await Promise.all([
-    collectSlugs("products", async (page) => {
-      const result = await fetchProductsWithDetails({ page, perPage: SITEMAP_PAGE_SIZE });
+    collectLocalizedSlugs("products", async (locale, page) => {
+      const result = await fetchProductsWithDetails({
+        page,
+        perPage: SITEMAP_PAGE_SIZE,
+        locale,
+      });
       return { entries: result.products, lastPage: result.pagination.lastPage };
     }),
-    collectSlugs("blog posts", async (page) => {
-      const result = await fetchBlogPostsWithDetails({ page, perPage: SITEMAP_PAGE_SIZE });
+    collectLocalizedSlugs("blog posts", async (locale, page) => {
+      const result = await fetchBlogPostsWithDetails({
+        page,
+        perPage: SITEMAP_PAGE_SIZE,
+        locale,
+      });
       return { entries: result.posts, lastPage: result.pagination.lastPage };
     }),
   ]);
 
-  const productEntries = products.map((p) =>
-    entry(`/products/${createReadableResourcePath(p.id, p.slug)}`, {
-      changeFrequency: "weekly",
-      priority: 0.8,
-      lastModified: p.updatedAt,
-    })
-  );
+  const productEntries = products
+    .map((product) =>
+      localizedEntry(localizedResourcePaths("/products", product), {
+        changeFrequency: "weekly",
+        priority: 0.8,
+        lastModified: product.updatedAt,
+      })
+    )
+    .filter((item): item is MetadataRoute.Sitemap[number] => item !== null);
 
-  const postEntries = posts.map((p) =>
-    entry(`/blog/${createReadableResourcePath(p.id, p.slug)}`, {
-      changeFrequency: "monthly",
-      priority: 0.6,
-      lastModified: p.updatedAt,
-    })
-  );
+  const postEntries = posts
+    .map((post) =>
+      localizedEntry(localizedResourcePaths("/blog", post), {
+        changeFrequency: "monthly",
+        priority: 0.6,
+        lastModified: post.updatedAt,
+      })
+    )
+    .filter((item): item is MetadataRoute.Sitemap[number] => item !== null);
 
   return [...staticEntries, ...productEntries, ...postEntries];
 }

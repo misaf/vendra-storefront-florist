@@ -85,6 +85,48 @@ function loadNeshanSdk(): Promise<void> {
   });
 }
 
+/**
+ * The Neshan SDK stamps its attribution with inline `!important` styles — 11px
+ * in a pale grey that measures ~3.3:1, under the 4.5:1 floor — and places it
+ * outside `.leaflet-control-attribution`, so neither specificity nor our
+ * stylesheet can reach it. The attribution itself must stay (it is a licence
+ * condition), so this only raises what the SDK left below our floors: text
+ * size, contrast, and the 24px minimum target height its links owe under WCAG
+ * 2.5.8. Nothing is hidden, unlinked or reworded.
+ */
+function makeAttributionAccessible(container: HTMLElement) {
+  const color = getComputedStyle(container)
+    .getPropertyValue("--muted-foreground")
+    .trim();
+
+  container.querySelectorAll<HTMLElement>("a, span").forEach((node) => {
+    const style = getComputedStyle(node);
+    const isUndersizedText = parseFloat(style.fontSize) < 12;
+    const rect = node.getBoundingClientRect();
+    const isUndersizedTarget =
+      node.tagName === "A" && (rect.height < 24 || rect.width < 24);
+
+    if (!isUndersizedText && !isUndersizedTarget) return;
+
+    if (isUndersizedText) {
+      node.style.setProperty("font-size", "0.75rem", "important");
+      if (color) node.style.setProperty("color", color, "important");
+    }
+
+    if (node.tagName === "A") {
+      // `padding` is locked by the SDK's inline `!important`, so the target is
+      // grown with box metrics it does not set.
+      node.style.setProperty("display", "inline-flex", "important");
+      node.style.setProperty("align-items", "center", "important");
+      node.style.setProperty("justify-content", "center", "important");
+      node.style.setProperty("min-height", "1.5rem", "important");
+      // Logo links carry an <img>, not text, and can be narrower than they are
+      // tall — the 24px minimum applies to both axes.
+      node.style.setProperty("min-width", "1.5rem", "important");
+    }
+  });
+}
+
 export default function AddressMapPicker({
   value,
   onResolve,
@@ -95,6 +137,7 @@ export default function AddressMapPicker({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletLikeMap | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attributionObserver = useRef<MutationObserver | null>(null);
   const requestId = useRef(0);
 
   // Tiles and geocoding are chosen independently: Neshan tiles need a browser
@@ -184,6 +227,16 @@ export default function AddressMapPicker({
       map.whenReady(() => {
         const c = map.getCenter();
         resolve(c.lat, c.lng);
+
+        const container = containerRef.current;
+        if (!container) return;
+        makeAttributionAccessible(container);
+        // Tile providers re-render their attribution as the view changes, so
+        // the fix is re-applied rather than run once.
+        attributionObserver.current?.disconnect();
+        const observer = new MutationObserver(() => makeAttributionAccessible(container));
+        observer.observe(container, { childList: true, subtree: true });
+        attributionObserver.current = observer;
       });
     };
 
@@ -238,6 +291,8 @@ export default function AddressMapPicker({
     return () => {
       cancelled = true;
       if (settleTimer.current) clearTimeout(settleTimer.current);
+      attributionObserver.current?.disconnect();
+      attributionObserver.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -275,7 +330,7 @@ export default function AddressMapPicker({
     <div className="space-y-2.5">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <span className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
             {t("checkout.dropPinEyebrow")}
           </span>
           <p className="text-sm font-medium text-foreground">
@@ -286,7 +341,7 @@ export default function AddressMapPicker({
           type="button"
           onClick={handleLocate}
           disabled={locating}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+          className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
         >
           {locating ? (
             <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
@@ -323,7 +378,7 @@ export default function AddressMapPicker({
 
         {/* Live coordinate read-out — data set in mono, design-system style. */}
         {coords && (
-          <div className="pointer-events-none absolute bottom-2 left-2 z-[1000] rounded-md bg-card/85 px-2 py-1 font-mono text-[0.6rem] tracking-wider text-muted-foreground backdrop-blur-sm">
+          <div className="pointer-events-none absolute bottom-2 left-2 z-[1000] rounded-md bg-card/85 px-2 py-1 font-mono text-xs tracking-wider text-muted-foreground backdrop-blur-sm">
             {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
           </div>
         )}

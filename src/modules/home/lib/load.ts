@@ -7,7 +7,10 @@ import {
 } from "@/modules/products";
 
 const BLOG_PAGE_SIZE = 9;
-const HOME_PRODUCTS_PER_CATEGORY = 20;
+// A homepage rail is a discovery preview, not a second catalogue. Two full
+// desktop views are enough to establish range while keeping below-the-fold
+// image work and the keyboard sequence proportionate to the page.
+const HOME_PRODUCTS_PER_CATEGORY = 8;
 const HOME_CATEGORY_LIMIT = 3;
 
 export interface InitialBlogData {

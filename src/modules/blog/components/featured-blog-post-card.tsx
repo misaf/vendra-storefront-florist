@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ImageOff } from "lucide-react";
 import { normalizeImageUrl } from "@/shared/lib/utils";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
-import type { Post as BlogPost } from "@/modules/blog";
+import type { Post as BlogPost } from "../types";
 
 interface FeaturedBlogPostCardProps {
   post: BlogPost;
@@ -22,7 +22,7 @@ export function FeaturedBlogPostCard({
   return (
     <Link
       href={`/blog/${createReadableResourcePath(post.id, post.slug)}`}
-      className="group relative block h-full min-h-72 overflow-hidden rounded-2xl ring-1 ring-white/10 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group relative block h-full min-h-72 overflow-hidden rounded-2xl ring-1 ring-white/10"
     >
       {hasImageError ? (
         <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-storefront-brand/40 text-storefront-brand-foreground">
@@ -42,7 +42,7 @@ export function FeaturedBlogPostCard({
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-        <h3 className="line-clamp-3 text-xl font-bold leading-snug text-white transition-colors group-hover:text-white/80 sm:text-2xl lg:text-3xl">
+        <h3 className="store-dynamic-text line-clamp-3 text-xl font-bold leading-snug text-white transition-colors group-hover:text-white/80 sm:text-2xl lg:text-3xl" dir="auto">
           {post.title}
         </h3>
       </div>

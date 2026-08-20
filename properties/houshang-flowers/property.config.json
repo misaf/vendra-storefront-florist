@@ -1,15 +1,15 @@
 {
   "slug": "houshang-flowers",
   "theme": "default",
-  "domain": "houshang-flowers.com",
-  "siteUrl": "https://houshang-flowers.com",
+  "domain": "houshang-flowers.test",
+  "siteUrl": "https://houshang-flowers.test",
   "name": {
     "fa": "مجتمع گل و گیاه هوشنگ",
     "en": "Houshang Flowers"
   },
   "businessType": "Florist",
   "priceCurrency": "IRR",
-  "ogImage": "/hero-florist-studio.webp",
+  "ogImage": "/og.png",
   "heroImage": "/hero-florist-studio-storefront.webp",
   "aboutImage": "/hero-florist-studio.webp",
   "address": {

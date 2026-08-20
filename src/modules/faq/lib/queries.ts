@@ -43,7 +43,7 @@ function transformFaq(
     question: getLocalizedValue(faq.name, locale) ?? "",
     answer: toPlainText(getLocalizedValue(faq.description, locale)),
     position: parseNumericId(faq.position ?? 0),
-    category: reference?.label ?? category?.name,
+    category: category?.name ?? reference?.label ?? undefined,
     categorySlug: category?.slug,
   };
 }
@@ -109,7 +109,11 @@ async function fetchFaqCollection(
 
   return response.data
     .map((faq) => transformFaq(faq, locale, categories))
-    .filter((faq) => faq.question);
+    // A storefront FAQ is only publishable when it can actually answer the
+    // question. Draft questions without body copy remain available in the
+    // CMS, but do not leak into the customer experience as repeated
+    // "answer unavailable" placeholders.
+    .filter((faq) => faq.question && faq.answer);
 }
 
 function sortFaqs(faqs: Faq[]): Faq[] {
@@ -172,16 +176,30 @@ export const fetchFaqCategories = cache(
 );
 
 export function useFaqs(
+  locale: string,
   params: FetchFaqsParams = {},
   options?: ApiQueryOptions<Faq[]>
 ) {
+  const localizedParams = { ...params, locale };
+
   return useQuery(
-    createApiQueryOptions(faqKeys.list(params), () => fetchFaqs(params), options)
+    createApiQueryOptions(
+      faqKeys.list(localizedParams),
+      () => fetchFaqs(localizedParams),
+      options
+    )
   );
 }
 
-export function useFaqCategories(options?: ApiQueryOptions<FaqCategory[]>) {
+export function useFaqCategories(
+  locale: string,
+  options?: ApiQueryOptions<FaqCategory[]>
+) {
   return useQuery(
-    createApiQueryOptions(faqKeys.categories(), () => fetchFaqCategories(), options)
+    createApiQueryOptions(
+      faqKeys.categories(locale),
+      () => fetchFaqCategories(locale),
+      options
+    )
   );
 }

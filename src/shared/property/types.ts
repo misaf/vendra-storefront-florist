@@ -21,8 +21,8 @@ export interface PropertyConfig {
   businessType: string;
   /** ISO 4217 code used in Product JSON-LD offers. */
   priceCurrency: string;
-  /** Site-root-relative default social-share image. */
-  ogImage: string;
+  /** Optional site-root-relative default social-share image. */
+  ogImage?: string;
   /** Optional site-root-relative hero image. Defaults to the theme's own. */
   heroImage?: string;
   /** Optional site-root-relative About/newsletter image. Defaults to the theme's own. */

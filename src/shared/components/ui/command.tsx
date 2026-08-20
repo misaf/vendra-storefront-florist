@@ -35,27 +35,37 @@ function CommandDialog({
   children,
   className,
   showCloseButton = true,
+  closeLabel = "Close",
   shouldFilter,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
   title?: string
   description?: string
   className?: string
   showCloseButton?: boolean
+  closeLabel?: string
   /** Forwarded to cmdk. Pass `false` when results are already filtered
    *  server-side, so cmdk doesn't re-filter and hide valid matches. */
   shouldFilter?: boolean
+  /** Belongs on the content, not the root — see `useFocusReturn`. */
+  onCloseAutoFocus?: (event: Event) => void
 }) {
   return (
     <Dialog {...props}>
-      <DialogHeader className="sr-only">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
-      </DialogHeader>
       <DialogContent
         className={cn("overflow-hidden p-0", className)}
         showCloseButton={showCloseButton}
+        closeLabel={closeLabel}
+        onCloseAutoFocus={onCloseAutoFocus}
       >
+        {/* The accessible name/description belong inside the dialog. Rendered
+            outside it they leaked a permanent <h2> into every page's heading
+            outline, ahead of the page's own <h1>. */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
         <Command shouldFilter={shouldFilter} className="[&_[cmdk-group-heading]]:text-muted-foreground **:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
           {children}
         </Command>

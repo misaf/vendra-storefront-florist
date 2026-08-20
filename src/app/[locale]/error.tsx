@@ -23,17 +23,12 @@ export default function Error({
 
   return (
     <PageShell>
-      <section className="bg-background pb-20 pt-28 sm:pb-28 sm:pt-32">
-        <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
-          <span className="golzar-seam mx-auto mb-8 max-w-[10rem]">
-            <span className="h-px flex-1" aria-hidden="true" />
-            <span className="petal-dot" aria-hidden="true" />
-            <span className="h-px flex-1" aria-hidden="true" />
-          </span>
-          <p className="font-mono text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+      <section className="bg-background pb-20 pt-10 sm:pb-28 sm:pt-14">
+        <div className="store-container max-w-2xl text-center">
+          <p className="store-eyebrow justify-center">
             {t("errors.errorEyebrow")}
           </p>
-          <h1 className="font-display mt-4 text-3xl tracking-tight text-foreground sm:text-4xl">
+          <h1 className="store-page-title mt-4 text-foreground">
             {t("errors.errorTitle")}
           </h1>
           <p className="mt-4 leading-7 text-muted-foreground">

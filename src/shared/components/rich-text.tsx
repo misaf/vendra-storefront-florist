@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { JSONContent } from "@tiptap/core";
+import { hasRenderableTiptap, parseTiptapDocument } from "@/shared/lib/rich-text";
 import { renderToReactElement } from "@tiptap/static-renderer/pm/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
@@ -67,57 +68,18 @@ const TIPTAP_RENDER_EXTENSIONS = [
   TableCell,
 ];
 
-function isTiptapDocument(value: unknown): value is JSONContent {
-  return Boolean(
-    value &&
-      typeof value === "object" &&
-      "type" in value &&
-      (value as { type?: unknown }).type === "doc"
-  );
-}
-
-function parseTiptapDocument(value: unknown): JSONContent | null {
-  if (isTiptapDocument(value)) {
-    return value;
-  }
-
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  if (!trimmed.startsWith("{")) {
-    return null;
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(trimmed);
-    return isTiptapDocument(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function hasRenderableTiptap(value: unknown): value is JSONContent {
-  const document = parseTiptapDocument(value);
-  return (
-    Boolean(document) &&
-    Array.isArray(document?.content) &&
-    document.content.length > 0
-  );
-}
-
-/** Whether `content` has anything renderable — use to gate wrappers/cards. */
-export function hasRichTextContent(value: unknown): boolean {
-  if (hasRenderableTiptap(value)) {
-    return true;
-  }
-  return typeof value === "string" && value.trim().length > 0;
-}
+/**
+ * Type scale for the surface the copy sits on. The structural rules (links,
+ * code, tables, lists, media) are shared across all three; see `.rich-text` in
+ * globals.css.
+ */
+type RichTextDensity = "compact" | "default" | "article";
 
 interface RichTextProps {
   /** TipTap rich-text document (preferred), or a plain-text string fallback. */
   content: unknown;
+  /** `compact` for a category blurb, `article` for a journal entry. */
+  density?: RichTextDensity;
   className?: string;
 }
 
@@ -127,11 +89,15 @@ interface RichTextProps {
  * splitting a plain string into paragraphs when the content isn't a TipTap
  * document.
  */
-export function RichText({ content, className }: RichTextProps) {
+export function RichText({
+  content,
+  density = "default",
+  className,
+}: RichTextProps) {
   const rootClassName = ["rich-text", className].filter(Boolean).join(" ");
-  const tiptapDocument = parseTiptapDocument(content);
+  const tiptapDocument = parseTiptapDocument(content) as JSONContent | null;
 
-  if (hasRenderableTiptap(tiptapDocument)) {
+  if (tiptapDocument && hasRenderableTiptap(tiptapDocument)) {
     let rendered: ReactNode = null;
     try {
       rendered = renderToReactElement({
@@ -144,7 +110,11 @@ export function RichText({ content, className }: RichTextProps) {
     }
 
     if (rendered) {
-      return <div className={rootClassName}>{rendered}</div>;
+      return (
+        <div className={rootClassName} data-density={density}>
+          {rendered}
+        </div>
+      );
     }
   }
 
@@ -156,7 +126,7 @@ export function RichText({ content, className }: RichTextProps) {
 
     if (paragraphs.length > 0) {
       return (
-        <div className={rootClassName}>
+        <div className={rootClassName} data-density={density}>
           {paragraphs.map((paragraph, index) => (
             <p key={index}>{paragraph}</p>
           ))}

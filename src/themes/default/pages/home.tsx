@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { StorefrontClient, loadInitialBlog, loadInitialHomeProductCategories } from "@/modules/home";
+import { Hero, ServicePromises, loadInitialBlog, loadInitialHomeProductCategories } from "@/modules/home";
+import { BlogSection } from "@/modules/blog";
+import { HomeProductsSection } from "@/modules/products";
+import { Newsletter } from "@/modules/newsletter";
+import { PageShell } from "@/shared/components/layout/page-shell";
 import { buildMetadata } from "@/shared/seo";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +25,12 @@ export async function generateMetadata({
   });
 }
 
+/**
+ * Composition only. The page used to hand off to a single client component that
+ * existed to call `useTranslations()` and pass `t` down; each section now reads
+ * its own translations, so the page root and the service promises stay on the
+ * server and only the genuinely interactive sections ship as islands.
+ */
 export default async function HomePage({
   params,
 }: {
@@ -35,10 +45,15 @@ export default async function HomePage({
   ]);
 
   return (
-    <StorefrontClient
-      initialBlogPosts={blog.initialBlogPosts}
-      initialBlogCategory={blog.initialBlogCategory}
-      initialHomeProductCategories={initialHomeProductCategories}
-    />
+    <PageShell showFooterNewsletter={false}>
+      <Hero showButtons />
+      <ServicePromises locale={locale} />
+      <HomeProductsSection categories={initialHomeProductCategories} />
+      <BlogSection
+        allPosts={blog.initialBlogPosts}
+        category={blog.initialBlogCategory}
+      />
+      <Newsletter />
+    </PageShell>
   );
 }

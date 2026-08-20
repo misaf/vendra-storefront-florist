@@ -2,8 +2,7 @@
 import { Link, useRouter } from "@/shared/i18n/navigation";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
-import { Alert, AlertDescription } from "@/shared/components/ui/alert";
+import { ErrorState } from "@/shared/components/ui/error-state";
 import { Input } from "@/shared/components/ui/input";
 import {
   Empty,
@@ -12,8 +11,14 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/shared/components/ui/empty";
-import { Skeleton } from "@/shared/components/ui/skeleton";
-import { ThemedProductImage } from "./themed-product-image";
+import { ProductCard } from "./product-card";
+import {
+  PRODUCT_GRID_IMAGE_SIZES,
+  ProductGrid,
+  ProductGridSkeleton,
+} from "./product-grid";
+import { PageHeader } from "@/shared/components/layout/page-header";
+import { Breadcrumbs } from "@/shared/components/layout/breadcrumbs";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { useSearchParams } from "next/navigation";
 import {
@@ -27,22 +32,26 @@ import {
   ArrowUpDown,
   ChevronDown,
   Clock,
-  ImageOff,
   Loader2,
   Package,
   SortAsc,
   SortDesc,
   Search,
 } from "lucide-react";
-import { fetchProductsWithDetails, type FetchProductsResult } from "@/modules/products";
-import { useProductCategories } from "@/modules/products";
-import type { Product } from "@/modules/products";
+import { fetchProductsWithDetails, useProductCategories } from "../lib/queries";
+import type { FetchProductsResult, Product, ProductCategory } from "../types";
 import { buildProductsQueryKey, getProductsApiSort } from "../lib/keys";
-import { createReadableResourcePath } from "@/shared/lib/slug-url";
-import {cn, normalizeImageUrl} from "@/shared/lib/utils";
-import { RichText, hasRichTextContent } from "@/shared/components/rich-text";
+import { cn } from "@/shared/lib/utils";
+import dynamic from "next/dynamic";
+import { hasRichTextContent } from "@/shared/lib/rich-text";
+
+// The TipTap renderer (and prosemirror underneath it) is the heaviest thing on
+// these pages and is only reached when a record actually carries rich text, so
+// it loads as its own chunk instead of riding along with the catalogue.
+const RichText = dynamic(() =>
+  import("@/shared/components/rich-text").then((m) => m.RichText)
+);
 import { useBrandIcon } from "@/shared/property/use-brand-icon";
-import { useFormatPrice } from "@/shared/property/use-format-price";
 
 type SortValue = "newest" | "oldest" | "price-asc" | "price-desc";
 type EffectiveSortValue = SortValue | "api-order";
@@ -68,10 +77,7 @@ function CategoryRichTextDescription({ content }: { content: unknown }) {
 
   return (
     <section className="mt-10 rounded-lg border border-border bg-card p-5 text-card-foreground shadow-sm shadow-storefront-brand/[0.03] sm:p-6">
-      <RichText
-        content={content}
-        className="space-y-4 text-sm leading-7 [&_.tableWrapper]:overflow-x-auto [&_.tableWrapper]:rounded-lg [&_.tableWrapper]:border [&_.tableWrapper]:border-border [&_a]:font-semibold [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-primary/80 [&_blockquote]:border-s-2 [&_blockquote]:border-primary/30 [&_blockquote]:ps-4 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-card-foreground [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-card-foreground [&_img]:rounded-lg [&_ol]:list-inside [&_ol]:list-decimal [&_table]:w-full [&_table]:min-w-max [&_table]:border-collapse [&_tbody_tr:nth-child(even)]:bg-muted/35 [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-start [&_th]:font-semibold [&_th]:text-card-foreground [&_ul]:list-inside [&_ul]:list-disc"
-      />
+      <RichText content={content} density="compact" />
     </section>
   );
 }
@@ -135,6 +141,8 @@ interface ProductsClientProps {
   initialPagination: FetchProductsResult["pagination"] | null;
   initialError: string | null;
   initialQueryKey: string;
+  /** Resolved server-side so the heading and filters render named, not blank. */
+  initialCategories: ProductCategory[];
 }
 
 export default function ProductsClient({
@@ -142,14 +150,20 @@ export default function ProductsClient({
   initialPagination,
   initialError,
   initialQueryKey,
+  initialCategories,
 }: ProductsClientProps) {
-  const formatPrice = useFormatPrice();
   const { t, locale } = useTranslations();
   const BrandIcon = useBrandIcon();
   const searchParams = useSearchParams();
   const router = useRouter();
+  // Seeded from the server render, so the category heading, the sidebar and
+  // the description are correct in the first paint instead of appearing once
+  // the browser has fetched the same list again. An empty array means the
+  // server call failed, and is left undefined so the client still tries.
   const { data: apiCategories = [], isLoading: categoriesLoading } =
-    useProductCategories();
+    useProductCategories(locale, {
+      initialData: initialCategories.length > 0 ? initialCategories : undefined,
+    });
 
   const category = searchParams.get("category")?.trim() || "all";
   const activeCategoryFilter = category !== "all" ? category : undefined;
@@ -162,7 +176,14 @@ export default function ProductsClient({
   const usesApiSortOrder = Boolean(apiSort);
   const effectiveSort: EffectiveSortValue =
     usesApiSortOrder ? "api-order" : sort;
-  const queryKey = buildProductsQueryKey(activeCategoryFilter, search, apiSort);
+  const queryKey = buildProductsQueryKey(
+    locale,
+    activeCategoryFilter,
+    search,
+    apiSort
+  );
+  const currentQueryKeyRef = useRef(queryKey);
+  currentQueryKeyRef.current = queryKey;
 
   const [products, setProducts] = useState<Product[]>(() =>
     sortProductsStatic(initialProducts, effectiveSort, locale)
@@ -170,7 +191,6 @@ export default function ProductsClient({
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
-  const [imageErrorIds, setImageErrorIds] = useState<Set<number>>(new Set());
   const [categorySearch, setCategorySearch] = useState("");
   const [visibleCategoryCount, setVisibleCategoryCount] =
     useState(CATEGORY_PAGE_SIZE);
@@ -284,7 +304,6 @@ export default function ProductsClient({
         lastAppendRequestRef.current = null;
         setLoading(true);
         setProducts([]);
-        setImageErrorIds(new Set());
       } else {
         setLoadingMore(true);
       }
@@ -296,9 +315,13 @@ export default function ProductsClient({
           page,
           perPage: 12,
           category: activeCategoryFilter,
+          locale,
           search: search || undefined,
           sort: apiSort,
         });
+
+        // Ignore a response from a filter that is no longer active.
+        if (currentQueryKeyRef.current !== queryKey) return;
 
         setProducts((previousProducts) => {
           if (reset) return sortProducts(result.products);
@@ -335,7 +358,7 @@ export default function ProductsClient({
         }
       }
     },
-    [activeCategoryFilter, apiSort, queryKey, search, sortProducts]
+    [activeCategoryFilter, apiSort, locale, queryKey, search, sortProducts]
   );
 
   useEffect(() => {
@@ -401,18 +424,6 @@ export default function ProductsClient({
     );
   };
 
-  const markImageAsFailed = useCallback((productId: number) => {
-    setImageErrorIds((previousIds) => {
-      if (previousIds.has(productId)) {
-        return previousIds;
-      }
-
-      const nextIds = new Set(previousIds);
-      nextIds.add(productId);
-      return nextIds;
-    });
-  }, []);
-
   const headingText = useMemo(() => {
     if (search) {
       return `${t("search.results") || "Search Results"} - "${search}"`;
@@ -433,35 +444,39 @@ export default function ProductsClient({
   return (
     <PageShell>
 
-      <section className="bg-background pb-16 pt-24 dark:bg-background sm:pb-20 sm:pt-32">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-6 flex flex-col items-start gap-4 text-start sm:mb-8">
-            <div>
-              <span className="golzar-seam mb-3 max-w-[7rem]">
-                <span className="petal-dot" aria-hidden="true" />
-                <span className="h-px flex-1" aria-hidden="true" />
-              </span>
-              <h1 className="font-display text-2xl leading-tight tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-                {headingText}
-              </h1>
-              {search && (
-                <button
-                  onClick={handleClearSearch}
-                  className="mt-2 text-sm text-muted-foreground underline hover:text-foreground"
-                >
-                  {t("search.clearSearch") || "Clear search"}
-                </button>
-              )}
-            </div>
+      <section className="bg-background pb-16 dark:bg-background sm:pb-20">
+        <PageHeader
+          breadcrumbs={
+            <Breadcrumbs
+              label={t("products.breadcrumb")}
+              items={[
+                { label: t("common.home"), href: "/" },
+                { label: t("common.products") },
+              ]}
+            />
+          }
+          eyebrow={t("products.title")}
+          title={headingText}
+          description={!search ? t("products.subtitle") : undefined}
+          className="pb-7 sm:pb-9"
+        >
+          {search ? (
+            <button
+              onClick={handleClearSearch}
+              className="mt-2 rounded-sm text-sm text-muted-foreground underline hover:text-foreground"
+            >
+              {t("search.clearSearch") || "Clear search"}
+            </button>
+          ) : null}
+        </PageHeader>
 
-          </div>
-
-          <div className="grid min-w-0 gap-4 sm:gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
-            <aside className="min-w-0 rounded-lg border border-border bg-card p-2.5 text-card-foreground shadow-sm shadow-storefront-brand/[0.03] sm:p-3 lg:sticky lg:top-24">
+        <div className="store-container">
+          <div className="grid min-w-0 gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-10">
+            <aside className="min-w-0 border-b border-border pb-4 text-card-foreground store-sticky-lg lg:rounded-xl lg:border lg:bg-card/55 lg:p-4">
               <div className="mb-2 flex items-center justify-between gap-3 px-1">
-                <h3 className="text-xs font-bold uppercase text-muted-foreground">
+                <h2 className="text-xs font-bold uppercase text-muted-foreground">
                   {t("common.categories")}
-                </h3>
+                </h2>
                 {categoriesLoading && (
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                 )}
@@ -474,10 +489,10 @@ export default function ProductsClient({
                   onChange={(event) => setCategorySearch(event.target.value)}
                   aria-label={t("products.categorySearch")}
                   placeholder={t("products.categorySearch")}
-                  className="h-8 rounded-md bg-storefront-brand-soft px-8 text-xs dark:bg-storefront-brand-soft"
+                  className="h-11 rounded-xl bg-background px-9 text-xs dark:bg-storefront-brand-soft"
                 />
               </div>
-              <div className="-mx-1 flex max-w-full snap-x gap-1.5 overflow-x-auto px-1 pb-1 lg:mx-0 lg:max-h-96 lg:snap-none lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:px-0 lg:pb-0 lg:pe-1">
+              <div className="store-scroll-row -mx-1 flex max-w-full gap-1.5 overflow-x-auto px-1 pb-2 lg:mx-0 lg:max-h-96 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:px-0 lg:pb-0 lg:pe-1">
                 {filteredCategoryOptions.length === 0 ? (
                   <p className="px-1 py-2 text-xs text-muted-foreground">
                     {t("products.noCategoryResults")}
@@ -493,10 +508,10 @@ export default function ProductsClient({
                         aria-pressed={isActive}
                         onClick={() => handleCategoryChange(option.value)}
                         className={cn(
-                          "flex min-h-9 max-w-44 shrink-0 snap-start items-center justify-between gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors lg:min-h-8 lg:w-full lg:max-w-none lg:rounded-md lg:py-1.5 lg:text-xs",
+                          "flex min-h-11 max-w-44 shrink-0 items-center justify-between gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors lg:min-h-10 lg:w-full lg:max-w-none lg:rounded-xl lg:border-transparent lg:text-xs",
                           isActive
                             ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-storefront-brand/10"
-                            : "border-border bg-storefront-brand-soft text-card-foreground hover:border-primary/30 hover:bg-muted hover:text-primary"
+                            : "border-border bg-card text-card-foreground hover:border-primary/25 hover:bg-secondary hover:text-primary lg:bg-transparent"
                         )}
                       >
                         <span className="truncate">{option.label}</span>
@@ -529,12 +544,20 @@ export default function ProductsClient({
               )}
             </aside>
 
-            <div className="min-w-0">
-              <div className="flex w-full min-w-0 flex-col gap-2 text-start sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4">
-                <div className="-mx-1 flex max-w-full items-center gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+            <div className="min-w-0" aria-busy={loading || loadingMore}>
+              <div className="flex w-full min-w-0 flex-col gap-3 text-start sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4">
+                {/* Sort stays a set of links so each order is a shareable URL,
+                    but the selected one is marked with aria-current="true"
+                    (these are not pages) and every option keeps a full-size
+                    target at all widths rather than collapsing to bare text. */}
+                <div
+                  role="group"
+                  aria-label={t("products.sortLabel")}
+                  className="store-scroll-row -mx-1 flex max-w-full items-center gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:gap-2.5 sm:px-0 sm:pb-0"
+                >
                   <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                    <ArrowUpDown className="h-4 w-4" />
-                    {t("products.sortBy") || "Sort by"}
+                    <ArrowUpDown className="size-4" aria-hidden="true" />
+                    {t("products.sortBy")}
                   </span>
                   {SORT_OPTIONS.map((option) => {
                     const isActive = sort === option.value;
@@ -548,12 +571,12 @@ export default function ProductsClient({
                           sort: option.value,
                         })}
                         scroll={false}
-                        aria-current={isActive ? "page" : undefined}
+                        aria-current={isActive ? "true" : undefined}
                         className={cn(
-                          "inline-flex min-h-8 shrink-0 items-center rounded-full border px-3 text-xs font-semibold transition-colors sm:min-h-0 sm:rounded-none sm:border-0 sm:px-0",
+                          "inline-flex min-h-11 shrink-0 items-center rounded-full border px-3 text-xs font-semibold transition-colors",
                           isActive
-                            ? "border-primary/25 bg-storefront-brand-soft text-primary sm:bg-transparent sm:font-bold sm:underline sm:decoration-2 sm:underline-offset-4"
-                            : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-primary sm:bg-transparent"
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"
                         )}
                       >
                         {t(option.labelKey)}
@@ -562,7 +585,7 @@ export default function ProductsClient({
                   })}
                 </div>
                 {!loading && pagination ? (
-                  <span className="shrink-0 text-xs font-semibold text-muted-foreground sm:text-end">
+                  <span className="shrink-0 text-xs font-semibold text-muted-foreground sm:text-end" role="status" aria-live="polite">
                     {new Intl.NumberFormat(locale).format(pagination.total)}{" "}
                     {pagination.total === 1
                       ? t("common.productsAvailable") || "product"
@@ -571,45 +594,28 @@ export default function ProductsClient({
                 ) : null}
               </div>
 
-              <div className="mb-6 mt-4 border-t border-border" />
+              <div className="mb-7 mt-5 border-t border-border" />
 
           {error && (
-            <Alert variant="destructive" className="mb-8">
-              <AlertDescription>
-                <p>
-                  {t("products.loadError") ||
-                    "We couldn't load the products just now. Please check your connection and try again."}
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => loadProducts(1, true)}
-                >
-                  {t("products.tryAgain") || "Try Again"}
-                </Button>
-              </AlertDescription>
-            </Alert>
+            <ErrorState
+              className="mb-8"
+              message={
+                t("products.loadError") ||
+                "We couldn't load the products just now. Please check your connection and try again."
+              }
+              onRetry={() => loadProducts(1, true)}
+              retryLabel={t("products.tryAgain") || "Try Again"}
+              retryingLabel={t("products.retrying")}
+              isRetrying={loading}
+            />
           )}
 
           {loading ? (
-            <div className="grid grid-cols-2 items-stretch gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="flex h-full flex-col bg-card">
-                  <div className="aspect-square sm:aspect-[4/5]">
-                    <Skeleton className="h-full w-full rounded-none" />
-                  </div>
-                  <div className="flex min-h-24 flex-1 flex-col gap-2 px-3 pb-2 pt-3 sm:px-4 sm:pt-4">
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                    <Skeleton className="mt-1 h-4 w-full" />
-                    <Skeleton className="h-4 w-2/3" />
-                  </div>
-                  <div className="flex justify-end px-3 pb-3 pt-2 sm:px-4 sm:pb-4">
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : products.length === 0 ? (
+            <ProductGridSkeleton />
+          ) : products.length === 0 && !error ? (
+            // Only for a successful response that genuinely returned nothing.
+            // Showing this beside the load-failure alert told the customer the
+            // category was empty when in fact the request never arrived.
             <Empty className="py-12">
               <EmptyHeader>
                 <EmptyMedia
@@ -640,124 +646,57 @@ export default function ProductsClient({
             </Empty>
           ) : (
             <>
-              <div className="grid grid-cols-2 items-stretch gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
-                {products.map((product) => {
-                  const hasImageError = imageErrorIds.has(product.id);
-                  const productImageUrl = normalizeImageUrl(product.image);
-	                  const detailHref = `/products/${createReadableResourcePath(
-	                    product.id,
-	                    product.slug
-	                  )}`;
-	                  const inStock = product.inStock !== false;
-                  const hasPrice = Number(product.price) > 0 && inStock;
-                  const displayPrice = formatPrice(product.price, product.formattedPrice);
-
-                  return (
-	                    <div
-	                      key={product.id}
-                      className="group relative flex h-full flex-col bg-card text-card-foreground transition-colors hover:bg-muted/45"
-	                    >
-	                      <span
-                        aria-hidden="true"
-                        className="absolute inset-x-0 top-0 z-10 h-0.5 origin-center scale-x-0 bg-foreground transition-transform duration-300 group-hover:scale-x-100"
-                      />
-                      <div className="relative aspect-square overflow-hidden bg-card sm:aspect-[4/5]">
-                        <Link
-                          href={detailHref}
-                          className="block h-full w-full rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                        >
-                          {hasImageError ? (
-                            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-card text-muted-foreground">
-                              <span className="flex size-14 items-center justify-center rounded-full bg-background/75 shadow-sm ring-1 ring-border">
-                                <ImageOff className="h-6 w-6" />
-                              </span>
-                              <span className="max-w-28 text-center text-xs font-semibold leading-5">
-                                {t("products.imageUnavailable") || "Image unavailable"}
-                              </span>
-                            </div>
-                          ) : (
-                            <ThemedProductImage
-	                              src={productImageUrl}
-	                              alt={product.name}
-	                              width={360}
-	                              height={450}
-                              className="h-full w-full object-contain p-1.5 transition-transform duration-500 group-hover:scale-[1.03] sm:p-2"
-                              unoptimized
-                              loading="lazy"
-                              onError={() => markImageAsFailed(product.id)}
-                            />
-                          )}
-                        </Link>
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/18 to-transparent" />
-
-	                      </div>
-
-	                      <div className="flex min-h-24 flex-1 flex-col gap-2 px-3 pb-2 pt-3 sm:px-4 sm:pt-4">
-	                        {product.category && (
-	                          <div>
-	                            <Badge variant="secondary" className="rounded-full bg-storefront-brand-soft px-2 py-0.5 text-[11px] text-primary dark:bg-storefront-brand-soft dark:text-primary">
-	                              {product.category}
-	                            </Badge>
-	                          </div>
-	                        )}
-	                        <h3 className="line-clamp-2 min-h-10 text-xs font-semibold leading-5 sm:text-sm">
-                          <Link
-                            href={detailHref}
-                            className="flex items-start gap-2 rounded-sm outline-none transition-colors hover:text-foreground/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                          >
-                            <span className="petal-dot mt-1.5" aria-hidden="true" />
-                            <span className="min-w-0">{product.name}</span>
-                          </Link>
-                        </h3>
-                      </div>
-
-		                      <div className="mt-auto flex justify-end gap-3 px-3 pb-3 pt-2 text-end sm:px-4 sm:pb-4 sm:pt-3">
-		                        <div className="min-w-0 self-center">
-	                          <span
-                              dir="ltr"
-	                            className={cn(
-	                              "block truncate text-xs font-bold leading-5 sm:text-sm",
-	                              inStock
-	                                ? "text-card-foreground"
-	                                : "text-muted-foreground"
-	                            )}
-	                          >
-	                            {inStock
-	                              ? hasPrice
-	                                ? displayPrice
-	                                : t("products.priceOnRequest")
-	                              : t("products.outOfStock")}
-	                          </span>
-	                        </div>
-	                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <ProductGrid>
+                {products.map((product, index) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    locale={locale}
+                    t={t}
+                    showCategory
+                    eager={index < 4}
+                    sizes={PRODUCT_GRID_IMAGE_SIZES}
+                  />
+                ))}
+              </ProductGrid>
 
               {/* Infinite scroll sentinel (progressive enhancement) */}
               <div ref={observerTarget} className="h-px" aria-hidden="true" />
-              {loadingMore ? (
-                <div className="mt-8 flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  <span className="ms-2 text-sm text-muted-foreground">
-                    {t("products.loadingMore") || "Loading more products..."}
-                  </span>
-                </div>
-              ) : hasMore ? (
+              {hasMore || loadingMore ? (
                 // Manual fallback so keyboard/screen-reader users can advance
-                // and everyone can reach the footer past the grid.
+                // and everyone can reach the footer past the grid. The button
+                // carries its own busy state rather than being swapped for a
+                // spinner: unmounting it mid-load threw keyboard focus back to
+                // the top of the page on every page fetched.
                 <div className="mt-8 flex justify-center">
                   <Button
                     variant="outline"
-                    onClick={() =>
-                      loadProducts((pagination?.currentPage ?? 1) + 1, false)
-                    }
+                    // aria-disabled, not disabled: disabling the focused
+                    // element blurs it, which is what threw keyboard focus to
+                    // the top of the page on every fetch. This keeps the button
+                    // focusable and announces the busy state instead.
+                    aria-disabled={loadingMore}
+                    aria-busy={loadingMore}
+                    className={cn(loadingMore && "opacity-70")}
+                    onClick={() => {
+                      if (loadingMore) return;
+                      loadProducts((pagination?.currentPage ?? 1) + 1, false);
+                    }}
                   >
-                    {t("products.loadMore") || "Load more products"}
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        {t("products.loadingMore")}
+                      </>
+                    ) : (
+                      t("products.loadMore")
+                    )}
                   </Button>
                 </div>
               ) : null}
+              <span className="sr-only" role="status" aria-live="polite">
+                {loadingMore ? t("products.loadingMore") : ""}
+              </span>
               {!hasMore && products.length > 0 && (
                 <div className="mt-8 text-center">
                   <p className="text-sm text-muted-foreground">

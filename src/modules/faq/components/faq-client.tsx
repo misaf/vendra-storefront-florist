@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { HelpCircle, Search } from "lucide-react";
 import { PageShell } from "@/shared/components/layout/page-shell";
-import { Alert, AlertDescription } from "@/shared/components/ui/alert";
+import { PageHeader } from "@/shared/components/layout/page-header";
 import {
   Empty,
   EmptyContent,
@@ -13,11 +13,13 @@ import {
   EmptyTitle,
 } from "@/shared/components/ui/empty";
 import { Input } from "@/shared/components/ui/input";
+import { Button } from "@/shared/components/ui/button";
+import { ErrorState } from "@/shared/components/ui/error-state";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { useSearchParams } from "next/navigation";
-import { useRouter } from "@/shared/i18n/navigation";
-import { fetchFaqs } from "@/modules/faq";
-import type { Faq, FaqCategory } from "@/modules/faq";
+import { Link, useRouter } from "@/shared/i18n/navigation";
+import { fetchFaqs } from "../lib/queries";
+import type { Faq, FaqCategory } from "../types";
 import { cn } from "@/shared/lib/utils";
 
 interface FaqClientProps {
@@ -51,12 +53,13 @@ export default function FaqClient({
   const [reloading, setReloading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [openIds, setOpenIds] = useState<Set<number>>(new Set());
+  const numberFormat = useMemo(() => new Intl.NumberFormat(locale), [locale]);
 
   const reload = useCallback(async () => {
     setReloading(true);
     setError(null);
     try {
-      const result = await fetchFaqs({ perPage: 100 });
+      const result = await fetchFaqs({ perPage: 100, locale });
       setFaqs(result);
     } catch (err) {
       console.error("Error loading FAQs:", err);
@@ -64,7 +67,7 @@ export default function FaqClient({
     } finally {
       setReloading(false);
     }
-  }, []);
+  }, [locale]);
 
   // Category buckets in catalogue order, with uncategorized last.
   const buckets = useMemo<Bucket[]>(() => {
@@ -170,19 +173,12 @@ export default function FaqClient({
   return (
     <PageShell showFooterNewsletter={false}>
       {/* Masthead — quiet porcelain, search promoted as the real task */}
-      <section className="border-b border-border pt-28 sm:pt-32">
-        <div className="mx-auto max-w-6xl px-5 pb-12 sm:px-8 sm:pb-14 lg:px-12">
-          <span className="golzar-seam mb-4 max-w-[7rem]">
-            <span className="petal-dot" aria-hidden="true" />
-            <span className="h-px flex-1" aria-hidden="true" />
-          </span>
-          <h1 className="font-display max-w-2xl text-4xl leading-[1.04] tracking-tight text-foreground sm:text-6xl">
-            {t("faq.heading")}
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
-            {t("faq.subtitle")}
-          </p>
-
+      <section className="border-b border-border">
+        <PageHeader
+          eyebrow={t("faq.indexLabel")}
+          title={t("faq.heading")}
+          description={t("faq.subtitle")}
+        >
           <div className="relative mt-8 max-w-xl">
             <Search
               className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -197,31 +193,26 @@ export default function FaqClient({
               className="h-11 ps-9"
             />
           </div>
-        </div>
+        </PageHeader>
       </section>
 
       {/* Index rail + hairline ledger */}
-      <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
+      <section className="store-container store-section">
         {error ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              <p>{t("faq.loadError")}</p>
-              <button
-                className="mt-4 rounded-sm text-sm underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-                onClick={reload}
-                disabled={reloading}
-              >
-                {reloading ? t("faq.retrying") : t("faq.tryAgain")}
-              </button>
-            </AlertDescription>
-          </Alert>
+          <ErrorState
+            message={t("faq.loadError")}
+            onRetry={reload}
+            retryLabel={t("faq.tryAgain")}
+            retryingLabel={t("faq.retrying")}
+            isRetrying={reloading}
+          />
         ) : (
           <div className="grid gap-10 lg:grid-cols-[15rem_1fr] lg:gap-16">
             {/* Rail */}
-            <aside className="lg:sticky lg:top-28 lg:self-start">
+            <aside className="store-sticky-lg lg:rounded-xl lg:bg-card/55 lg:p-5">
               <p
                 id="faq-index-label"
-                className="font-mono text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground"
+                className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground"
               >
                 {t("faq.indexLabel")}
               </p>
@@ -239,7 +230,7 @@ export default function FaqClient({
                         aria-pressed={isActive}
                         onClick={() => handleCategoryChange(item.key)}
                         className={cn(
-                          "group flex min-h-11 w-full items-center justify-between gap-3 whitespace-nowrap rounded-sm py-1.5 text-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:border-t lg:border-border lg:py-2.5 lg:first:border-t-0",
+                          "group flex min-h-11 w-full items-center justify-between gap-3 whitespace-nowrap rounded-sm py-1.5 text-start transition-colors lg:border-t lg:border-border lg:py-2.5 lg:first:border-t-0",
                           isActive
                             ? "text-foreground"
                             : "text-muted-foreground hover:text-foreground"
@@ -265,7 +256,7 @@ export default function FaqClient({
                           </span>
                         </span>
                         <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                          {item.count}
+                          {numberFormat.format(item.count)}
                         </span>
                       </button>
                     </li>
@@ -290,15 +281,21 @@ export default function FaqClient({
                       {searchQuery ? t("faq.noSearchResults") : t("faq.noFaqs")}
                     </EmptyDescription>
                   </EmptyHeader>
-                  {searchQuery && (
+                  {searchQuery ? (
                     <EmptyContent>
                       <button
                         type="button"
                         onClick={() => setSearchQuery("")}
-                        className="rounded-sm text-sm font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="rounded-sm text-sm font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground"
                       >
                         {t("faq.clearSearch")}
                       </button>
+                    </EmptyContent>
+                  ) : (
+                    <EmptyContent>
+                      <Button asChild variant="outline">
+                        <Link href="/contact">{t("faq.contactForAnswer")}</Link>
+                      </Button>
                     </EmptyContent>
                   )}
                 </Empty>
@@ -309,7 +306,7 @@ export default function FaqClient({
                       {showGroupHeadings ? (
                         <div className="mb-1 flex items-center gap-2.5">
                           <span className="petal-dot" aria-hidden="true" />
-                          <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.22em] text-muted-foreground">
+                          <h2 className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
                             {group.name}
                           </h2>
                         </div>
@@ -319,49 +316,73 @@ export default function FaqClient({
                       <ul>
                         {group.items.map((faq) => {
                           const open = openIds.has(faq.id);
+                          const hasAnswer = faq.answer.trim().length > 0;
                           const panelId = `faq-panel-${faq.id}`;
                           return (
                             <li
                               key={faq.id}
                               className="border-t border-border first:border-t-0"
                             >
-                              <h3>
-                                <button
-                                  type="button"
-                                  aria-expanded={open}
-                                  aria-controls={panelId}
-                                  onClick={() => toggle(faq.id)}
-                                  className="group flex w-full items-start justify-between gap-5 py-5 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              <div>
+                                {hasAnswer ? (
+                                  <h3>
+                                    <button
+                                      type="button"
+                                      aria-expanded={open}
+                                      aria-controls={panelId}
+                                      onClick={() => toggle(faq.id)}
+                                      className="group flex min-h-14 w-full items-start justify-between gap-5 py-5 text-start"
+                                    >
+                                      <span
+                                        className="font-display text-xl leading-snug text-foreground [.locale-fa_&]:leading-[1.75] sm:text-2xl"
+                                      >
+                                        {faq.question}
+                                      </span>
+                                      <span
+                                        className="relative mt-1.5 size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
+                                        aria-hidden="true"
+                                      >
+                                        <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-current" />
+                                        <span
+                                          data-open={open ? "" : undefined}
+                                          className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-current motion-safe:transition-transform data-[open]:scale-y-0"
+                                        />
+                                      </span>
+                                    </button>
+                                  </h3>
+                                ) : (
+                                  <div className="py-5">
+                                    <h3 className="font-display text-xl leading-snug text-foreground [.locale-fa_&]:leading-[1.75] sm:text-2xl">
+                                      {faq.question}
+                                    </h3>
+                                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                                      <span>{t("faq.answerUnavailable")}</span>
+                                      <Link
+                                        href={{
+                                          pathname: "/contact",
+                                          query: { subject: faq.question },
+                                        }}
+                                        className="rounded-sm font-semibold text-primary underline underline-offset-4"
+                                      >
+                                        {t("faq.contactForAnswer")}
+                                      </Link>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              {hasAnswer ? (
+                                <div
+                                  id={panelId}
+                                  data-open={open ? "" : undefined}
+                                  className="grid grid-rows-[0fr] motion-safe:transition-[grid-template-rows] motion-safe:duration-300 data-[open]:grid-rows-[1fr]"
                                 >
-                                  <span className="font-display text-lg leading-snug tracking-tight text-foreground sm:text-xl">
-                                    {faq.question}
-                                  </span>
-                                  {/* +/− hairline toggle, no chevron */}
-                                  <span
-                                    className="relative mt-1.5 size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
-                                    aria-hidden="true"
-                                  >
-                                    <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-current" />
-                                    <span
-                                      data-open={open ? "" : undefined}
-                                      className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-current motion-safe:transition-transform data-[open]:scale-y-0"
-                                    />
-                                  </span>
-                                </button>
-                              </h3>
-                              <div
-                                id={panelId}
-                                data-open={open ? "" : undefined}
-                                className="grid grid-rows-[0fr] motion-safe:transition-[grid-template-rows] motion-safe:duration-300 data-[open]:grid-rows-[1fr]"
-                              >
-                                <div className="overflow-hidden">
-                                  {faq.answer && (
-                                    <p className="max-w-2xl pb-6 text-[0.95rem] leading-7 text-muted-foreground">
+                                  <div className="overflow-hidden">
+                                    <p className="max-w-2xl pb-6 text-sm leading-7 text-muted-foreground">
                                       {faq.answer}
                                     </p>
-                                  )}
+                                  </div>
                                 </div>
-                              </div>
+                              ) : null}
                             </li>
                           );
                         })}

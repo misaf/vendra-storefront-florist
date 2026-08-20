@@ -1,8 +1,8 @@
-# Deployment contract: this image ↔ vendra-controller
+# Deployment contract: this image ↔ vendra-cp
 
 The production Compose template for a storefront property is **embedded in the
-`vendra-controller` Go binary**, at
-`vendra-controller/assets/compose/property/docker-compose.yml`. It is not a file
+`vendra-cp` Go binary**, at
+`vendra-cp/assets/compose/property/docker-compose.yml`. It is not a file
 in this repository, and this repository must not ship a competing copy.
 
 This document records what that template passes today, what this image expects,
@@ -53,15 +53,11 @@ omits a share image. This image's schema lists `ogImage` as required with
 `Invalid STOREFRONT_CONFIG_BASE64: configuration is missing required fields`.
 
 Fixed on this side: `ogImage` is no longer a required field, and an empty value
-falls back to `heroImage` and then to a bundled default, because Laravel
-deliberately sends `""` rather than omitting the key.
+falls back to `heroImage`, because Laravel deliberately sends `""` rather than
+omitting the key. When both values are empty, image metadata is omitted instead
+of leaking the bundled example property's photo into another storefront.
 
-**Still outstanding:** no brand-neutral share image ships in `public/`, so the
-final fallback is the florist example's photo. A runtime tenant that sets neither
-`ogImage` nor `heroImage` will share that image. Either add a neutral asset or
-generate one per tenant with a Next.js `opengraph-image` route.
-
-### 2. Incomplete configurations were accepted — **fixed in vendra-controller**
+### 2. Incomplete configurations were accepted — **fixed in vendra-cp**
 
 `property.Validate` checked only `slug` and `domain`, so a configuration missing
 `name`, `businessType`, `priceCurrency`, `address`, `contact` or `social`
@@ -73,7 +69,7 @@ missing ones by name, so Laravel's POST gets a specific error instead of a
 container that never becomes healthy. `ogImage` is deliberately excluded — it is
 optional, and the console sends `""`. The quickstart example is corrected.
 
-### 3. Health checks probed `/` — **fixed in vendra-controller**
+### 3. Health checks probed `/` — **fixed in vendra-cp**
 
 `property.Render` now writes `STOREFRONT_HEALTH_PATH=/api/health` (exported as
 `property.DefaultHealthPath`), the Compose template default matches, and the

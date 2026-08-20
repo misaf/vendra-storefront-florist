@@ -37,13 +37,13 @@ export function ThemedProductImage({
         {...props}
         src={PLACEHOLDER_IMAGE}
         alt={alt}
-        className={cn(className, "dark:hidden")}
+        className={cn(className, "object-cover p-0 dark:hidden")}
       />
       <Image
         {...props}
         src={DARK_PLACEHOLDER_IMAGE}
         alt={alt}
-        className={cn(className, "hidden dark:block")}
+        className={cn(className, "hidden object-cover p-0 dark:block")}
       />
     </>
   );

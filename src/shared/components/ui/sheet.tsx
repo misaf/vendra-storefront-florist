@@ -44,25 +44,46 @@ function SheetOverlay({
   )
 }
 
+/**
+ * `start` and `end` are the inline edges — they follow the document's writing
+ * direction, so a drawer that opens from the trailing edge does so on the right
+ * in English and on the left in Persian without the caller knowing the locale.
+ *
+ * The three call sites (cart, account panel, mobile navigation) each used to
+ * write `side={isRtlLocale(locale) ? "left" : "right"}`, which meant every new
+ * drawer had to remember to do the same or silently open from the wrong edge.
+ * `left`/`right` remain available for the rare drawer that really is physical.
+ */
+type SheetSide = "top" | "bottom" | "start" | "end" | "left" | "right"
+
 function SheetContent({
   className,
   children,
-  side = "right",
+  side = "end",
+  closeLabel = "Close",
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
-  side?: "top" | "right" | "bottom" | "left"
+  side?: SheetSide
+  closeLabel?: string
 }) {
+  const isInlineStart = side === "start" || side === "left"
+  const isInlineEnd = side === "end" || side === "right"
+
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Content
         data-slot="sheet-content"
+        data-side={side}
         className={cn(
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
-          side === "right" &&
-            "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
-          side === "left" &&
-            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
+          // Logical inline edges. `start-0`/`end-0` and `border-s`/`border-e`
+          // flip with direction; the slide animation is picked to match in
+          // globals.css, where an RTL rule can reach it.
+          (isInlineStart || isInlineEnd) &&
+            "inset-y-0 h-full w-3/4 sm:max-w-sm",
+          isInlineStart && "start-0 border-e",
+          isInlineEnd && "end-0 border-s",
           side === "top" &&
             "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto border-b",
           side === "bottom" &&
@@ -72,9 +93,9 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute end-4 top-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+        <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute end-2 top-2 flex size-11 items-center justify-center rounded-full opacity-70 transition-opacity hover:bg-secondary hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
           <XIcon className="size-4" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{closeLabel}</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>
     </SheetPortal>

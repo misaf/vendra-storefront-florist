@@ -1,249 +1,218 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import type { FocusEvent as ReactFocusEvent } from "react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { Link, usePathname } from "@/shared/i18n/navigation";
-import { CategoryMediaImage } from "./category-media-image";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { isRtlLocale } from "@/shared/lib/locale";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/shared/components/ui/dropdown-menu";
-import { Button } from "@/shared/components/ui/button";
-import { 
-  ChevronDown, 
-  Sparkles,
-  Leaf,
-  Grid3x3,
-  Check,
-  ArrowLeft,
-  ArrowRight,
-  Loader2,
-  ShoppingBag,
-} from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { cn } from "@/shared/lib/utils";
-import { useProductCategories } from "@/modules/products";
-import { useBrandIcon } from "@/shared/property/use-brand-icon";
+import { useProductCategories } from "../lib/queries";
 
-interface CategoryDisplayItem {
-  value: string;
-  name: string;
-  icon: typeof Grid3x3;
-  description?: string;
-  featured: boolean;
-  image?: string;
+interface CategoryMenuProps {
+  /**
+   * Trigger classes, supplied by the bar it sits in so the catalogue reads as
+   * one of the navigation links rather than as a control of its own kind.
+   */
+  className?: string;
+  /** The catalogue is the section currently being viewed. */
+  active?: boolean;
 }
 
-export function CategoryMenu() {
+/**
+ * Columns follow the catalogue rather than a fixed grid: a shop with four
+ * categories gets a narrow list instead of a wide panel with empty columns,
+ * and one with thirty still scans in three columns of ten.
+ */
+function getPanelLayout(count: number) {
+  if (count >= 9) return { width: "w-[40rem]", columns: "grid-cols-3" };
+  if (count >= 5) return { width: "w-[27rem]", columns: "grid-cols-2" };
+  return { width: "w-[16rem]", columns: "grid-cols-1" };
+}
+
+const CATEGORY_LINK_CLASS =
+  "store-dynamic-text flex min-h-10 items-center rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground";
+
+/**
+ * The catalogue entry in the main navigation: a disclosure button and the panel
+ * of categories it reveals.
+ *
+ * It is deliberately *not* an ARIA menu. `role="menu"` describes an application
+ * menu — arrow-key driven, Tab exits, the rest of the page goes inert — and a
+ * modal dropdown applied that to site navigation: every link was `tabindex=-1`,
+ * page scroll was locked and the whole document was `aria-hidden` while a
+ * shopper browsed categories. This is a button that discloses a list of links,
+ * so it is built as one and Tab walks straight through it.
+ */
+export function CategoryMenu({ className, active = false }: CategoryMenuProps) {
   const { t, locale } = useTranslations();
-  const BrandIcon = useBrandIcon();
-  // Built here, not at module scope: the brand mark comes from the runtime property.
-  const categoryIcons = useMemo(() => [BrandIcon, Sparkles, Leaf], [BrandIcon]);
-  const searchParams = useSearchParams();
   const pathname = usePathname();
-  const currentCategory = searchParams?.get("category") || "all";
-  const isProductsPage = pathname?.includes("/products");
-  const { data: apiCategories = [], isLoading } = useProductCategories();
-  const isRTL = isRtlLocale(locale);
-  const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
+  const { data: categories = [], isLoading } = useProductCategories(locale);
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const panelId = useId();
+  const listLabelId = useId();
+  const layout = getPanelLayout(categories.length);
 
-  const categories = useMemo<CategoryDisplayItem[]>(() => {
-    return apiCategories.map((cat, index) => ({
-      value: cat.slug,
-      name: cat.name,
-      icon: categoryIcons[index % categoryIcons.length],
-      description: cat.description || undefined,
-      featured: index < 3,
-      image: cat.image,
-    }));
-  }, [apiCategories]);
+  const close = useCallback(() => setOpen(false), []);
 
-  const getCategoryUrl = (category: string) => {
-    if (category === "all") {
-      return "/products" as const;
-    }
-    return { pathname: "/products", query: { category } } as const;
+  const closeAndRestoreFocus = useCallback(() => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
+  // A route change from outside the panel — a browser Back step, the logo, the
+  // search panel — must not leave it hanging open over the page it opened onto.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (triggerRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeAndRestoreFocus();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, closeAndRestoreFocus]);
+
+  /**
+   * Tabbing past the last category is how a keyboard user says they are done
+   * with the panel. A null `relatedTarget` is not that — it is a click on the
+   * panel's own padding, or focus leaving for the browser chrome — so it is
+   * left alone rather than closing the panel out from under the pointer.
+   */
+  const handleFocusOut = (event: ReactFocusEvent<HTMLElement>) => {
+    const next = event.relatedTarget as Node | null;
+    if (!next) return;
+    if (triggerRef.current?.contains(next)) return;
+    if (panelRef.current?.contains(next)) return;
+    setOpen(false);
   };
 
-  const featuredCategories = useMemo(
-    () => categories.filter((category) => category.featured),
-    [categories]
-  );
-  const regularCategories = useMemo(
-    () => categories.filter((category) => !category.featured),
-    [categories]
-  );
+  const handleTriggerKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "ArrowDown") return;
+    event.preventDefault();
+    setOpen(true);
+    // The panel mounts with this state change, so the first link only exists
+    // after paint.
+    requestAnimationFrame(() => {
+      panelRef.current?.querySelector<HTMLAnchorElement>("a[href]")?.focus();
+    });
+  };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-expanded={open}
+        aria-controls={open ? panelId : undefined}
+        aria-current={active ? "true" : undefined}
+        onClick={() => setOpen((isOpen) => !isOpen)}
+        onKeyDown={handleTriggerKeyDown}
+        onBlur={handleFocusOut}
+        className={cn(
+          "inline-flex items-center gap-1.5",
+          className,
+          // Open reads exactly like current: both mean "this is the section
+          // you are in", and a fainter open state let the neighbouring active
+          // link out-shout the trigger whose panel was on screen.
+          open && !active && "bg-secondary text-foreground"
+        )}
+      >
+        {t("common.products")}
+        <ChevronDown
+          aria-hidden="true"
+          className={cn("size-3.5 opacity-60 transition-transform duration-200", open && "rotate-180")}
+        />
+      </button>
+
+      {open ? (
+        <div
+          ref={panelRef}
+          id={panelId}
+          onBlur={handleFocusOut}
+          /* Anchored to the header, not to the trigger: the nav is vertically
+             centred in the bar, so its own centre plus half the header height
+             lands the panel exactly on the header's bottom edge at both header
+             heights. `end-0` lines its closing edge up with the last navigation
+             link — one alignment that holds at every width and in both
+             directions, instead of a floating panel whose position is decided
+             by whichever viewport edge it collided with. */
           className={cn(
-            "flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-semibold transition-all hover:bg-muted hover:text-primary dark:hover:bg-white/10 dark:hover:text-white",
-            isProductsPage
-              ? "bg-primary text-primary-foreground shadow-sm shadow-storefront-brand/10"
-              : "text-primary/80 dark:text-foreground"
+            "absolute end-0 top-[calc(50%+var(--store-header-h)/2)] z-10",
+            "max-w-[calc(100vw-2rem)] overflow-y-auto rounded-b-2xl border border-t-0 border-border bg-card p-3 text-card-foreground shadow-panel",
+            /* The header is not the only chrome above the panel — the utility
+               bar sits above it until the page is scrolled — so the allowance
+               covers both. Without it a short viewport clips the last category
+               off a panel that is a few pixels under its own scroll threshold,
+               leaving it unreachable. */
+            "max-h-[calc(100dvh-var(--store-header-h)-5rem)]",
+            "animate-in fade-in-0 slide-in-from-top-1 duration-150",
+            layout.width
           )}
         >
-          <ShoppingBag className="h-4 w-4" />
-          <span>{t("common.products")}</span>
-          <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="start" 
-        className={cn(
-          "w-[92vw] max-w-[820px] border-border/70 bg-[linear-gradient(145deg,color-mix(in_oklch,var(--card)_94%,transparent),color-mix(in_oklch,var(--storefront-brand-soft)_92%,transparent)_54%,color-mix(in_oklch,var(--background)_90%,transparent))] p-4 text-foreground shadow-2xl shadow-storefront-brand/[0.12] backdrop-blur-xl dark:border-white/12 dark:text-white dark:shadow-black/25 sm:w-[760px]",
-          locale === "fa" ? "locale-fa" : "locale-en"
-        )}
-        sideOffset={8}
-      >
-        <DropdownMenuLabel className="mb-3 px-2 py-1.5 text-xs font-semibold uppercase text-muted-foreground">
-          {t("common.browseByCategory")}
-        </DropdownMenuLabel>
-        
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : categories.length === 0 ? (
-          <div className="flex items-center justify-center py-8">
-            <p className="text-sm text-muted-foreground">
-              {t("common.noCategories")}
-            </p>
-          </div>
-        ) : (
-          <>
-            {featuredCategories.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                {featuredCategories.map((category) => {
-                    const Icon = category.icon;
-                    const isActive = currentCategory === category.value;
-              
-              return (
-                <DropdownMenuItem 
-                  key={category.value} 
-                  asChild
-                  className="p-0"
-                >
-                  <Link
-                    href={getCategoryUrl(category.value)}
-                    className={cn(
-                      "group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card/70 transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:bg-muted hover:shadow-xl hover:shadow-storefront-brand/[0.08] dark:bg-white/8 dark:hover:bg-white/12 dark:hover:shadow-black/20",
-                      isActive && "border-primary/30 bg-muted shadow-xl shadow-storefront-brand/[0.08] dark:bg-white/14 dark:shadow-black/20"
-                    )}
-                  >
-                    <CategoryMediaImage
-                      src={category.image}
-                      alt={category.name}
-                      className="h-32 w-full bg-storefront-brand-soft dark:bg-white/10"
-                      imageClassName="opacity-75 transition-transform duration-300 group-hover:scale-105 group-hover:opacity-90"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                      <div className="absolute end-3 top-3">
-                        <div className={cn(
-                          "flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm transition-colors",
-                          isActive 
-                            ? "bg-secondary text-secondary-foreground"
-                            : "bg-card/85 text-primary"
-                        )}>
-                          <Icon className="h-5 w-5" />
-                        </div>
-                      </div>
-                      {isActive && (
-                        <div className="absolute start-3 top-3">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary">
-                            <Check className="h-4 w-4 text-secondary-foreground" />
-                          </div>
-                        </div>
-                      )}
-                    </CategoryMediaImage>
-                    <div className="bg-card/60 p-4 dark:bg-white/8">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-sm font-semibold text-primary dark:text-white">
-                            {category.name}
-                          </h3>
-                          {category.description && (
-                            <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-muted-foreground">
-                              {category.description}
-                            </p>
-                          )}
-                        </div>
-                        <ArrowIcon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-                      </div>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-              );
-                  })}
-              </div>
-            )}
+          <Link
+            href="/products"
+            onClick={close}
+            className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-secondary/60 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+          >
+            {t("common.allProducts")}
+            <ArrowRight className="size-4 shrink-0 text-muted-foreground rtl:rotate-180" aria-hidden="true" />
+          </Link>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {regularCategories.map((category) => {
-                  const Icon = category.icon;
-                  const isActive = currentCategory === category.value;
-              
-              return (
-                <DropdownMenuItem 
-                  key={category.value} 
-                  asChild
-                  className="p-0"
-                >
+          {/* Named, not just captioned: tabbing into the panel otherwise
+              announces "list, 13 items" with no clue what the list is of, since
+              a visual label above a list is a label to no one. */}
+          <p id={listLabelId} className="mb-1 mt-4 px-3 text-xs font-bold uppercase text-muted-foreground">
+            {t("common.browseByCategory")}
+          </p>
+
+          {isLoading ? (
+            <ul className={cn("grid gap-x-2 gap-y-0.5", layout.columns)} aria-hidden="true">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <li key={index} className="flex min-h-10 items-center px-3 py-2">
+                  <span className="h-3.5 w-full animate-pulse rounded-full bg-muted" />
+                </li>
+              ))}
+            </ul>
+          ) : categories.length === 0 ? (
+            <p className="px-3 py-2 text-sm text-muted-foreground">{t("common.noCategories")}</p>
+          ) : (
+            <ul aria-labelledby={listLabelId} className={cn("grid gap-x-2 gap-y-0.5", layout.columns)}>
+              {categories.map((category) => (
+                <li key={category.id}>
                   <Link
-                    href={getCategoryUrl(category.value)}
-                    className={cn(
-                      "flex w-full items-start gap-3 rounded-lg border border-border bg-card/65 px-4 py-3 text-sm transition-all hover:border-primary/20 hover:bg-muted hover:shadow-sm dark:bg-white/8 dark:hover:bg-white/12",
-                      isActive && "border-primary/30 bg-muted dark:bg-white/14"
-                    )}
+                    href={{ pathname: "/products", query: { category: category.slug } }}
+                    onClick={close}
+                    className={CATEGORY_LINK_CLASS}
                   >
-                    <div className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors",
-                      isActive
-                        ? "bg-secondary text-secondary-foreground"
-                        : "bg-primary/7 text-primary dark:bg-white/10"
-                    )}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex flex-1 flex-col gap-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-primary dark:text-white">
-                          {category.name}
-                        </span>
-                        {isActive && (
-                          <Check className="h-4 w-4 shrink-0 text-foreground" />
-                        )}
-                      </div>
-                      {category.description && (
-                        <span className="line-clamp-1 text-xs text-muted-foreground">
-                          {category.description}
-                        </span>
-                      )}
-                    </div>
+                    <bdi>{category.name}</bdi>
                   </Link>
-                </DropdownMenuItem>
-              );
-            })}
-            </div>
-            <DropdownMenuSeparator className="my-3 bg-border" />
-            <DropdownMenuItem asChild className="p-0">
-              <Link 
-                href="/products" 
-                className="flex w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                {t("common.viewAllProducts")}
-              </Link>
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
+    </>
   );
 }

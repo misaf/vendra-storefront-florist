@@ -55,15 +55,36 @@ function getOrderTotals(
 
 function createCheckoutFormSchema(t: (key: string) => string) {
   return z.object({
-    firstName: z.string().min(1, t("checkout.firstNameRequired")),
-    lastName: z.string().min(1, t("checkout.lastNameRequired")),
-    email: z.string().email(t("checkout.emailInvalid")),
-    phone: z.string().min(1, t("checkout.phoneRequired")),
-    address: z.string().min(1, t("checkout.addressRequired")),
-    city: z.string().min(1, t("checkout.cityRequired")),
-    zipCode: z.string().min(1, t("checkout.zipCodeRequired")),
+    firstName: z.string().trim().min(1, t("checkout.firstNameRequired")),
+    lastName: z.string().trim().min(1, t("checkout.lastNameRequired")),
+    email: z.string().trim().email(t("checkout.emailInvalid")),
+    phone: z
+      .string()
+      .trim()
+      .min(1, t("checkout.phoneRequired"))
+      .refine(
+        (value) => value.replace(/[^0-9۰-۹٠-٩]/g, "").length >= 7,
+        t("checkout.phoneInvalid")
+      ),
+    address: z
+      .string()
+      .trim()
+      .min(1, t("checkout.addressRequired"))
+      .min(5, t("checkout.addressInvalid")),
+    city: z.string().trim().min(1, t("checkout.cityRequired")),
+    zipCode: z
+      .string()
+      .trim()
+      .min(1, t("checkout.zipCodeRequired"))
+      .refine(
+        (value) => {
+          const digits = value.replace(/[^0-9۰-۹٠-٩]/g, "");
+          return digits.length >= 5 && digits.length <= 10;
+        },
+        t("checkout.zipCodeInvalid")
+      ),
     // Country is filled by pinning the map, never typed by hand.
-    country: z.string().min(1, t("checkout.pinRequired")),
+    country: z.string().trim().min(1, t("checkout.pinRequired")),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
   });
@@ -79,11 +100,13 @@ export default function CheckoutClient() {
   const { t, locale } = useTranslations();
   const property = useProperty();
   const hydrated = useHydrated();
+  const numberFormat = useMemo(() => new Intl.NumberFormat(locale), [locale]);
 
   const checkoutFormSchema = useMemo(() => createCheckoutFormSchema(t), [t]);
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutFormSchema),
+    mode: "onBlur",
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -194,36 +217,36 @@ export default function CheckoutClient() {
   return (
     <PageShell showFooter={false}>
       {/* Checkout Content */}
-      <div className="mx-auto max-w-7xl px-4 pb-12 pt-28 sm:px-6 sm:pt-32 lg:px-8">
+      <div className="store-container pb-16 pt-8 sm:pb-24 sm:pt-12">
         <button
           type="button"
           onClick={openCart}
-          className="mb-4 inline-flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="-ms-2 mb-4 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
           <ArrowLeft className="size-4 rtl:rotate-180" />
           {t("common.backToCart")}
         </button>
-        <span className="golzar-seam mb-3 max-w-[7rem]">
-          <span className="petal-dot" aria-hidden="true" />
-          <span className="h-px flex-1" aria-hidden="true" />
-        </span>
-        <h1 className="font-display mb-8 text-3xl tracking-tight text-foreground sm:text-4xl">
+        <p className="store-eyebrow mb-3">{t("checkout.orderSummary")}</p>
+        <h1 className="store-page-title mb-8 text-foreground sm:mb-10">
           {t("checkout.title")}
         </h1>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-3">
+          <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isSubmitting} className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.75fr)] lg:gap-12">
             {/* Left Column - Forms */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6">
               {/* Shipping Information */}
-              <Card>
+              <Card className="border-0 bg-card/65 shadow-none">
                 <CardHeader>
                   <CardTitle className="font-display flex items-center gap-3 text-xl">
-                    <span className="flex size-9 items-center justify-center rounded-full bg-secondary text-muted-foreground ring-1 ring-border">
+                    <span className="flex size-9 items-center justify-center rounded-full bg-secondary text-primary">
                       <MapPin className="h-5 w-5" />
                     </span>
                     {t("checkout.shippingInformation")}
                   </CardTitle>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {t("checkout.requiredFieldsHint")}
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -234,7 +257,11 @@ export default function CheckoutClient() {
                         <FormItem>
                           <FormLabel>{t("checkout.firstName")}</FormLabel>
                           <FormControl>
-                            <Input autoComplete="given-name" {...field} />
+                            <Input
+                              autoComplete="given-name"
+                              aria-required="true"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -247,7 +274,11 @@ export default function CheckoutClient() {
                         <FormItem>
                           <FormLabel>{t("checkout.lastName")}</FormLabel>
                           <FormControl>
-                            <Input autoComplete="family-name" {...field} />
+                            <Input
+                              autoComplete="family-name"
+                              aria-required="true"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -264,6 +295,9 @@ export default function CheckoutClient() {
                           <Input
                             type="email"
                             autoComplete="email"
+                            autoCapitalize="none"
+                            spellCheck={false}
+                            aria-required="true"
                             dir="ltr"
                             {...field}
                           />
@@ -283,6 +317,7 @@ export default function CheckoutClient() {
                             type="tel"
                             autoComplete="tel"
                             inputMode="tel"
+                            aria-required="true"
                             dir="ltr"
                             {...field}
                           />
@@ -306,6 +341,7 @@ export default function CheckoutClient() {
                           <Textarea
                             autoComplete="street-address"
                             rows={3}
+                            aria-required="true"
                             {...field}
                           />
                         </FormControl>
@@ -324,7 +360,11 @@ export default function CheckoutClient() {
                         <FormItem>
                           <FormLabel>{t("checkout.city")}</FormLabel>
                           <FormControl>
-                            <Input autoComplete="address-level2" {...field} />
+                            <Input
+                              autoComplete="address-level2"
+                              aria-required="true"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -340,6 +380,7 @@ export default function CheckoutClient() {
                             <Input
                               autoComplete="postal-code"
                               inputMode="numeric"
+                              aria-required="true"
                               dir="ltr"
                               {...field}
                             />
@@ -354,19 +395,20 @@ export default function CheckoutClient() {
                   <FormField
                     control={form.control}
                     name="country"
-                    render={() => (
+                    render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("checkout.country")}</FormLabel>
-                        <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-secondary/50 px-3 text-sm">
-                          <MapPin className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                          {detectedCountry ? (
-                            <span className="text-foreground">{detectedCountry}</span>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              {t("checkout.countryFromMap")}
-                            </span>
-                          )}
-                        </div>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            value={detectedCountry}
+                            placeholder={t("checkout.countryFromMap")}
+                            readOnly
+                            aria-readonly="true"
+                            aria-required="true"
+                            className="bg-secondary/50 text-foreground read-only:cursor-default"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -376,13 +418,12 @@ export default function CheckoutClient() {
             </div>
 
             {/* Right Column - Order Summary */}
-            <div className="lg:col-span-1">
-              <Card className="sticky top-24 overflow-hidden pt-0">
-                {/* an ink strip crowning the focal card */}
-                <div aria-hidden="true" className="h-1.5 w-full bg-foreground" />
+            <div>
+              <Card className="store-sticky overflow-hidden border-0 bg-storefront-brand pt-0 text-storefront-brand-foreground shadow-xl shadow-storefront-brand/20">
+                <div aria-hidden="true" className="h-1.5 w-full bg-rose" />
                 <CardHeader>
-                  <CardTitle className="font-display flex items-center gap-3 text-xl">
-                    <span className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <CardTitle className="font-display flex items-center gap-3 text-2xl text-storefront-brand-foreground">
+                    <span className="flex size-9 items-center justify-center rounded-full bg-storefront-brand-foreground text-storefront-brand">
                       <ShoppingBag className="h-5 w-5" />
                     </span>
                     {t("checkout.orderSummary")}
@@ -397,17 +438,18 @@ export default function CheckoutClient() {
                             src={item.image}
                             alt={item.name}
                             fill
-                            className="object-cover"
+                            sizes="64px"
+                            className="object-contain p-1"
                           />
                         </div>
                         <div className="flex flex-1 flex-col">
-                          <p className="text-sm font-medium text-card-foreground">
-                            {item.name}
+                          <p className="store-dynamic-text text-sm font-medium text-storefront-brand-foreground">
+                            <bdi>{item.name}</bdi>
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("common.quantity")}: {item.quantity}
+                          <p className="text-xs text-storefront-brand-foreground/80">
+                            {t("common.quantity")}: {numberFormat.format(item.quantity)}
                           </p>
-                          <p className="mt-1 text-sm font-medium text-card-foreground" dir="ltr">
+                          <p className="mt-1 text-sm font-medium text-storefront-brand-foreground" dir="ltr">
                             {formatPrice(item.price * item.quantity)}
                           </p>
                         </div>
@@ -415,29 +457,29 @@ export default function CheckoutClient() {
                     ))}
                   </div>
 
-                  <div className="border-t border-border pt-4">
+                  <div className="border-t border-storefront-brand-foreground/25 pt-4">
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t("checkout.subtotal")}</span>
-                        <span className="text-card-foreground" dir="ltr">
+                        <span className="text-storefront-brand-foreground/80">{t("checkout.subtotal")}</span>
+                        <span className="text-storefront-brand-foreground" dir="ltr">
                           {formatPrice(subtotal)}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t("checkout.shipping")}</span>
-                        <span className="text-card-foreground" dir="ltr">
+                        <span className="text-storefront-brand-foreground/80">{t("checkout.shipping")}</span>
+                        <span className="text-storefront-brand-foreground" dir="ltr">
                           {formatPrice(shipping)}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t("checkout.tax")}</span>
-                        <span className="text-card-foreground" dir="ltr">
+                        <span className="text-storefront-brand-foreground/80">{t("checkout.tax")}</span>
+                        <span className="text-storefront-brand-foreground" dir="ltr">
                           {formatPrice(tax)}
                         </span>
                       </div>
-                      <div className="flex justify-between border-t border-border pt-2 text-lg font-bold">
-                        <span className="text-card-foreground">{t("common.total")}</span>
-                        <span className="text-card-foreground" dir="ltr">
+                      <div className="flex justify-between border-t border-storefront-brand-foreground/25 pt-3 text-lg font-bold">
+                        <span className="text-storefront-brand-foreground">{t("common.total")}</span>
+                        <span className="text-storefront-brand-foreground" dir="ltr">
                           {formatPrice(total)}
                         </span>
                       </div>
@@ -447,7 +489,7 @@ export default function CheckoutClient() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full gap-2 rounded-full"
+                    className="w-full gap-2 bg-storefront-brand-foreground text-storefront-brand hover:bg-storefront-brand-foreground/90"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (

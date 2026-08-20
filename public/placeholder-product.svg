@@ -1,27 +1,18 @@
-<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">No image available</title>
-  <desc id="desc">Light theme product image placeholder.</desc>
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fbfaf7"/>
-      <stop offset="1" stop-color="#efede8"/>
-    </linearGradient>
-    <linearGradient id="vase" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#d8d1c7"/>
-      <stop offset="1" stop-color="#b8afa4"/>
-    </linearGradient>
-  </defs>
-  <rect width="400" height="400" fill="url(#bg)"/>
-  <rect x="28" y="28" width="344" height="344" rx="18" fill="none" stroke="#342c28" stroke-opacity="0.08"/>
+<svg width="400" height="500" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Product photography pending</title>
+  <desc id="desc">A quiet botanical illustration used while product photography is unavailable.</desc>
+  <rect width="400" height="500" rx="30" fill="#ebe9dc"/>
+  <circle cx="200" cy="225" r="132" fill="#f6f3ea" fill-opacity="0.62"/>
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M178 182 C160 151 166 122 196 105 C229 123 237 151 215 183" stroke="#9f958b" stroke-opacity="0.62" stroke-width="8"/>
-    <path d="M200 175 C189 210 158 227 132 214 C139 179 164 163 200 175Z" stroke="#8a9b78" stroke-opacity="0.58" stroke-width="8"/>
-    <path d="M202 176 C236 157 265 166 280 197 C252 220 221 214 202 176Z" stroke="#8a9b78" stroke-opacity="0.58" stroke-width="8"/>
-    <circle cx="174" cy="137" r="18" fill="#d8a3a0" fill-opacity="0.48" stroke="#9f6b67" stroke-opacity="0.28" stroke-width="5"/>
-    <circle cx="224" cy="138" r="18" fill="#d8a3a0" fill-opacity="0.48" stroke="#9f6b67" stroke-opacity="0.28" stroke-width="5"/>
-    <circle cx="201" cy="107" r="18" fill="#dfbd80" fill-opacity="0.52" stroke="#9b7436" stroke-opacity="0.26" stroke-width="5"/>
+    <path d="M199 310C195 249 202 199 209 150" stroke="#6f7d63" stroke-opacity="0.48" stroke-width="5"/>
+    <path d="M202 246C162 214 130 222 111 258C150 278 184 270 202 246Z" stroke="#6f7d63" stroke-opacity="0.58" stroke-width="7"/>
+    <path d="M204 230C244 197 279 207 296 244C255 263 223 255 204 230Z" stroke="#6f7d63" stroke-opacity="0.58" stroke-width="7"/>
+    <path d="M206 183C174 162 168 128 193 105C225 119 237 149 206 183Z" stroke="#a56f69" stroke-opacity="0.54" stroke-width="7"/>
+    <path d="M212 182C242 154 274 158 289 189C259 213 229 209 212 182Z" stroke="#a56f69" stroke-opacity="0.46" stroke-width="7"/>
+    <path d="M196 185C165 157 133 164 121 197C151 218 179 211 196 185Z" stroke="#a56f69" stroke-opacity="0.46" stroke-width="7"/>
+    <circle cx="204" cy="181" r="17" fill="#c98d7f" fill-opacity="0.28" stroke="#a56f69" stroke-opacity="0.4" stroke-width="5"/>
   </g>
-  <path d="M153 235 H247 L229 324 H171 Z" fill="url(#vase)" stroke="#342c28" stroke-opacity="0.1" stroke-width="4"/>
-  <path d="M166 254 H234" stroke="#342c28" stroke-opacity="0.14" stroke-width="5" stroke-linecap="round"/>
-  <text x="200" y="354" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#7b7168" text-anchor="middle">No Image</text>
+  <path d="M144 313H256L239 409C237 421 227 430 215 430H185C173 430 163 421 161 409L144 313Z" fill="#d4cbbb"/>
+  <path d="M156 334H244" stroke="#786f64" stroke-opacity="0.22" stroke-width="5" stroke-linecap="round"/>
+  <path d="M176 455H224" stroke="#3c4636" stroke-opacity="0.2" stroke-width="3" stroke-linecap="round"/>
 </svg>

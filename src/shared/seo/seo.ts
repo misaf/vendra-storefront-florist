@@ -8,9 +8,8 @@ export const SITE_NAME: Record<Locale, string> = Object.fromEntries(
   routing.locales.map((locale) => [locale, getPropertyName(locale)])
 ) as Record<Locale, string>;
 
-/** Default social-share image, resolved against `metadataBase`. */
 /**
- * Default social-share image.
+ * Property social-share image fallback, or `null` when none is configured.
  *
  * Vendra's console sends `ogImage: ""` rather than omitting the key when a
  * property has no share image, so an empty value is a normal input, not a
@@ -19,10 +18,7 @@ export const SITE_NAME: Record<Locale, string> = Object.fromEntries(
 export const DEFAULT_OG_IMAGE =
   getProperty().ogImage?.trim() ||
   getProperty().heroImage?.trim() ||
-  // TODO: no brand-neutral share image ships in public/ yet, so this last
-  // fallback is the bundled example's. A runtime tenant that sets neither
-  // ogImage nor heroImage gets it — see deploy/CONTRACT.md.
-  "/hero-florist-studio.webp";
+  null;
 
 /** Currency used in Product JSON-LD offers (ISO 4217). */
 export const PRICE_CURRENCY = getProperty().priceCurrency;
@@ -106,7 +102,7 @@ export interface BuildMetadataParams {
   path?: string;
   title?: string;
   description?: string;
-  /** Absolute or root-relative image URLs. Falls back to the default OG image. */
+  /** Absolute or root-relative image URLs. Falls back to the property image. */
   images?: string[];
   type?: "website" | "article";
   publishedTime?: string;
@@ -132,13 +128,18 @@ export function buildMetadata({
   noIndex = false,
 }: BuildMetadataParams): Metadata {
   const previewAlt = title || siteName(locale);
-  const previewImages = (images && images.length > 0 ? images : [DEFAULT_OG_IMAGE])
-    .map((image) => ({
-      url: absoluteUrl(image),
-      width: 1200,
-      height: 630,
-      alt: previewAlt,
-    }));
+  const previewSources =
+    images && images.length > 0
+      ? images
+      : DEFAULT_OG_IMAGE
+        ? [DEFAULT_OG_IMAGE]
+        : [];
+  const previewImages = previewSources.map((image) => ({
+    url: absoluteUrl(image),
+    width: 1200,
+    height: 630,
+    alt: previewAlt,
+  }));
 
   return {
     title,
@@ -152,14 +153,14 @@ export function buildMetadata({
       url: absoluteUrl(localizedPath(locale, path)),
       title,
       description,
-      images: previewImages,
+      ...(previewImages.length > 0 ? { images: previewImages } : {}),
       ...(type === "article" ? { publishedTime, modifiedTime } : {}),
     },
     twitter: {
-      card: "summary_large_image",
+      card: previewImages.length > 0 ? "summary_large_image" : "summary",
       title,
       description,
-      images: previewImages,
+      ...(previewImages.length > 0 ? { images: previewImages } : {}),
     },
     ...(noIndex
       ? { robots: { index: false, follow: false, googleBot: { index: false, follow: false } } }
@@ -176,14 +177,15 @@ type JsonLd = Record<string, unknown>;
 /** Organization / LocalBusiness — emit once site-wide (root layout). */
 export function organizationSchema(locale: string): JsonLd {
   const contact = getContactInfo();
+  const image = DEFAULT_OG_IMAGE ? absoluteUrl(DEFAULT_OG_IMAGE) : null;
+
   return {
     "@context": "https://schema.org",
     "@type": getProperty().businessType,
     "@id": `${getSiteUrl()}/#organization`,
     name: siteName(locale),
     url: getSiteUrl(),
-    image: absoluteUrl(DEFAULT_OG_IMAGE),
-    logo: absoluteUrl(DEFAULT_OG_IMAGE),
+    ...(image ? { image, logo: image } : {}),
     telephone: contact.mobilePhone,
     email: contact.email,
     address: {
@@ -241,19 +243,21 @@ export interface ProductSchemaInput {
 
 /** Product rich result with an Offer. */
 export function productSchema(locale: string, product: ProductSchemaInput): JsonLd {
-  const images = (product.images && product.images.length > 0
+  const imageSources = product.images && product.images.length > 0
     ? product.images
     : product.image
       ? [product.image]
-      : [DEFAULT_OG_IMAGE]
-  ).map((src) => absoluteUrl(src));
+      : DEFAULT_OG_IMAGE
+        ? [DEFAULT_OG_IMAGE]
+        : [];
+  const images = imageSources.map((src) => absoluteUrl(src));
 
   return {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: product.description,
-    image: images,
+    ...(images.length > 0 ? { image: images } : {}),
     ...(product.sku ? { sku: product.sku } : {}),
     brand: { "@type": "Brand", name: siteName(locale) },
     offers: {
@@ -282,12 +286,14 @@ export interface ArticleSchemaInput {
 
 /** BlogPosting rich result. */
 export function articleSchema(locale: string, article: ArticleSchemaInput): JsonLd {
+  const image = article.image || DEFAULT_OG_IMAGE;
+
   return {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: article.title,
     description: article.description,
-    image: [absoluteUrl(article.image || DEFAULT_OG_IMAGE)],
+    ...(image ? { image: [absoluteUrl(image)] } : {}),
     inLanguage: locale,
     mainEntityOfPage: absoluteUrl(localizedPath(locale, article.path)),
     ...(article.publishedAt ? { datePublished: article.publishedAt } : {}),

@@ -5,7 +5,11 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { BlogPostCard } from "./blog-post-card";
 import { FeaturedBlogPostCard } from "./featured-blog-post-card";
 import { isRtlLocale } from "@/shared/lib/locale";
-import type { Post as BlogPost, PostCategory } from "@/modules/blog";
+import { useCallback } from "react";
+import { formatLocaleDate } from "@/shared/lib/date";
+import { useTranslations } from "@/shared/hooks/use-translations";
+import { SectionHeader } from "@/shared/components/layout/section-header";
+import type { Post as BlogPost, PostCategory } from "../types";
 
 // 1 featured lead post + 8 grid posts
 const MAX_STOREFRONT_POSTS = 9;
@@ -13,18 +17,16 @@ const MAX_STOREFRONT_POSTS = 9;
 interface BlogSectionProps {
   allPosts: BlogPost[];
   category?: PostCategory | null;
-  locale: string;
-  formatDate: (dateString: string) => string;
-  t: (key: string) => string;
 }
 
-export function BlogSection({
-  allPosts,
-  category,
-  locale,
-  formatDate,
-  t,
-}: BlogSectionProps) {
+export function BlogSection({ allPosts, category }: BlogSectionProps) {
+  // Own translations and own date formatting: both used to arrive as function
+  // props, which a server page cannot supply.
+  const { t, locale } = useTranslations();
+  const formatDate = useCallback(
+    (dateString: string) => formatLocaleDate(dateString, locale),
+    [locale]
+  );
   const isRTL = isRtlLocale(locale);
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
   const sectionTitle = t("blog.title") || "Blog";
@@ -38,26 +40,27 @@ export function BlogSection({
     : "/blog";
 
   return (
-    <section className="storefront-snap-panel relative scroll-mt-24 overflow-hidden bg-storefront-brand py-16 text-storefront-brand-foreground dark:bg-storefront-surface dark:text-foreground sm:py-24 md:min-h-[100svh]">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_85%_-10%,color-mix(in_oklch,white_6%,transparent),transparent_55%)]"
-      />
-      <div className="relative mx-auto flex max-w-7xl flex-col justify-center px-4 sm:px-6 lg:px-8 md:min-h-[calc(100svh-6rem)]">
-        <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
-          <h2 className="font-display max-w-2xl text-4xl leading-[1.0] tracking-tight text-white sm:text-5xl lg:text-6xl">
-            {sectionTitle}
-          </h2>
-          <Link
-            href={blogHref}
-            className="group inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-white/70 transition-colors hover:text-white"
-          >
-            <span className="border-b border-white/30 pb-1 transition-colors group-hover:border-white">
-              {t("blog.viewAllPosts") || "View All Posts"}
-            </span>
-            <ArrowIcon className="h-4 w-4 transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
-          </Link>
-        </div>
+    <section className="storefront-view-panel store-section-lg store-scroll-anchor relative overflow-hidden bg-storefront-brand text-storefront-brand-foreground dark:bg-storefront-surface dark:text-foreground">
+      <div className="store-container relative">
+        {/* This heading used to run to text-6xl (60px), overshooting the
+            section step the rest of the storefront holds to. */}
+        <SectionHeader
+          className="mb-12"
+          tone="inverted"
+          eyebrow={t("blog.eyebrow")}
+          title={sectionTitle}
+          action={
+            <Link
+              href={blogHref}
+              className="group inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-storefront-brand-foreground/70 transition-colors hover:text-storefront-brand-foreground"
+            >
+              <span className="border-b border-white/30 pb-1 transition-colors group-hover:border-white">
+                {t("blog.viewAllPosts") || "View All Posts"}
+              </span>
+              <ArrowIcon className="size-4 transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
+            </Link>
+          }
+        />
 
         {posts.length === 0 ? (
           <div className="rounded-lg border border-dashed border-white/20 bg-white/5 px-5 py-8 text-sm leading-6 text-storefront-brand-foreground/75 dark:text-muted-foreground">

@@ -61,6 +61,8 @@ function getFirstRelationship<T>(data: T | T[] | undefined): T | undefined {
 interface ResolvedProductPrice {
   value: number;
   formatted?: string;
+  originalValue?: number;
+  originalFormatted?: string;
 }
 
 function parsePriceValue(value: ProductPriceField | undefined): number {
@@ -85,30 +87,15 @@ function getFormattedPriceValue(value: ProductPriceField | undefined): string | 
   return undefined;
 }
 
-function resolveProductPriceResource(
-  price?: ProductPriceDto | null
+function resolvePriceCandidate(
+  candidates: Array<ProductPriceField | undefined>
 ): ResolvedProductPrice {
-  if (!price) return { value: 0 };
-
-  const candidates = [
-    price.final_price,
-    price.attributes?.final_price,
-    price.sale_price,
-    price.attributes?.sale_price,
-    price.price,
-    price.attributes?.price,
-    price.amount,
-    price.attributes?.amount,
-    price.value,
-    price.attributes?.value,
-  ];
-
   for (const candidate of candidates) {
     const parsed = parsePriceValue(candidate);
     if (parsed > 0) {
       return {
         value: parsed,
-        formatted: price.formatted ?? getFormattedPriceValue(candidate),
+        formatted: getFormattedPriceValue(candidate),
       };
     }
   }
@@ -116,14 +103,94 @@ function resolveProductPriceResource(
   return { value: 0 };
 }
 
+function resolveProductPriceResource(
+  price?: ProductPriceDto | null
+): ResolvedProductPrice {
+  if (!price) return { value: 0 };
+
+  const finalPrice = resolvePriceCandidate([
+    price.final_price,
+    price.attributes?.final_price,
+  ]);
+  const salePrice = resolvePriceCandidate([
+    price.sale_price,
+    price.attributes?.sale_price,
+  ]);
+  const basePrice = resolvePriceCandidate([
+    price.price,
+    price.attributes?.price,
+  ]);
+  const fallbackPrice = resolvePriceCandidate([
+    price.amount,
+    price.attributes?.amount,
+    price.value,
+    price.attributes?.value,
+    price.minorAmount,
+  ]);
+  const currentPrice =
+    finalPrice.value > 0
+      ? finalPrice
+      : salePrice.value > 0
+        ? salePrice
+        : basePrice.value > 0
+          ? basePrice
+          : fallbackPrice;
+  const hasOriginalPrice =
+    basePrice.value > 0 && basePrice.value > currentPrice.value;
+
+  return {
+    value: currentPrice.value,
+    formatted: price.formatted ?? currentPrice.formatted,
+    ...(hasOriginalPrice
+      ? {
+          originalValue: basePrice.value,
+          originalFormatted: basePrice.formatted,
+        }
+      : {}),
+  };
+}
+
+function resolveTopLevelProductPricing(product: ProductDto): ResolvedProductPrice {
+  const finalPrice = resolvePriceCandidate([product.final_price]);
+  const salePrice = resolvePriceCandidate([product.sale_price]);
+  const basePrice = resolvePriceCandidate([product.price]);
+  const currentPrice =
+    finalPrice.value > 0
+      ? finalPrice
+      : salePrice.value > 0
+        ? salePrice
+        : basePrice;
+
+  return {
+    ...currentPrice,
+    ...(basePrice.value > currentPrice.value
+      ? {
+          originalValue: basePrice.value,
+          originalFormatted: basePrice.formatted,
+        }
+      : {}),
+  };
+}
+
 function resolveProductPricing(product: ProductDto): ResolvedProductPrice {
+  const topLevelPrice = resolveTopLevelProductPricing(product);
   const latestPriceResource = getFirstRelationship(
     product.latestProductPrice ?? product.latest_product_price
   );
   const latestPrice = resolveProductPriceResource(latestPriceResource);
 
   if (latestPrice.value > 0) {
-    return latestPrice;
+    return {
+      ...latestPrice,
+      ...(!latestPrice.originalValue &&
+      topLevelPrice.originalValue &&
+      topLevelPrice.originalValue > latestPrice.value
+        ? {
+            originalValue: topLevelPrice.originalValue,
+            originalFormatted: topLevelPrice.originalFormatted,
+          }
+        : {}),
+    };
   }
 
   const firstPrice = getFirstRelationship(
@@ -132,17 +199,20 @@ function resolveProductPricing(product: ProductDto): ResolvedProductPrice {
   const firstPriceValue = resolveProductPriceResource(firstPrice);
 
   if (firstPriceValue.value > 0) {
-    return firstPriceValue;
+    return {
+      ...firstPriceValue,
+      ...(!firstPriceValue.originalValue &&
+      topLevelPrice.originalValue &&
+      topLevelPrice.originalValue > firstPriceValue.value
+        ? {
+            originalValue: topLevelPrice.originalValue,
+            originalFormatted: topLevelPrice.originalFormatted,
+          }
+        : {}),
+    };
   }
 
-  const candidates = [product.final_price, product.sale_price, product.price];
-
-  for (const candidate of candidates) {
-    const parsed = parsePriceValue(candidate);
-    if (parsed > 0) return { value: parsed };
-  }
-
-  return { value: 0 };
+  return topLevelPrice;
 }
 
 function getPagination(
@@ -226,7 +296,7 @@ function getProductCategoryInfo(
 
   return {
     slug: category?.slug,
-    name: reference.label ?? category?.name ?? undefined,
+    name: category?.name ?? reference.label ?? undefined,
   };
 }
 
@@ -244,6 +314,8 @@ export function transformProduct(
     name: getLocalizedValue(product.name, locale) ?? "",
     price: pricing.value,
     formattedPrice: pricing.formatted,
+    originalPrice: pricing.originalValue,
+    formattedOriginalPrice: pricing.originalFormatted,
     image: getFirstRelatedImage(product),
     images: getRelatedImages(product),
     description: stripHtml(description, 150),
@@ -254,6 +326,8 @@ export function transformProduct(
     token: product.token,
     inStock: product.inStock ?? product.in_stock,
     quantity: product.quantity,
+    stockThreshold: product.stockThreshold ?? product.stock_threshold,
+    availableSoon: product.availableSoon ?? product.available_soon,
     createdAt: product.createdAt ?? product.created_at,
     updatedAt: product.updatedAt ?? product.updated_at,
   };
@@ -376,6 +450,7 @@ function createProductQueryParams(
   sort: string | undefined
 ): URLSearchParams {
   const queryParams = createPageQueryParams(page, perPage);
+  queryParams.append("include", "multimedia,latestProductPrice");
 
   if (sort === "random-position") {
     queryParams.append("random", "1");
@@ -384,6 +459,33 @@ function createProductQueryParams(
   }
 
   return queryParams;
+}
+
+async function fetchBrowserCatalogSearch(
+  params: FetchProductsParams & { search: string }
+): Promise<FetchProductsResult | null> {
+  const {
+    page = 1,
+    perPage = 15,
+    category,
+    locale,
+    search,
+    sort,
+  } = params;
+  const fallbackParams = new URLSearchParams({
+    query: search,
+    locale: locale ?? "fa",
+    page: String(page),
+    perPage: String(perPage),
+  });
+
+  if (category) fallbackParams.set("category", category);
+  if (sort) fallbackParams.set("sort", sort);
+
+  const response = await fetch(`/api/catalog-search?${fallbackParams}`);
+  if (!response.ok) return null;
+
+  return (await response.json()) as FetchProductsResult;
 }
 
 export async function fetchProducts(
@@ -406,11 +508,204 @@ export async function fetchProducts(
     queryParams.append("categoryId", categoryId);
   }
 
+  // Text queries in the browser need the localized catalog index. Starting
+  // there avoids waiting for Vendra's token-oriented search to return an
+  // empty response before the useful request can begin. Numeric product codes
+  // continue to use Vendra directly.
+  if (
+    normalizedSearch &&
+    !slug &&
+    typeof window !== "undefined" &&
+    !/^[0-9۰-۹٠-٩\s-]+$/.test(normalizedSearch)
+  ) {
+    const localizedResult = await fetchBrowserCatalogSearch({
+      page,
+      perPage,
+      category,
+      locale,
+      search: normalizedSearch,
+      sort,
+    });
+
+    if (localizedResult) return localizedResult;
+  }
+
   if (normalizedSearch && !slug) {
     queryParams.append("search", normalizedSearch);
   }
 
-  return fetchProductCollection(path, queryParams, { page, perPage }, locale);
+  const result = await fetchProductCollection(
+    path,
+    queryParams,
+    { page, perPage },
+    locale
+  );
+
+  // Vendra's catalog search currently resolves product tokens reliably, but
+  // some deployments do not index localized product names. Preserve the
+  // canonical API search first, then fall back to a cached storefront-side
+  // catalog match only when Vendra returns no result.
+  if (normalizedSearch && !slug && result.pagination.total === 0) {
+    if (typeof window !== "undefined") {
+      return (
+        (await fetchBrowserCatalogSearch({
+          page,
+          perPage,
+          category,
+          locale,
+          search: normalizedSearch,
+          sort,
+        })) ?? result
+      );
+    }
+
+    return searchCatalogProducts({
+      page,
+      perPage,
+      category,
+      locale,
+      search: normalizedSearch,
+      sort,
+    });
+  }
+
+  return result;
+}
+
+const SEARCH_CATALOG_TTL_MS = 60_000;
+const searchCatalogCache = new Map<
+  string,
+  { expiresAt: number; products: Product[] }
+>();
+
+function normalizeCatalogSearchValue(value: string, locale?: string): string {
+  const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
+  const arabicDigits = "٠١٢٣٤٥٦٧٨٩";
+
+  return value
+    .normalize("NFKC")
+    .toLocaleLowerCase(locale)
+    .replace(/[يى]/g, "ی")
+    .replace(/ك/g, "ک")
+    .replace(/[۰-۹]/g, (digit) => String(persianDigits.indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String(arabicDigits.indexOf(digit)))
+    .replace(/[\u200c\u200d]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function productSearchScore(
+  product: Product,
+  normalizedQuery: string,
+  locale?: string
+): number {
+  const name = normalizeCatalogSearchValue(product.name, locale);
+  const token = normalizeCatalogSearchValue(product.token ?? "", locale);
+  const slug = normalizeCatalogSearchValue(product.slug ?? "", locale);
+  const category = normalizeCatalogSearchValue(product.category ?? "", locale);
+  const terms = normalizedQuery.split(" ").filter(Boolean);
+  const searchableValue = `${name} ${token} ${slug} ${category}`;
+
+  if (!terms.every((term) => searchableValue.includes(term))) return -1;
+  if (token === normalizedQuery) return 100;
+  if (name === normalizedQuery) return 90;
+  if (name.startsWith(normalizedQuery)) return 75;
+  if (name.includes(normalizedQuery)) return 60;
+  if (token.includes(normalizedQuery)) return 50;
+  if (category.includes(normalizedQuery)) return 35;
+  return 20;
+}
+
+async function loadCatalogForSearch({
+  category,
+  locale,
+  sort,
+}: Pick<FetchProductsParams, "category" | "locale" | "sort">): Promise<Product[]> {
+  const cacheKey = `${locale ?? "fa"}|${category ?? "all"}|${sort ?? "default"}`;
+  const cached = searchCatalogCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.products;
+  }
+
+  const perPage = 100;
+  const firstPage = await fetchProducts({
+    page: 1,
+    perPage,
+    category,
+    locale,
+    sort,
+  });
+  const remainingPageNumbers = Array.from(
+    { length: Math.max(0, firstPage.pagination.lastPage - 1) },
+    (_, index) => index + 2
+  );
+  const remainingPages = await Promise.all(
+    remainingPageNumbers.map((page) =>
+      fetchProducts({ page, perPage, category, locale, sort })
+    )
+  );
+  const products = [
+    ...firstPage.products,
+    ...remainingPages.flatMap((result) => result.products),
+  ];
+
+  searchCatalogCache.set(cacheKey, {
+    expiresAt: Date.now() + SEARCH_CATALOG_TTL_MS,
+    products,
+  });
+
+  return products;
+}
+
+export async function searchCatalogProducts(
+  params: FetchProductsParams = {}
+): Promise<FetchProductsResult> {
+  const {
+    page = 1,
+    perPage = 15,
+    category,
+    locale,
+    search = "",
+    sort,
+  } = params;
+  const normalizedQuery = normalizeCatalogSearchValue(search, locale);
+
+  if (!normalizedQuery) {
+    return emptyProductsResult(page, perPage);
+  }
+
+  const catalog = await loadCatalogForSearch({ category, locale, sort });
+  const matches = catalog
+    .map((product) => ({
+      product,
+      score: productSearchScore(product, normalizedQuery, locale),
+    }))
+    .filter((match) => match.score >= 0)
+    .sort((left, right) => {
+      if (left.score !== right.score) return right.score - left.score;
+      return (
+        Date.parse(right.product.updatedAt ?? "") -
+        Date.parse(left.product.updatedAt ?? "")
+      );
+    })
+    .map((match) => match.product);
+  const start = (page - 1) * perPage;
+  const paginatedProducts = matches.slice(start, start + perPage);
+  const total = matches.length;
+
+  return {
+    products: paginatedProducts,
+    pagination: {
+      currentPage: page,
+      lastPage: Math.max(1, Math.ceil(total / perPage)),
+      perPage,
+      total,
+      from: total === 0 ? 0 : start + 1,
+      to: Math.min(start + perPage, total),
+    },
+    links: {},
+  };
 }
 
 export async function fetchProductsWithDetails(
@@ -431,6 +726,9 @@ export async function fetchProduct(
   try {
     const [response, categories] = await Promise.all([
       apiClient.get<ProductDto | ProductDto[]>(`catalog/products/${id}`, {
+        query: {
+          include: "multimedia,latestProductPrice",
+        },
         locale,
         next: { revalidate: 10 },
         mode: "cors",
@@ -497,6 +795,7 @@ export const fetchProductCategories = cache(
       {
         query: {
           itemsPerPage: "100",
+          include: "multimedia",
         },
         locale,
         next: { revalidate: 10 },
@@ -510,35 +809,44 @@ export const fetchProductCategories = cache(
 );
 
 export function useProducts(
+  locale: string,
   params: FetchProductsParams = {},
   options?: ApiQueryOptions<FetchProductsResult>
 ) {
+  const localizedParams = { ...params, locale };
+
   return useQuery(
-    createApiQueryOptions(productKeys.list(params), () =>
-      fetchProductsWithDetails(params),
+    createApiQueryOptions(productKeys.list(localizedParams), () =>
+      fetchProductsWithDetails(localizedParams),
     options)
   );
 }
 
 export function useProduct(
   id: string | number,
+  locale: string,
   options?: ApiQueryOptions<Product | null>
 ) {
   return useQuery(
-    createApiQueryOptions(productKeys.detail(id), () => fetchProduct(id), {
-      enabled: Boolean(id),
-      ...options,
-    })
+    createApiQueryOptions(
+      productKeys.detail(locale, id),
+      () => fetchProduct(id, locale),
+      {
+        enabled: Boolean(id),
+        ...options,
+      }
+    )
   );
 }
 
 export function useProductCategories(
+  locale: string,
   options?: ApiQueryOptions<ProductCategory[]>
 ) {
   return useQuery(
     createApiQueryOptions(
-      productKeys.categories(),
-      () => fetchProductCategories(),
+      productKeys.categories(locale),
+      () => fetchProductCategories(locale),
       {
         staleTime: 5 * 60 * 1000,
         ...options,

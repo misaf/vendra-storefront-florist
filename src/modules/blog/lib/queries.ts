@@ -116,7 +116,7 @@ export function transformPost(
     publishedAt: post.createdAt,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
-    category: reference?.label ?? category?.name,
+    category: category?.name ?? reference?.label ?? undefined,
   };
 }
 
@@ -228,7 +228,9 @@ async function fetchPostCollection(
 }
 
 function createPostQueryParams(page: number, perPage: number): URLSearchParams {
-  return createPageQueryParams(page, perPage);
+  const queryParams = createPageQueryParams(page, perPage);
+  queryParams.append("include", "multimedia");
+  return queryParams;
 }
 
 export async function fetchPosts(
@@ -265,6 +267,9 @@ async function fetchPostById(
   try {
     const [response, categories] = await Promise.all([
       apiClient.get<PostDto | PostDto[]>(`content/blog-posts/${id}`, {
+        query: {
+          include: "multimedia",
+        },
         locale,
         next: { revalidate: 10 },
         mode: "cors",
@@ -361,21 +366,32 @@ export const fetchBlogPost = fetchPost;
 export const fetchBlogPostsWithDetails = fetchPostsWithDetails;
 
 export function usePosts(
+  locale: string,
   params: FetchPostsParams = {},
   options?: ApiQueryOptions<FetchPostsResult>
 ) {
+  const localizedParams = { ...params, locale };
+
   return useQuery(
-    createApiQueryOptions(postKeys.list(params), () =>
-      fetchPostsWithDetails(params),
+    createApiQueryOptions(postKeys.list(localizedParams), () =>
+      fetchPostsWithDetails(localizedParams),
     options)
   );
 }
 
-export function usePost(slug: string, options?: ApiQueryOptions<Post | null>) {
+export function usePost(
+  slug: string,
+  locale: string,
+  options?: ApiQueryOptions<Post | null>
+) {
   return useQuery(
-    createApiQueryOptions(postKeys.detail(slug), () => fetchPost(slug), {
-      enabled: Boolean(slug),
-      ...options,
-    })
+    createApiQueryOptions(
+      postKeys.detail(locale, slug),
+      () => fetchPost(slug, locale),
+      {
+        enabled: Boolean(slug),
+        ...options,
+      }
+    )
   );
 }

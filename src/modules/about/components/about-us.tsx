@@ -85,13 +85,13 @@ export default async function AboutUs() {
     <PageShell showFooterNewsletter={false}>
       <div className="bg-background text-foreground">
         <section className="overflow-hidden bg-storefront-brand text-storefront-brand-foreground dark:bg-storefront-surface dark:text-foreground">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 pb-16 pt-28 sm:px-8 sm:pt-32 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:px-10 lg:pb-20">
+          <div className="store-container store-section grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
             <div className="max-w-xl">
               <p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.24em] text-storefront-brand-foreground/70 dark:text-storefront-text-muted">
                 <span className="h-px w-7 bg-storefront-brand-foreground/45 dark:bg-storefront-text-muted" />
                 {t("common.storeTagline")}
               </p>
-              <h1 className="font-display mt-5 text-3xl leading-[1.05] tracking-tight text-balance sm:text-4xl lg:text-5xl">
+              <h1 className="store-page-title mt-5">
                 {t("about.heroTitle")}
               </h1>
               <p className="mt-5 max-w-lg text-sm leading-7 text-storefront-brand-foreground/75 dark:text-storefront-text-muted sm:text-base sm:leading-8">
@@ -112,16 +112,12 @@ export default async function AboutUs() {
 
             <div className="relative mx-auto w-full max-w-[28rem] lg:mx-0 lg:justify-self-end">
               {/* an elegant offset frame — stylish, monochrome */}
-              <div
-                aria-hidden
-                className="absolute -inset-3 rounded-xl border border-storefront-brand-foreground/20 dark:border-foreground/15"
-              />
-              <div className="relative aspect-[5/4] overflow-hidden rounded-lg border border-storefront-brand-foreground/15 bg-storefront-brand-soft shadow-2xl shadow-black/25">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-storefront-brand-soft shadow-2xl shadow-black/20 sm:aspect-[5/4] lg:aspect-[4/5]">
                 <Image
                   src={getProperty().aboutImage ?? "/hero-florist-studio.webp"}
                   alt={t("about.heroImageAlt")}
                   fill
-                  priority
+                  preload
                   sizes="(min-width: 1024px) 36vw, 100vw"
                   className="object-cover"
                 />
@@ -131,10 +127,10 @@ export default async function AboutUs() {
         </section>
 
         <section>
-          <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.04fr_0.96fr] lg:gap-16 lg:px-12">
+          <div className="store-container store-section-lg grid gap-10 lg:grid-cols-[1.04fr_0.96fr] lg:gap-16">
             <div>
               <SectionLabel>{t("about.storyEyebrow")}</SectionLabel>
-              <h2 className="mt-5 max-w-2xl font-display text-3xl leading-[1.08] tracking-tight sm:text-5xl">
+              <h2 className="store-section-title mt-5 max-w-2xl">
                 {t("about.storyTitle")}
               </h2>
               <p className="mt-7 max-w-2xl text-lg leading-8 text-foreground dark:text-foreground sm:text-xl">
@@ -162,7 +158,7 @@ export default async function AboutUs() {
         </section>
 
         <section className="bg-storefront-brand-soft text-foreground dark:bg-storefront-brand-soft dark:text-foreground">
-          <div className="mx-auto max-w-5xl px-5 py-16 text-center sm:px-8 sm:py-22 lg:px-12">
+          <div className="store-container store-section-lg max-w-5xl text-center">
             <SectionLabel centered as="h2">{t("about.missionTitle")}</SectionLabel>
             <p className="mx-auto mt-7 max-w-4xl text-2xl font-light leading-[1.45] sm:text-[2rem]">
               {t("about.missionBody")}
@@ -171,10 +167,10 @@ export default async function AboutUs() {
         </section>
 
         <section className="bg-storefront-brand text-storefront-brand-foreground dark:bg-storefront-surface dark:text-foreground">
-          <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[0.9fr_1.1fr] lg:px-12">
+          <div className="store-container store-section-lg grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <SectionLabel onDark>{t("about.valuesTitle")}</SectionLabel>
-              <h2 className="mt-5 max-w-xl font-display text-3xl leading-[1.12] tracking-tight sm:text-5xl">
+              <h2 className="store-section-title mt-5 max-w-xl">
                 {t("about.valuesSubtitle")}
               </h2>
             </div>
@@ -204,10 +200,10 @@ export default async function AboutUs() {
         </section>
 
         <section>
-          <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[0.94fr_1.06fr] lg:gap-16 lg:px-12">
+          <div className="store-container store-section-lg grid gap-10 lg:grid-cols-[0.94fr_1.06fr] lg:gap-16">
             <div>
               <SectionLabel>{t("about.processTitle")}</SectionLabel>
-              <h2 className="mt-5 max-w-xl font-display text-3xl leading-[1.12] tracking-tight sm:text-5xl">
+              <h2 className="store-section-title mt-5 max-w-xl">
                 {t("about.processSubtitle")}
               </h2>
               <figure className="mt-9">
@@ -255,7 +251,7 @@ export default async function AboutUs() {
         </section>
 
         <section className="bg-storefront-brand-soft/70 dark:bg-storefront-brand-soft">
-          <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
+          <div className="store-container store-section-lg grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
             <div>
               <SectionLabel as="h2">{t("about.trustTitle")}</SectionLabel>
               <p className="mt-5 max-w-md text-xl leading-8 text-foreground">
@@ -283,9 +279,9 @@ export default async function AboutUs() {
         </section>
 
         <section className="bg-storefront-brand text-storefront-brand-foreground dark:bg-storefront-surface dark:text-foreground">
-          <div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:px-8 sm:py-22 lg:grid-cols-[1fr_auto] lg:items-end lg:px-12">
+          <div className="store-container store-section-lg grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
-              <h2 className="max-w-3xl font-display text-3xl leading-[1.08] tracking-tight sm:text-5xl">
+              <h2 className="store-section-title max-w-3xl">
               {t("about.finalCtaTitle")}
               </h2>
               <p className="mt-5 max-w-xl text-base leading-8 text-storefront-brand-foreground/78 dark:text-storefront-text-muted">

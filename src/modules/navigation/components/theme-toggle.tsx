@@ -20,15 +20,17 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
+      className="size-11"
       onClick={() => setTheme(isLightTheme ? "dark" : "light")}
       aria-label={t("common.toggleTheme")}
+      aria-pressed={mounted ? !isLightTheme : undefined}
     >
       {!mounted ? (
-        <Sun className="h-5 w-5 opacity-0" />
+        <Sun className="size-5 opacity-0" />
       ) : isLightTheme ? (
-        <Moon className="h-5 w-5" />
+        <Moon className="size-5" />
       ) : (
-        <Sun className="h-5 w-5" />
+        <Sun className="size-5" />
       )}
     </Button>
   );

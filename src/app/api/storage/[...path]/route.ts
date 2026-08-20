@@ -45,6 +45,27 @@ function normalizeStoragePath(pathSegments: string[] | undefined): string | null
   return sanitizedSegments.map((segment) => encodeURIComponent(segment)).join("/");
 }
 
+/**
+ * Response headers for a proxied asset. Storage paths are content-addressed by
+ * uuid, so they stay immutable for a year; the upstream validators are passed
+ * through so conditional requests keep working across that window.
+ */
+function buildResponseHeaders(upstream: Response): Headers {
+  const headers = new Headers({
+    "Content-Type": upstream.headers.get("content-type") || "image/jpeg",
+    "Cache-Control": "public, max-age=31536000, immutable",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET",
+  });
+
+  for (const name of ["etag", "last-modified", "content-length"] as const) {
+    const value = upstream.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+
+  return headers;
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ path: string[] }> }
@@ -62,12 +83,25 @@ export async function GET(
       queryString ? `?${queryString}` : ""
     }`;
 
+    // Forward the browser's validators so an unchanged image can come back as
+    // a bodyless 304 instead of being re-downloaded from storage and re-sent.
+    const upstreamHeaders: HeadersInit = { Accept: "image/*" };
+    const ifNoneMatch = request.headers.get("if-none-match");
+    const ifModifiedSince = request.headers.get("if-modified-since");
+    if (ifNoneMatch) upstreamHeaders["If-None-Match"] = ifNoneMatch;
+    if (ifModifiedSince) upstreamHeaders["If-Modified-Since"] = ifModifiedSince;
+
     const response = await fetch(url, {
-      headers: {
-        Accept: "image/*",
-      },
+      headers: upstreamHeaders,
       cache: "default",
     });
+
+    if (response.status === 304) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: buildResponseHeaders(response),
+      });
+    }
 
     if (!response.ok) {
       return NextResponse.json(
@@ -76,17 +110,11 @@ export async function GET(
       );
     }
 
-    const contentType = response.headers.get("content-type") || "image/jpeg";
-    const imageBuffer = await response.arrayBuffer();
-
-    return new NextResponse(imageBuffer, {
+    // Streamed, not buffered: a large photo no longer has to be held in the
+    // server's memory in full before any of it reaches the browser.
+    return new NextResponse(response.body, {
       status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-      },
+      headers: buildResponseHeaders(response),
     });
   } catch (error) {
     console.error("[Storage Proxy] Error:", error);

@@ -6,197 +6,108 @@ import { useTranslations } from "@/shared/hooks/use-translations";
 import { useProperty } from "@/shared/property/property-provider";
 import { usePropertyName } from "@/shared/property/use-property-name";
 import { Newsletter } from "@/modules/newsletter";
-import { ShieldCheck } from "lucide-react";
+import { ArrowUpRight, ShieldCheck } from "lucide-react";
 import { useBrandIcon } from "@/shared/property/use-brand-icon";
 
-const linkClassName = "text-sm text-muted-foreground transition-colors hover:text-primary";
+const footerLink =
+  "store-focus-invert -my-2 inline-flex min-h-11 items-center gap-1.5 rounded-sm py-2 text-sm text-white/80 transition-colors hover:text-white";
 
-interface FooterProps {
-  showNewsletter?: boolean;
-}
-
-export function Footer({ showNewsletter = true }: FooterProps) {
+export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) {
   const BrandIcon = useBrandIcon();
   const { t } = useTranslations();
   const property = useProperty();
   const storeName = usePropertyName();
-  const socialLinks = [
-    {
-      label: "Instagram",
-      href: `https://www.instagram.com/${property.social.instagramUsername}`,
-      labelKey: "home.heroInstagramLabel",
-    },
-    {
-      label: "Telegram",
-      href: `https://t.me/${property.social.telegramUsername}`,
-      labelKey: "home.heroTelegramLabel",
-    },
-    {
-      label: "WhatsApp",
-      href: `https://wa.me/${property.social.whatsappPhone}`,
-      labelKey: "home.heroWhatsAppLabel",
-    },
-  ] as const;
-  const enamadContainerRef = useRef<HTMLDivElement | null>(null);
-  const [showEnamadFallback, setShowEnamadFallback] = useState(true);
+  const sealRef = useRef<HTMLDivElement | null>(null);
+  const [showSealFallback, setShowSealFallback] = useState(true);
   const trustSeal = property.trustSeal;
-  const enamadHtml = trustSeal
-    ? `<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=${trustSeal.id}&Code=${trustSeal.code}'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=${trustSeal.id}&Code=${trustSeal.code}' alt='' style='cursor:pointer' code='${trustSeal.code}'></a>`
+  const trustSealLabel = t("footer.enamadLabel");
+  const sealHtml = trustSeal
+    ? `<a aria-label='${trustSealLabel}' referrerpolicy='origin' target='_blank' rel='noreferrer' href='https://trustseal.enamad.ir/?id=${trustSeal.id}&Code=${trustSeal.code}'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=${trustSeal.id}&Code=${trustSeal.code}' alt='${trustSealLabel}' style='cursor:pointer' code='${trustSeal.code}'></a>`
     : null;
 
   useEffect(() => {
-    const imageElement = enamadContainerRef.current?.querySelector("img");
-    if (!imageElement) {
-      return;
-    }
-
-    const isLoaded = () => imageElement.complete && imageElement.naturalWidth > 0;
-    const handleLoad = () => setShowEnamadFallback(false);
-    const handleError = () => setShowEnamadFallback(true);
-
-    imageElement.addEventListener("load", handleLoad);
-    imageElement.addEventListener("error", handleError);
-
-    // The image may already be cached/complete before the listeners attach.
-    if (isLoaded()) {
-      setShowEnamadFallback(false);
-    }
-
-    const fallbackTimer = window.setTimeout(() => {
-      setShowEnamadFallback(!isLoaded());
-    }, 3500);
-
+    const image = sealRef.current?.querySelector("img");
+    if (!image) return;
+    const loaded = () => image.complete && image.naturalWidth > 0;
+    const handleLoad = () => setShowSealFallback(false);
+    const handleError = () => setShowSealFallback(true);
+    image.addEventListener("load", handleLoad);
+    image.addEventListener("error", handleError);
+    if (loaded()) setShowSealFallback(false);
+    const timer = window.setTimeout(() => setShowSealFallback(!loaded()), 3500);
     return () => {
-      imageElement.removeEventListener("load", handleLoad);
-      imageElement.removeEventListener("error", handleError);
-      window.clearTimeout(fallbackTimer);
+      image.removeEventListener("load", handleLoad);
+      image.removeEventListener("error", handleError);
+      window.clearTimeout(timer);
     };
   }, []);
 
+  const socialLinks = [
+    ["Instagram", `https://www.instagram.com/${property.social.instagramUsername}`],
+    ["Telegram", `https://t.me/${property.social.telegramUsername}`],
+    ["WhatsApp", `https://wa.me/${property.social.whatsappPhone}`],
+  ] as const;
+
   return (
-    <footer className="relative border-t border-border bg-storefront-brand-soft dark:bg-background">
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 -top-px mx-auto h-px max-w-7xl bg-[linear-gradient(to_right,transparent,var(--rose)_22%,var(--marigold)_42%,var(--iris)_62%,var(--leaf)_82%,transparent)] opacity-80"
-      />
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <footer className="bg-storefront-brand text-white">
+      <div className="store-container">
         {showNewsletter ? (
-          <div className="mb-10 rounded-lg border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6">
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="font-display text-xl font-medium text-card-foreground">
-                  {t("newsletter.title") || "Newsletter"}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {t("newsletter.description") || "Get the latest updates and offers."}
-                </p>
-              </div>
-              <div className="w-full sm:w-[26rem]">
-                <Newsletter variant="compact" />
-              </div>
+          <div className="store-section-sm grid gap-6 border-b border-white/15 lg:grid-cols-[1fr_minmax(22rem,0.85fr)] lg:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/75 [.locale-fa_&]:tracking-normal">{t("newsletter.title")}</p>
+              <h2 className="store-section-title mt-2 max-w-xl text-white">{t("newsletter.description")}</h2>
             </div>
+            <Newsletter variant="compact" />
           </div>
         ) : null}
 
-        <div className="grid gap-10 lg:grid-cols-[1.2fr_2fr]">
+        <div className="store-section grid gap-10 lg:grid-cols-[1.25fr_1.75fr] lg:gap-16">
           <div>
-            <Link href="/" className="inline-flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground ring-2 ring-border">
-                <BrandIcon className="size-5" />
-              </span>
-              <span className="font-display text-xl font-medium text-foreground">
-                {storeName}
-              </span>
+            <Link href="/" className="store-focus-invert inline-flex items-center gap-3 rounded-lg">
+              <span className="flex size-11 items-center justify-center rounded-full bg-white text-primary"><BrandIcon className="size-5" /></span>
+              <span className="font-display text-2xl text-white">{storeName}</span>
             </Link>
-            <p className="mt-4 max-w-sm text-sm leading-7 text-muted-foreground">
-              {t("home.subtitle")}
-            </p>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-              <ShieldCheck className="size-4" />
-              {t("footer.support")}
-            </div>
+            <p className="mt-5 max-w-md text-sm leading-7 text-white/80">{t("home.subtitle")}</p>
+            <p className="mt-5 inline-flex items-center gap-2 text-xs font-semibold text-white/80"><ShieldCheck className="size-4" />{t("footer.support")}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             <div>
-              <h3 className="text-sm font-bold text-foreground">
-              {t("footer.company")}
-              </h3>
-              <ul className="mt-4 space-y-2">
-                <li>
-                  <Link href="/about" className={linkClassName}>
-                    {t("common.about")}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/blog" className={linkClassName}>
-                    {t("blog.title")}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className={linkClassName}>
-                    {t("common.contact")}
-                  </Link>
-                </li>
+              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white/75 [.locale-fa_&]:tracking-normal">{t("footer.shop")}</h3>
+              <ul className="mt-5 space-y-3">
+                <li><Link href="/products" className={footerLink}>{t("footer.allProducts")}</Link></li>
+                <li><Link href="/faq" className={footerLink}>{t("footer.faq")}</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground">
-                {t("footer.shop")}
-              </h3>
-              <ul className="mt-4 space-y-2">
-                <li>
-                  <Link href="/products" className={linkClassName}>
-                    {t("footer.allProducts")}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/faq" className={linkClassName}>
-                    {t("footer.faq")}
-                  </Link>
-                </li>
+              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white/75 [.locale-fa_&]:tracking-normal">{t("footer.company")}</h3>
+              <ul className="mt-5 space-y-3">
+                <li><Link href="/about" className={footerLink}>{t("common.about")}</Link></li>
+                <li><Link href="/blog" className={footerLink}>{t("blog.title")}</Link></li>
+                <li><Link href="/contact" className={footerLink}>{t("common.contact")}</Link></li>
               </ul>
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-foreground">
-                {t("footer.connect")}
-              </h3>
-              <ul className="mt-4 space-y-2">
-                {socialLinks.map((social) => (
-                  <li key={social.label}>
-                    <a
-                      href={social.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={t(social.labelKey)}
-                      className={linkClassName}
-                    >
-                      {social.label}
-                    </a>
+            <div className="col-span-2 sm:col-span-1">
+              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white/75 [.locale-fa_&]:tracking-normal">{t("footer.connect")}</h3>
+              <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-3 sm:block sm:space-y-3">
+                {socialLinks.map(([label, href]) => (
+                  <li key={label}>
+                    <a href={href} target="_blank" rel="noreferrer" className={footerLink}>{label}<ArrowUpRight className="size-3.5 rtl:rotate-180" /></a>
                   </li>
                 ))}
               </ul>
             </div>
           </div>
         </div>
-        <div className="mt-10 border-t border-border pt-6">
-          {enamadHtml ? (
-            <>
-              <div
-                ref={enamadContainerRef}
-                className="mb-3 flex justify-center"
-                dangerouslySetInnerHTML={{ __html: enamadHtml }}
-              />
-              {showEnamadFallback ? (
-                <p className="mb-3 text-center text-xs text-muted-foreground">
-                  {t("footer.enamadFallback")}
-                </p>
-              ) : null}
-            </>
+
+        <div className="flex flex-col items-center justify-between gap-5 border-t border-white/15 py-6 text-xs text-white/75 sm:flex-row">
+          <p>{t("footer.copyright")}</p>
+          {sealHtml ? (
+            <div className="text-center">
+              <div ref={sealRef} className="[&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_img]:max-h-14 [&_img]:w-auto" dangerouslySetInnerHTML={{ __html: sealHtml }} />
+              {showSealFallback ? <p>{t("footer.enamadFallback")}</p> : null}
+            </div>
           ) : null}
-          <p className="text-center text-sm text-muted-foreground">
-            {t("footer.copyright")}
-          </p>
         </div>
       </div>
     </footer>

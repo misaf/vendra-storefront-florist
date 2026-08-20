@@ -118,10 +118,13 @@ function Carousel({
         canScrollNext,
       }}
     >
+      {/* These carousels already sit inside labelled page sections. `group`
+          preserves the widget semantics without adding a stack of secondary
+          landmarks to a screen reader's region list. */}
       <div
         onKeyDownCapture={handleKeyDown}
         className={cn("relative", className)}
-        role="region"
+        role="group"
         aria-roledescription="carousel"
         data-slot="carousel"
         {...props}
@@ -186,7 +189,7 @@ function CarouselPrevious({
       variant={variant}
       size={size}
       className={cn(
-        "absolute size-8 rounded-full",
+        "absolute size-11 rounded-full",
         orientation === "horizontal"
           ? "top-1/2 -left-12 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
@@ -221,7 +224,7 @@ function CarouselNext({
       variant={variant}
       size={size}
       className={cn(
-        "absolute size-8 rounded-full",
+        "absolute size-11 rounded-full",
         orientation === "horizontal"
           ? "top-1/2 -right-12 -translate-y-1/2"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",

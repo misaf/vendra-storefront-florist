@@ -7,7 +7,7 @@ import { JsonLd } from "@/shared/components/seo/json-ld";
 import { Button } from "@/shared/components/ui/button";
 import { SafeImage } from "@/shared/components/ui/safe-image";
 import { RichText } from "@/shared/components/rich-text";
-import { Calendar, ArrowLeft, ArrowRight } from "lucide-react";
+import { Calendar, ArrowLeft, ArrowRight, BookOpen } from "lucide-react";
 import { isRtlLocale } from "@/shared/lib/locale";
 import { getPost, loadRelatedPosts } from "@/modules/blog";
 import type { Post as BlogPost } from "@/modules/blog";
@@ -79,13 +79,12 @@ export default async function BlogPostDetail({
       error = t("blog.postNotFound");
     }
   } catch (caughtError) {
-    error =
-      caughtError instanceof Error
-        ? caughtError.message
-        : t("blog.loadPostError");
+    console.error("Blog post load failed:", caughtError);
+    error = t("blog.loadPostError");
   }
 
   const hasLeadImage = Boolean(post?.image && post.image !== PLACEHOLDER_IMAGE);
+  const hasArticleContent = Boolean(post && plainText(post.content));
 
   // Kick off the related fetch without awaiting — streamed on the client.
   const relatedPostsPromise: Promise<BlogPost[]> = post
@@ -95,8 +94,8 @@ export default async function BlogPostDetail({
   return (
     <PageShell>
       {error ? (
-        <section className="bg-background pb-20 pt-28 sm:pb-28 sm:pt-32">
-          <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
+        <section className="bg-background pb-20 pt-10 sm:pb-28 sm:pt-14">
+          <div className="store-container max-w-2xl text-center">
             <span className="golzar-seam mx-auto mb-8 max-w-[10rem]">
               <span className="h-px flex-1" aria-hidden="true" />
               <span className="petal-dot" aria-hidden="true" />
@@ -138,11 +137,11 @@ export default async function BlogPostDetail({
               ]),
             ]}
           />
-          <header className="bg-background pt-28 sm:pt-32">
-            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <header className="bg-background pt-10 sm:pt-14">
+            <div className="store-container max-w-6xl">
               <Link
                 href="/blog"
-                className="group inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                className="group -my-2 inline-flex min-h-11 items-center gap-1.5 rounded-sm py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 <BackArrow className="size-3.5 transition-transform duration-300 group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5" />
                 {t("blog.backToBlog")}
@@ -152,7 +151,7 @@ export default async function BlogPostDetail({
                 <aside className="order-2 flex flex-wrap gap-x-6 gap-y-4 text-sm text-muted-foreground md:order-1 md:block md:space-y-7 md:border-e md:border-border md:pe-8">
                   {post.category ? (
                     <div>
-                      <p className="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         {t("blog.title")}
                       </p>
                       <p className="mt-2 font-medium text-foreground">
@@ -161,7 +160,7 @@ export default async function BlogPostDetail({
                     </div>
                   ) : null}
                   <div>
-                    <p className="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       {t("blog.latestEntry")}
                     </p>
                     <time
@@ -182,7 +181,7 @@ export default async function BlogPostDetail({
                     <span className="petal-dot" aria-hidden="true" />
                     <span className="h-px flex-1" aria-hidden="true" />
                   </span>
-                  <h1 className="font-display max-w-4xl text-4xl leading-[1.08] text-foreground [.locale-fa_&]:leading-[1.45] sm:text-5xl lg:text-6xl">
+                  <h1 className="store-dynamic-text store-page-title max-w-4xl text-foreground" dir="auto">
                     {post.title}
                   </h1>
                   {(plainText(post.excerpt) || plainText(post.content)) && (
@@ -209,7 +208,7 @@ export default async function BlogPostDetail({
                     fill
                     sizes="(min-width: 1024px) 64rem, 100vw"
                     className="object-cover"
-                    priority
+                    preload
                     unoptimized
                   />
                 </div>
@@ -217,15 +216,37 @@ export default async function BlogPostDetail({
             </figure>
           )}
 
-          <article className="bg-background py-12 sm:py-18">
+          <article className="store-section bg-background">
             <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[12rem_minmax(0,42rem)_1fr] lg:px-8">
               <div className="hidden lg:block">
-                <div className="sticky top-28 h-px w-full bg-border" />
+                <div className="store-sticky h-px w-full bg-border" />
               </div>
-              <RichText
-                content={post.richContent ?? post.content}
-                className="space-y-7 text-[1.03rem] leading-8 text-muted-foreground sm:text-lg sm:leading-9 [&_.tableWrapper]:overflow-x-auto [&_.tableWrapper]:rounded-lg [&_.tableWrapper]:border [&_.tableWrapper]:border-border [&_a]:font-medium [&_a]:text-foreground [&_a]:underline [&_a]:decoration-border [&_a]:underline-offset-4 [&_a:hover]:decoration-foreground [&_blockquote]:my-10 [&_blockquote]:border-s-2 [&_blockquote]:border-foreground [&_blockquote]:bg-card [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:text-xl [&_blockquote]:leading-9 [&_blockquote]:text-foreground/85 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_h1]:font-display [&_h1]:text-4xl [&_h1]:font-semibold [&_h1]:leading-tight [&_h1]:text-foreground [&_h2]:font-display [&_h2]:pt-6 [&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:leading-tight [&_h2]:text-foreground [&_h3]:font-display [&_h3]:pt-3 [&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:leading-tight [&_h3]:text-foreground [&_h4]:text-xl [&_h4]:font-semibold [&_h4]:text-foreground [&_hr]:border-border [&_img]:rounded-xl [&_ol]:list-outside [&_ol]:ps-6 [&_ol]:list-decimal [&_strong]:font-semibold [&_strong]:text-foreground [&_table]:w-full [&_table]:min-w-max [&_table]:border-collapse [&_tbody_tr:nth-child(even)]:bg-muted/35 [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-start [&_th]:font-semibold [&_th]:text-foreground [&_ul]:list-outside [&_ul]:ps-6 [&_ul]:list-disc"
-              />
+              {hasArticleContent ? (
+                <RichText
+                  content={post.richContent ?? post.content}
+                  density="article"
+                />
+              ) : (
+                <div className="rounded-xl border border-border bg-card/65 p-6 sm:p-8">
+                  <span className="flex size-11 items-center justify-center rounded-full bg-secondary text-primary">
+                    <BookOpen className="size-5" aria-hidden="true" />
+                  </span>
+                  <h2 className="font-display mt-5 text-2xl leading-tight text-foreground sm:text-3xl">
+                    {t("blog.contentPendingTitle")}
+                  </h2>
+                  <p className="mt-3 leading-7 text-muted-foreground">
+                    {t("blog.contentPendingDescription")}
+                  </p>
+                  <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+                    <Button asChild>
+                      <Link href="/blog">{t("blog.viewAllPosts")}</Link>
+                    </Button>
+                    <Button asChild variant="outline">
+                      <Link href="/contact">{t("common.contact")}</Link>
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="hidden lg:block" aria-hidden="true" />
             </div>
           </article>

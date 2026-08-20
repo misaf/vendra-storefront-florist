@@ -13,13 +13,13 @@ export default function CheckoutSuccess() {
   return (
     <PageShell showFooter={false}>
       {/* Success Content */}
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md" role="status" aria-live="polite">
+      <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-lg border-0 bg-card/70 px-2 py-8 text-center shadow-xl shadow-foreground/5 sm:px-6 sm:py-12" role="status" aria-live="polite">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-storefront-brand-soft">
-              <CheckCircle2 className="h-8 w-8 text-primary" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <CheckCircle2 className="h-8 w-8" />
             </div>
-            <h1 className="text-2xl font-semibold leading-none">
+            <h1 className="store-page-title">
               {t("checkout.successTitle")}
             </h1>
             <CardDescription className="text-base">
