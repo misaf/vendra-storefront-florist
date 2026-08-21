@@ -53,10 +53,14 @@ export function LanguageSwitcher() {
           : undefined;
 
         if (targetCategory) query.category = targetCategory.slug;
-        else delete query.category;
+        // If this tenant's localized category resources do not share an ID,
+        // retain the current slug as the best available category identity.
       } catch {
-        // A valid all-products view is preferable to carrying a stale slug.
-        delete query.category;
+        // The catalogue currently shares category slugs across locales. If the
+        // optional identity lookup fails in the browser, keep the user's active
+        // filter instead of silently dropping their shopping context. The
+        // destination catalogue still provides its normal empty-state recovery
+        // if a future tenant uses a locale-specific slug that cannot resolve.
       }
     }
 

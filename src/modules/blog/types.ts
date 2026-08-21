@@ -36,6 +36,7 @@ export interface PostDto extends PostResource {
   name: LocalizedValue<string>;
   description?: LocalizedValue<unknown>;
   slug: LocalizedValue<string>;
+  active?: boolean;
   createdAt: string;
   updatedAt: string;
   multimedia?: PostMedia | PostMedia[];
@@ -62,10 +63,18 @@ export interface Post {
   excerpt: string;
   slug: string;
   image?: string;
+  /** The card-sized rendition of `image`, for the index and related grids. */
+  thumbnail?: string;
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
   category?: string;
+  /** `false` marks a draft the console has not published. */
+  status?: boolean;
+  /** Set only when the category resolved from the category collection — the
+   *  embedded reference carries a label but no slug, and the journal index
+   *  filters on the slug. */
+  categorySlug?: string;
 }
 
 export interface PostCategory {

@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/shared/components/ui/form";
 import { useTranslations } from "@/shared/hooks/use-translations";
+import { useProperty } from "@/shared/property/property-provider";
 import { Loader2, CheckCircle2, Send } from "lucide-react";
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 
@@ -32,6 +33,7 @@ type NewsletterFormValues = z.infer<ReturnType<typeof createNewsletterSchema>>;
  */
 export default function NewsletterForm({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslations();
+  const property = useProperty();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -65,12 +67,16 @@ export default function NewsletterForm({ compact = false }: { compact?: boolean 
         successAlert: "mt-4 border-border bg-secondary text-foreground",
       };
 
-  const onSubmit = async () => {
+  const onSubmit = ({ email }: NewsletterFormValues) => {
     setError(null);
     try {
-      // Simulated demo flow, matching the checkout module: no backend route is
-      // called and no data leaves the browser.
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      /* There is no newsletter endpoint in the storefront contract. Opening a
+         pre-addressed email keeps the feature useful without falsely claiming
+         an address was subscribed when nothing left the browser. The visitor
+         still reviews and sends the message in their own mail application. */
+      window.location.href = `mailto:${property.contact.email}?subject=${encodeURIComponent(
+        t("newsletter.requestSubject")
+      )}&body=${encodeURIComponent(t("newsletter.requestBody", { email }))}`;
 
       setIsSubmitted(true);
       form.reset();

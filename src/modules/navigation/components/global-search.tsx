@@ -22,9 +22,14 @@ export function GlobalSearch({ full = false }: { full?: boolean }) {
   const { t } = useTranslations();
   const { capture, onCloseAutoFocus } = useFocusReturn();
 
-  // Detect OS for keyboard shortcut display
+  // Which modifier to draw in the hint. `navigator.platform` is deprecated, so
+  // the UA-data platform is preferred where it exists and it is the fallback.
   useEffect(() => {
-    setIsMac(typeof window !== "undefined" && navigator.platform.toUpperCase().indexOf("MAC") >= 0);
+    if (typeof navigator === "undefined") return;
+    const platform =
+      (navigator as Navigator & { userAgentData?: { platform?: string } })
+        .userAgentData?.platform ?? navigator.platform;
+    setIsMac(/mac/i.test(platform));
   }, []);
 
   // Keyboard shortcut (Cmd+K / Ctrl+K)
@@ -52,7 +57,7 @@ export function GlobalSearch({ full = false }: { full?: boolean }) {
     <>
       <button
         onClick={openSearch}
-        className={full ? "flex h-11 w-full items-center gap-3 rounded-xl px-3 text-start text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground" : "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground xl:hidden"}
+        className={full ? "flex h-11 w-full items-center gap-3 rounded-xl px-3 text-start text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground" : "flex size-[44px] items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground xl:hidden"}
         aria-label={t("search.title")}
       >
         <Search className="h-4 w-4" />
@@ -61,7 +66,13 @@ export function GlobalSearch({ full = false }: { full?: boolean }) {
 
       {!full ? <button
         onClick={openSearch}
-        className="hidden h-11 items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-card hover:text-foreground xl:flex xl:w-56 2xl:w-64"
+        /* The width is capped against the viewport as well as stated in rem.
+           A bare `w-56` is 14rem, which at a doubled root font size becomes
+           448px of unshrinkable control and pushed the whole header cluster
+           past the right edge of a 1280px window — content loss under WCAG
+           1.4.4. `min()` leaves the resting width untouched and only bites
+           once the text is scaled up. */
+        className="hidden h-11 min-w-0 items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-card hover:text-foreground xl:flex xl:w-[min(14rem,22vw)] 2xl:w-[min(16rem,22vw)]"
         aria-label={t("search.title")}
       >
         <Search className="h-4 w-4" />

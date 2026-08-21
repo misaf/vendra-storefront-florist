@@ -73,7 +73,13 @@
   --accent-foreground: oklch(0.96 0.012 88);
   --destructive: oklch(0.64 0.2 22);
   --border: oklch(0.91 0.018 92 / 14%);
-  --input: oklch(0.91 0.018 92 / 20%);
+  /* Field boundaries carry more weight than the decorative hairline above
+     them: at 20% they sat at 1.73:1 against the card, and a text field's
+     border is the only thing that says where the field is. 44% reads at
+     3.5:1, clearing WCAG 2.1 SC 1.4.11 (Non-text Contrast, 3:1). Only
+     `border-input` and the `bg-input/30` field fill use this token, so the
+     page's hairlines are untouched. */
+  --input: oklch(0.91 0.018 92 / 44%);
   --ring: oklch(0.78 0.105 44);
   --rose: oklch(0.72 0.13 35);
   --rose-foreground: oklch(0.18 0.03 30);
@@ -111,7 +117,10 @@
   --accent-foreground: oklch(0.28 0.04 154);
   --destructive: oklch(0.52 0.2 27);
   --border: oklch(0.84 0.025 98);
-  --input: oklch(0.82 0.028 98);
+  /* See the dark block: the same 3:1 floor, measured here at 3.5:1 on card
+     and 3.4:1 on the page. Darker than `--border` on purpose — a field has
+     to be found before it can be filled, while a section rule does not. */
+  --input: oklch(0.62 0.03 98);
   --ring: oklch(0.58 0.13 35);
   --rose: oklch(0.54 0.15 33);
   --rose-foreground: oklch(0.99 0.005 91);
@@ -196,13 +205,20 @@
   font-weight: 700;
 }
 
-/* Comfortable, consistent control size — every button is floored at a 44×44px
+/* Comfortable, consistent control size — every button is floored at a 44x44px
    tap area on all devices, the size a fingertip needs and a uniform baseline on
    desktop too. Covers asChild link-buttons (they carry data-slot="button") and
-   even buttons that hardcode a smaller height, since min-height beats height. */
+   even buttons that hardcode a smaller height, since min-height beats height.
+
+   Stated in px, not rem, because this is a measurement of a fingertip rather
+   than a measurement of type. As `2.75rem` it grew with the reader's font size,
+   so a row of four icon buttons in the header went from 176px to 352px at a
+   doubled default — pushing the header cluster past the viewport while adding
+   nothing a reader could read. Buttons carrying text still outgrow the floor on
+   their own, because their text still scales. */
 [data-slot="button"] {
-  min-height: 2.75rem;
-  min-width: 2.75rem;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 ::selection {
@@ -210,8 +226,16 @@
 }
 
 /* Unlayered, like the :root default it overrides — a layered rule would lose
-   to the unlayered `--store-header-h: 4rem` no matter what order it came in. */
-@media (min-width: 1024px) {
+   to the unlayered `--store-header-h: 4rem` no matter what order it came in.
+
+   The breakpoints in this file are stated in `rem` so they agree with the ones
+   Tailwind generates for `sm:` / `md:` / `lg:`, which are also rem. A media
+   query's rem is the reader's *default* font size, so when someone raises it
+   both halves of a layout change mode together. Written in px these rules kept
+   their desktop behaviour while the utilities beside them had already fallen
+   back to the stacked one — which left the catalogue's category rail sticky and
+   full-width, pinned over the products it was meant to sit beside. */
+@media (min-width: 64rem) {
   :root { --store-header-h: 4.5rem; }
 }
 
@@ -221,11 +245,11 @@
     margin-inline: auto;
   }
 
-  @media (min-width: 640px) {
+  @media (min-width: 40rem) {
     .store-container { width: min(100% - 3rem, 80rem); }
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 64rem) {
     .store-container { width: min(100% - 5rem, 80rem); }
   }
 
@@ -244,7 +268,7 @@
   .store-section    { padding-block: 3rem; }
   .store-section-lg { padding-block: 4rem; }
 
-  @media (min-width: 640px) {
+  @media (min-width: 40rem) {
     .store-section-head { padding-block: 2rem 3.5rem; }
     .store-section-sm { padding-block: 3rem; }
     .store-section    { padding-block: 4rem; }
@@ -262,7 +286,7 @@
   /* Most sticky asides only pin once there is a column beside them to pin
      against. A plain class can't take Tailwind's `lg:` prefix, so the
      breakpoint is baked into its own name. */
-  @media (min-width: 1024px) {
+  @media (min-width: 64rem) {
     .store-sticky-lg {
       position: sticky;
       top: calc(var(--store-header-h) + 1.5rem);
@@ -275,9 +299,11 @@
   }
 
   /* Edge-to-edge media links (a card's image, a gallery thumb). Their frame
-     clips anything drawn outside it, so the indicator is drawn inside. */
+     clips anything drawn outside it, so the indicator is drawn inside. WAI's
+     Focus Appearance guidance calls for a 3px inset indicator to provide the
+     same visible area as a 2px perimeter drawn outside the control. */
   .store-focus-inset:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 3px solid var(--ring);
     outline-offset: -3px;
   }
 
@@ -400,6 +426,18 @@
      type scale for the surface. These lived as three ~1.5 kB inline
      `[&_h2]:…` class strings that had drifted apart from each other. */
   .rich-text > * + * { margin-block-start: 1rem; }
+  /* A blockquote or list item holds block children of its own, which the
+     child combinator above never reaches — without this a two-paragraph pull
+     quote runs together as one wall of text. */
+  .rich-text :is(blockquote, li, figure) > * + * { margin-block-start: 0.75rem; }
+  .rich-text li + li { margin-block-start: 0.375rem; }
+  .rich-text li > :is(ul, ol) { margin-block-start: 0.375rem; }
+
+  /* Backend copy carries URLs, product codes and Persian compounds that no
+     line-breaking rule expects. Wrapping them is the difference between a long
+     word and a page that scrolls sideways. */
+  .rich-text { overflow-wrap: break-word; }
+  .rich-text a { overflow-wrap: anywhere; }
 
   .rich-text a {
     font-weight: 600;
@@ -423,11 +461,51 @@
     font-size: 0.9em;
   }
 
-  .rich-text img { border-radius: var(--radius-lg); }
-  .rich-text hr { border-color: var(--border); }
+  /* A code block scrolls inside its own frame; the page never does. The inline
+     `code` chrome above is undone here so a block isn't a pill inside a pill. */
+  .rich-text pre {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+    padding: 1rem 1.25rem;
+    font-size: 0.875em;
+    line-height: 1.7;
+    direction: ltr;
+    text-align: start;
+  }
+  .rich-text pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
 
-  .rich-text ul { list-style: disc inside; }
-  .rich-text ol { list-style: decimal inside; }
+  /* An author uploads whatever the camera produced; the intrinsic width on the
+     rendered <img> would otherwise push the column wider than the viewport. */
+  .rich-text img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-lg);
+  }
+  .rich-text figcaption {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--muted-foreground);
+  }
+  .rich-text hr {
+    border: 0;
+    border-block-start: 1px solid var(--border);
+  }
+
+  /* `outside` so the second line of a long item aligns with the first rather
+     than sliding under its own bullet. */
+  .rich-text :is(ul, ol) {
+    list-style-position: outside;
+    padding-inline-start: 1.25rem;
+  }
+  .rich-text ul { list-style-type: disc; }
+  .rich-text ol { list-style-type: decimal; }
+  .rich-text ul ul { list-style-type: circle; }
+  .rich-text ol ol { list-style-type: lower-alpha; }
 
   .rich-text .tableWrapper {
     overflow-x: auto;
@@ -512,12 +590,27 @@
     color: color-mix(in oklch, var(--foreground) 85%, transparent);
   }
   .rich-text[data-density="article"] img { border-radius: var(--radius-xl); }
-  .rich-text[data-density="article"] ul { list-style: disc outside; padding-inline-start: 1.5rem; }
-  .rich-text[data-density="article"] ol { list-style: decimal outside; padding-inline-start: 1.5rem; }
+  .rich-text[data-density="article"] :is(ul, ol) { padding-inline-start: 1.5rem; }
+  .rich-text[data-density="article"] li + li { margin-block-start: 0.5rem; }
   .rich-text[data-density="article"] :is(th, td) { color: inherit; }
+  /* A section reached from a shared #anchor must clear the pinned bar. */
+  .rich-text[data-density="article"] :is(h1, h2, h3, h4) {
+    scroll-margin-block-start: calc(var(--store-header-h) + 1.5rem);
+  }
 
-  @media (min-width: 640px) {
+  @media (min-width: 40rem) {
     .rich-text[data-density="article"] { font-size: 1.125rem; line-height: 2.25rem; }
+  }
+
+  /* The density blocks above name `--font-display` — a Latin serif with no
+     Arabic coverage — so a Persian article heading fell through to whatever
+     the browser substituted, breaking mid-page from the Vazirmatn around it.
+     Persian keeps its own face, and the tight Latin tracking with it. */
+  .locale-fa .rich-text[data-density] :is(h1, h2, h3, h4) {
+    font-family: var(--font-persian);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.6;
   }
 
   .rich-text [data-type="taskList"] {
@@ -738,7 +831,7 @@
 }
 
 @layer utilities {
-  @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: view()) {
       .storefront-view-panel > div {
         animation: storefront-section-enter both ease-out;

@@ -1,16 +1,15 @@
 /**
- * The shape of `properties/<slug>/property.config.json`.
+ * The store configuration one container serves.
  *
  * Everything that identifies a single storefront lives here: no brand name,
- * phone number or handle belongs in `src/`. The selected property is resolved
- * at build time by `scripts/select-property.mjs`, which validates the file
- * against these fields before generating `src/generated/property.ts`.
+ * phone number or handle belongs in `src/`. Vendra supplies it at container
+ * startup as base64 JSON in `STOREFRONT_CONFIG_BASE64`, validated against
+ * `config/storefront.schema.json`. `config/storefront.development.json` is the
+ * same document, used only when running locally.
  */
 export interface PropertyConfig {
-  /** Directory name under `properties/`, also used as the build identifier. */
+  /** Vendra's identifier for the store, and the last-resort brand name. */
   slug: string;
-  /** Build-time storefront implementation selected from src/themes/<id>. */
-  theme: string;
   /** Public storefront domain. Must be an active tenant domain in Vendra — it is what the canonical API resolves the tenant from. */
   domain: string;
   /** Canonical public origin, no trailing slash. */
@@ -23,16 +22,18 @@ export interface PropertyConfig {
   priceCurrency: string;
   /** Optional site-root-relative default social-share image. */
   ogImage?: string;
-  /** Optional site-root-relative hero image. Defaults to the theme's own. */
-  heroImage?: string;
-  /** Optional site-root-relative About/newsletter image. Defaults to the theme's own. */
+  /** Optional site-root-relative hero artwork for the light color theme. */
+  heroImageLight?: string;
+  /** Optional site-root-relative hero artwork for the dark color theme. */
+  heroImageDark?: string;
+  /** Optional site-root-relative About/newsletter image. Defaults to the bundled art. */
   aboutImage?: string;
   /**
    * Optional per-locale message overrides, deep-merged over `messages/`.
    *
-   * This is how a runtime property supplies its own copy: it travels inside
-   * `STOREFRONT_CONFIG_BASE64` because the shared image has no per-tenant files
-   * to read from. Build-time properties use `properties/<slug>/messages/` instead.
+   * A store's copy travels inside `STOREFRONT_CONFIG_BASE64` because the shared
+   * image has no per-store files to read from. Anything not overridden falls
+   * through to the brand-neutral base catalogue in `messages/`.
    */
   messages?: PropertyMessages;
   address: PropertyAddress;

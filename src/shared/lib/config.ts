@@ -60,19 +60,14 @@ export interface ContactInfo {
 }
 
 /**
- * Contact details for the selected property. Every field can still be
- * overridden per environment, which is what keeps one image usable for a
- * staging deployment of the same property.
+ * Contact details for the active store.
+ *
+ * Straight from the store configuration Vendra supplies — there is deliberately
+ * no `CONTACT_*` environment override. Those existed when identity was chosen at
+ * build time and a deployment needed a way to amend it; now the configuration is
+ * itself a runtime input, so an override could only ever let a container
+ * contradict Vendra about a store's own phone number.
  */
 export function getContactInfo(): ContactInfo {
-  const { contact } = getProperty();
-
-  return {
-    mobilePhone: process.env.CONTACT_MOBILE_PHONE || contact.mobilePhone,
-    officePhone: process.env.CONTACT_OFFICE_PHONE || contact.officePhone,
-    email: process.env.CONTACT_EMAIL || contact.email,
-    hoursOpen: process.env.CONTACT_HOURS_OPEN || contact.hoursOpen,
-    hoursClose: process.env.CONTACT_HOURS_CLOSE || contact.hoursClose,
-    mapQuery: process.env.CONTACT_MAP_QUERY || contact.mapQuery,
-  };
+  return { ...getProperty().contact };
 }

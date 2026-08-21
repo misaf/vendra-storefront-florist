@@ -223,10 +223,17 @@ export default function AddressMapPicker({
         const c = map.getCenter();
         settleTimer.current = setTimeout(() => resolve(c.lat, c.lng), SETTLE_DELAY);
       });
-      // Resolve the opening view so the buyer gets immediate feedback.
+      // The property's map coordinate is only an opening view. Treating it as
+      // the buyer's chosen pin used to prefill checkout with the shop's own
+      // address before the buyer touched the map, which made a plausible but
+      // incorrect delivery address very easy to submit. A previously confirmed
+      // value may be restored; a fresh checkout waits for an actual map move or
+      // the explicit "use my location" action.
       map.whenReady(() => {
-        const c = map.getCenter();
-        resolve(c.lat, c.lng);
+        if (value) {
+          const c = map.getCenter();
+          resolve(c.lat, c.lng);
+        }
 
         const container = containerRef.current;
         if (!container) return;
@@ -327,9 +334,9 @@ export default function AddressMapPicker({
         : t("checkout.pinHint");
 
   return (
-    <div className="space-y-2.5">
-      <div className="flex items-end justify-between gap-3">
-        <div>
+    <div className="min-w-0 space-y-2.5">
+      <div className="flex min-w-0 flex-col items-start gap-2 min-[420px]:flex-row min-[420px]:items-end min-[420px]:justify-between">
+        <div className="min-w-0">
           <span className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
             {t("checkout.dropPinEyebrow")}
           </span>
@@ -354,12 +361,12 @@ export default function AddressMapPicker({
 
       <div
         data-provider={tileProvider}
-        className="golzar-pinmap relative overflow-hidden rounded-xl border border-border bg-muted"
+        className="golzar-pinmap relative w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-muted"
       >
         <div
           ref={containerRef}
           dir="ltr"
-          className="h-64 w-full sm:h-80"
+          className="h-64 w-full min-w-0 max-w-full sm:h-80"
           aria-label={t("checkout.deliveryLocation")}
           role="application"
         />

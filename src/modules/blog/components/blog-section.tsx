@@ -11,8 +11,9 @@ import { useTranslations } from "@/shared/hooks/use-translations";
 import { SectionHeader } from "@/shared/components/layout/section-header";
 import type { Post as BlogPost, PostCategory } from "../types";
 
-// 1 featured lead post + 8 grid posts
-const MAX_STOREFRONT_POSTS = 9;
+// One lead story and two supporting entries keep editorial content useful but
+// clearly secondary to shopping.
+const MAX_STOREFRONT_POSTS = 3;
 
 interface BlogSectionProps {
   allPosts: BlogPost[];
@@ -40,42 +41,38 @@ export function BlogSection({ allPosts, category }: BlogSectionProps) {
     : "/blog";
 
   return (
-    <section className="storefront-view-panel store-section-lg store-scroll-anchor relative overflow-hidden bg-storefront-brand text-storefront-brand-foreground dark:bg-storefront-surface dark:text-foreground">
+    <section className="store-section store-scroll-anchor bg-secondary/45">
       <div className="store-container relative">
-        {/* This heading used to run to text-6xl (60px), overshooting the
-            section step the rest of the storefront holds to. */}
         <SectionHeader
-          className="mb-12"
-          tone="inverted"
+          className="mb-8 sm:mb-10"
           eyebrow={t("blog.eyebrow")}
           title={sectionTitle}
+          description={t("blog.subtitle")}
           action={
             <Link
               href={blogHref}
-              className="group inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-storefront-brand-foreground/70 transition-colors hover:text-storefront-brand-foreground"
+              className="group inline-flex min-h-11 shrink-0 items-center gap-2 rounded-sm text-sm font-bold text-foreground underline decoration-border underline-offset-8 transition-colors hover:text-primary hover:decoration-primary"
             >
-              <span className="border-b border-white/30 pb-1 transition-colors group-hover:border-white">
-                {t("blog.viewAllPosts") || "View All Posts"}
-              </span>
+              {t("blog.viewAllPosts") || "View All Posts"}
               <ArrowIcon className="size-4 transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
             </Link>
           }
         />
 
         {posts.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-white/20 bg-white/5 px-5 py-8 text-sm leading-6 text-storefront-brand-foreground/75 dark:text-muted-foreground">
+          <div className="rounded-lg border border-dashed border-border bg-background/50 px-5 py-8 text-sm leading-6 text-muted-foreground">
             {t("blog.noPosts") || "No posts found"}
           </div>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-12">
-            <div className={gridPosts.length > 0 ? "lg:col-span-5" : "lg:col-span-12"}>
+          <div className="grid gap-5 min-[43.75rem]:grid-cols-[1.15fr_0.85fr] min-[43.75rem]:gap-6">
+            <div>
               <FeaturedBlogPostCard
                 post={featuredPost}
                 imageUnavailableText={t("blog.imageUnavailable")}
               />
             </div>
             {gridPosts.length > 0 ? (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:col-span-7 lg:grid-cols-3">
+              <div className="grid grid-cols-2 gap-4 min-[43.75rem]:content-start">
                 {gridPosts.map((post) => (
                   <BlogPostCard
                     key={post.id}

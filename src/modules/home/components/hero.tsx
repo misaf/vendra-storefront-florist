@@ -1,101 +1,116 @@
-"use client";
-
-import Image from "next/image";
-import { Link } from "@/shared/i18n/navigation";
+import { getTranslations } from "next-intl/server";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { HeroArtwork } from "./hero-artwork";
 import { Button } from "@/shared/components/ui/button";
-import { useTranslations } from "@/shared/hooks/use-translations";
-import { useProperty } from "@/shared/property/property-provider";
-import { usePropertyName } from "@/shared/property/use-property-name";
-import { telHref } from "@/shared/lib/utils";
+import { Link } from "@/shared/i18n/navigation";
 import { isRtlLocale } from "@/shared/lib/locale";
-import { ArrowLeft, ArrowRight, MapPin, MessageCircle, Phone } from "lucide-react";
+import { getRequestTheme } from "@/shared/lib/theme-server";
+import { getProperty, getPropertyName } from "@/shared/property";
 
 interface HeroProps {
-  showButtons?: boolean;
+  locale: string;
+  /** Buyable products in the catalogue right now, or null if unknown. */
+  inStockTotal: number | null;
+  /** How many collections the shop sells, for the breadth line. */
+  collectionCount: number;
 }
 
-export function Hero({ showButtons = true }: HeroProps) {
-  const { t, locale } = useTranslations();
-  const property = useProperty();
-  const storeName = usePropertyName();
+/**
+ * The homepage's one job above the fold: say what the shop sells, and open the
+ * catalogue. One button, because a hero with two equal buttons has no primary
+ * action — the discovery band directly below is the second path, and it is a
+ * whole screen of real categories rather than a competing label.
+ *
+ * Under the button sit two facts rather than three slogans: how much is
+ * actually buyable, and across how many collections. Both are counted from the
+ * catalogue the page has already loaded, so neither can drift into a promise
+ * the storefront cannot keep, and both answer the question the band directly
+ * below is about to act on. Opening hours are stated once, at the foot of the
+ * page beside the phone number a shopper would use them with; phone and address
+ * stay in the utility bar and footer, where they already are.
+ */
+export async function Hero({
+  locale,
+  inStockTotal,
+  collectionCount,
+}: HeroProps) {
+  const t = await getTranslations({ locale });
+  const property = getProperty();
+  const storeName = getPropertyName(locale);
   const ArrowIcon = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
-  const phone = property.contact.mobilePhone;
+  const initialTheme = await getRequestTheme();
+  const lightImage =
+    property.heroImageLight?.trim() || property.heroImageDark?.trim() || null;
+  const darkImage =
+    property.heroImageDark?.trim() || property.heroImageLight?.trim() || null;
+
+  const formatCount = new Intl.NumberFormat(locale);
+  const facts = [
+    inStockTotal && inStockTotal > 0
+      ? t("home.heroInStock", { count: formatCount.format(inStockTotal) })
+      : null,
+    // "1 collection" is not a range worth advertising, so a shop with one
+    // simply does not make the claim.
+    collectionCount > 1
+      ? t("home.heroCollections", { count: formatCount.format(collectionCount) })
+      : null,
+  ].filter((fact): fact is string => Boolean(fact));
 
   return (
-    <section className="relative border-b border-border/70 bg-background">
-      {/* The display type is sized to leave the primary action above the fold on
-          a short phone viewport; the copy block therefore precedes the image on
-          mobile and sits beside it from lg up. */}
-      <div className="store-container store-section-sm grid gap-8 lg:grid-cols-[1.05fr_minmax(0,1fr)] lg:items-center lg:gap-14 lg:py-16">
-        <div className="relative z-10 max-w-2xl">
-          <p className="store-eyebrow">{t("home.heroBadge")}</p>
-          <h1 className="font-display mt-4 text-balance text-[clamp(2.25rem,6.4vw,3rem)] leading-[1.04] text-foreground [.locale-fa_&]:leading-[1.3] lg:mt-5 lg:text-[clamp(2.75rem,3.9vw,3.75rem)]">
-            {t("home.title")}
-          </h1>
-          <p className="store-lede mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
-            {t("home.subtitle")}
-          </p>
-
-          {showButtons ? (
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button asChild size="lg" className="group justify-between px-7 sm:min-w-44">
-                <Link href="/products">
+    <section className="store-section-sm bg-background">
+      <div className="store-container">
+        <div className="grid overflow-hidden rounded-3xl border border-border/80 bg-card shadow-panel lg:min-h-[min(34rem,calc(100svh-10rem))] lg:grid-cols-2">
+          <div className="flex items-center px-6 py-10 sm:px-10 sm:py-12 lg:px-12 lg:py-14 xl:px-16">
+            <div className="max-w-xl">
+              <p className="store-eyebrow">{t("home.heroBadge")}</p>
+              <h1 className="font-display mt-4 text-[clamp(2.5rem,9vw,4rem)] leading-[1.04] text-foreground [.locale-fa_&]:leading-[1.35] lg:mt-5 lg:text-[clamp(3rem,4vw,3.5rem)]">
+                {t("home.title")}
+              </h1>
+              <p className="store-lede mt-5 max-w-lg text-base sm:text-lg">
+                {t("home.subtitle")}
+              </p>
+              <Button
+                asChild
+                size="lg"
+                className="group mt-7 min-w-44 justify-between px-7"
+              >
+                <Link
+                  href="/products"
+                  aria-label={`${t("common.shopNow")} — ${storeName}`}
+                >
                   {t("common.shopNow")}
-                  <ArrowIcon className="size-4 transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
+                  <ArrowIcon
+                    className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none rtl:group-hover:-translate-x-0.5"
+                    aria-hidden="true"
+                  />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="px-7">
-                <Link href="/contact">{t("home.heroConsult")}</Link>
-              </Button>
+
+              {/* A list, not three headings: supporting facts under the action.
+                  The separator is drawn between items so it never dangles at
+                  the end of a wrapped row. With an unreachable catalogue there
+                  are no facts to state, and the rule above them would be a line
+                  under nothing. */}
+              {facts.length > 0 ? (
+                <ul className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/70 pt-5 text-sm text-muted-foreground">
+                  {facts.map((fact, index) => (
+                    <li key={fact} className="flex items-center gap-3">
+                      {index > 0 ? (
+                        <span className="petal-dot" aria-hidden="true" />
+                      ) : null}
+                      <span>{fact}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
-          ) : null}
+          </div>
 
-          {/* Where to find the shop and how to reach it — the two facts a local
-              customer needs first. The service promises live in their own
-              section below rather than being repeated here. */}
-          <ul className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-5 text-sm text-muted-foreground">
-            <li className="flex items-center gap-2">
-              <MapPin className="size-4 shrink-0 text-rose" aria-hidden="true" />
-              <span className="font-medium text-foreground">{t("home.heroAddress")}</span>
-            </li>
-            <li>
-              <a
-                href={telHref(phone)}
-                dir="ltr"
-                className="-my-2 inline-flex min-h-11 items-center gap-2 rounded-sm py-2 font-semibold transition-colors hover:text-primary"
-              >
-                <Phone className="size-4 shrink-0" aria-hidden="true" />
-                <span className="sr-only">{t("common.callStore")}</span>
-                {phone}
-              </a>
-            </li>
-            <li>
-              <a
-                href={`https://wa.me/${property.social.whatsappPhone}`}
-                target="_blank"
-                rel="noreferrer"
-                className="-my-2 inline-flex min-h-11 items-center gap-2 rounded-sm py-2 font-semibold transition-colors hover:text-primary"
-              >
-                <MessageCircle className="size-4 shrink-0" aria-hidden="true" />
-                WhatsApp
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <div className="relative w-full">
-          {/* Capped against the viewport height as well as its width: an
-              uncapped 4:5 portrait made the hero taller than a laptop screen
-              and pushed the headline halfway down the page. */}
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[clamp(1.25rem,2.5vw,2rem)] bg-secondary sm:aspect-[16/10] lg:aspect-[4/5] lg:max-h-[min(34rem,calc(100svh-11rem))]">
-            <Image
-              src={property.heroImage ?? "/hero-florist-studio-storefront.webp"}
-              alt={storeName}
-              fill
-              sizes="(min-width: 1280px) 600px, (min-width: 1024px) 46vw, calc(100vw - 2rem)"
-              className="object-cover"
-              quality={85}
-              preload
+          <div className="relative min-h-72 overflow-hidden bg-secondary sm:min-h-96 lg:min-h-0">
+            <HeroArtwork
+              lightImage={lightImage}
+              darkImage={darkImage}
+              initialTheme={initialTheme}
             />
           </div>
         </div>

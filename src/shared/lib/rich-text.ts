@@ -88,3 +88,78 @@ export function hasRichTextContent(value: unknown): boolean {
   }
   return typeof value === "string" && value.trim().length > 0;
 }
+
+interface TiptapNode {
+  type?: string;
+  attrs?: Record<string, unknown>;
+  content?: TiptapNode[];
+  text?: string;
+}
+
+function mapNodes(
+  node: TiptapNode,
+  transform: (node: TiptapNode) => TiptapNode
+): TiptapNode {
+  const mapped = transform(node);
+  return Array.isArray(mapped.content)
+    ? { ...mapped, content: mapped.content.map((child) => mapNodes(child, transform)) }
+    : mapped;
+}
+
+function forEachNode(node: TiptapNode, visit: (node: TiptapNode) => void): void {
+  visit(node);
+  node.content?.forEach((child) => forEachNode(child, visit));
+}
+
+function headingLevel(node: TiptapNode): number | null {
+  if (node.type !== "heading") return null;
+  const level = node.attrs?.level;
+  return typeof level === "number" ? level : null;
+}
+
+/**
+ * Demotes an authored `h1` so the page keeps exactly one — the post title.
+ *
+ * The backend editor offers every heading level, so an author can open an
+ * article with an `h1` and produce a document with two top-level headings.
+ * Shifting *every* heading down by one keeps the relative outline the author
+ * wrote (an `h2` subsection stays subordinate to the `h1` above it) instead of
+ * flattening both into `h2`. `h6` has nowhere to go and stays put.
+ */
+export function demoteDocumentHeadings(document: unknown): unknown {
+  const node = document as TiptapNode | null;
+  if (!node || typeof node !== "object") return document;
+
+  let hasTopLevelHeading = false;
+  forEachNode(node, (candidate) => {
+    if (headingLevel(candidate) === 1) hasTopLevelHeading = true;
+  });
+
+  if (!hasTopLevelHeading) return document;
+
+  return mapNodes(node, (candidate) => {
+    const level = headingLevel(candidate);
+    return level === null
+      ? candidate
+      : { ...candidate, attrs: { ...candidate.attrs, level: Math.min(6, level + 1) } };
+  });
+}
+
+/**
+ * Words in a rich-text value. Whitespace-separated, which counts Persian and
+ * English alike — both scripts space their words.
+ */
+export function countRichTextWords(value: unknown): number {
+  const text = stringifyRichText(value).trim();
+  return text ? text.split(/\s+/).length : 0;
+}
+
+/**
+ * Whole minutes to read a rich-text value, floored at 1. 200 wpm is the usual
+ * silent-reading estimate; the figure is rounded because a reading time is a
+ * hint, not a measurement.
+ */
+export function estimateReadingMinutes(value: unknown): number {
+  const words = countRichTextWords(value);
+  return words > 0 ? Math.max(1, Math.round(words / 200)) : 0;
+}

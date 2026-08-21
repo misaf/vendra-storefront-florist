@@ -47,7 +47,13 @@ function createContactFormSchema(t: (key: string) => string) {
 
 type ContactFormValues = z.infer<ReturnType<typeof createContactFormSchema>>;
 
-export default function ContactClient({ contactInfo }: { contactInfo: ContactInfo }) {
+export default function ContactClient({
+  contactInfo,
+  initialSubject = "",
+}: {
+  contactInfo: ContactInfo;
+  initialSubject?: string;
+}) {
   const { t, locale } = useTranslations();
   const BrandIcon = useBrandIcon();
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -67,7 +73,7 @@ export default function ContactClient({ contactInfo }: { contactInfo: ContactInf
       name: "",
       email: "",
       phone: "",
-      subject: "",
+      subject: initialSubject,
       message: "",
     },
   });

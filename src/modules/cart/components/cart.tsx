@@ -5,24 +5,17 @@ import { useCart, type CartItem } from "../hooks/cart-context";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetFooter,
 } from "@/shared/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from "@/shared/components/ui/empty";
 import { Link } from "@/shared/i18n/navigation";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { useTranslations } from "@/shared/hooks/use-translations";
+import { formatRemainingQuantity } from "@/modules/products";
 
 import { SafeImage } from "@/shared/components/ui/safe-image";
 import { useBrandIcon } from "@/shared/property/use-brand-icon";
@@ -46,9 +39,10 @@ export function Cart() {
   } = useCart();
   const BrandIcon = useBrandIcon();
   const { t, locale } = useTranslations();
-  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [recentlyRemovedItem, setRecentlyRemovedItem] =
     useState<CartItem | null>(null);
+  const [recentlyClearedItems, setRecentlyClearedItems] =
+    useState<CartItem[] | null>(null);
   const numberFormat = new Intl.NumberFormat(locale);
 
   const handleUndoRemove = useCallback(() => {
@@ -61,8 +55,24 @@ export function Cart() {
   }, [recentlyRemovedItem, restoreCartItem, t]);
 
   const handleRemove = (item: CartItem) => {
+    setRecentlyClearedItems(null);
     setRecentlyRemovedItem(item);
     removeFromCart(item.id);
+  };
+
+  const handleClear = () => {
+    setRecentlyRemovedItem(null);
+    setRecentlyClearedItems(items);
+    clearCart();
+  };
+
+  const handleUndoClear = () => {
+    const clearedItems = recentlyClearedItems;
+    if (!clearedItems) return;
+
+    clearedItems.forEach(restoreCartItem);
+    setRecentlyClearedItems(null);
+    toast.success(t("common.cartRestored"));
   };
 
   return (
@@ -70,7 +80,10 @@ export function Cart() {
       open={isCartOpen}
       onOpenChange={(open) => {
         setCartOpen(open);
-        if (!open) setRecentlyRemovedItem(null);
+        if (!open) {
+          setRecentlyRemovedItem(null);
+          setRecentlyClearedItems(null);
+        }
       }}
     >
       <SheetContent
@@ -92,24 +105,31 @@ export function Cart() {
             <span className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground"><ShoppingBag className="h-5 w-5" /></span>
             <span>{t("common.shoppingCart")} <span className="text-base text-muted-foreground">({numberFormat.format(getTotalItems())})</span></span>
           </SheetTitle>
+          <SheetDescription className="sr-only">
+            {t("common.cartDrawerDescription")}
+          </SheetDescription>
         </SheetHeader>
 
-        {recentlyRemovedItem ? (
+        {recentlyRemovedItem || recentlyClearedItems ? (
           <div
             role="status"
             className="flex items-center justify-between gap-3 border-b border-border bg-secondary/60 px-5 py-2 sm:px-7"
           >
             <p className="store-dynamic-text line-clamp-2 text-sm text-muted-foreground" dir="auto">
-              {t("common.removedFromCart", {
-                name: recentlyRemovedItem.name,
-              })}
+              {recentlyRemovedItem
+                ? t("common.removedFromCart", {
+                    name: recentlyRemovedItem.name,
+                  })
+                : t("common.cartCleared")}
             </p>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               className="min-h-11 shrink-0 px-3 text-primary"
-              onClick={handleUndoRemove}
+              onClick={
+                recentlyRemovedItem ? handleUndoRemove : handleUndoClear
+              }
             >
               {t("common.undo")}
             </Button>
@@ -144,7 +164,13 @@ export function Cart() {
             </Empty>
           ) : (
             <div className="divide-y divide-border">
-              {items.map((item) => (
+              {items.map((item) => {
+                // The catalogue only tracks stock when it reports a count, so a
+                // null ceiling means "as many as you like", not "none left".
+                const atStockCeiling =
+                  item.stock != null && item.quantity >= item.stock;
+
+                return (
                 <div
                   key={item.id}
                   className="flex gap-4 py-5 first:pt-0 last:pb-0"
@@ -152,11 +178,13 @@ export function Cart() {
                   <Link
                     href={`/products/${createReadableResourcePath(item.id, item.slug)}`}
                     onClick={() => setCartOpen(false)}
+                    aria-hidden="true"
+                    tabIndex={-1}
                     className="relative h-24 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-secondary"
                   >
                     <SafeImage
-                      src={item.image}
-                      alt={item.name}
+                      src={item.thumbnail || item.image}
+                      alt=""
                       fill
                       sizes="80px"
                       className="object-contain p-1 transition-transform duration-300 hover:scale-[1.03]"
@@ -174,8 +202,11 @@ export function Cart() {
                           <bdi>{item.name}</bdi>
                         </Link>
                       </h3>
-                      <p className="text-sm text-muted-foreground" dir="ltr">
-                        {formatPrice(item.price, item.formattedPrice)}
+                      <p className="text-sm text-muted-foreground">
+                        <span className="sr-only">{t("common.unitPrice")}: </span>
+                        <span dir="ltr">
+                          {formatPrice(item.price, item.formattedPrice)}
+                        </span>
                       </p>
                     </div>
                     <div className="flex items-center justify-between">
@@ -183,7 +214,6 @@ export function Cart() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-11"
                           disabled={item.quantity <= 1}
                           aria-label={t("common.decreaseQuantity")}
                           onClick={() =>
@@ -198,7 +228,7 @@ export function Cart() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-11"
+                          disabled={atStockCeiling}
                           aria-label={t("common.increaseQuantity")}
                           onClick={() =>
                             updateQuantity(item.id, item.quantity + 1)
@@ -210,19 +240,33 @@ export function Cart() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-11 text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive"
                         aria-label={t("common.removeItem")}
                         onClick={() => handleRemove(item)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="text-sm font-medium text-card-foreground" dir="ltr">
-                      {formatPrice(Number(item.price) * item.quantity)}
+                    {/* Why the stepper stopped. Without it the + simply goes
+                        dead and the shopper is left guessing whether the button
+                        is broken or the shop is out. */}
+                    {atStockCeiling && item.stock != null ? (
+                      <p className="text-xs font-semibold text-primary">
+                        {formatRemainingQuantity(t, locale, item.stock)}
+                      </p>
+                    ) : null}
+                    <p className="text-sm font-medium text-card-foreground">
+                      <span className="text-muted-foreground">
+                        {t("common.lineTotal")}:{" "}
+                      </span>
+                      <span dir="ltr">
+                        {formatPrice(Number(item.price) * item.quantity)}
+                      </span>
                     </p>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -240,7 +284,7 @@ export function Cart() {
             <div className="grid w-full grid-cols-[auto_1fr] gap-2">
               <Button
                 variant="outline"
-                onClick={() => setConfirmClearOpen(true)}
+                onClick={handleClear}
                 className="px-5"
               >
                 {t("common.clearCart")}
@@ -255,31 +299,6 @@ export function Cart() {
         )}
       </SheetContent>
 
-      <Dialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
-        <DialogContent closeLabel={t("common.close")} className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t("common.clearCartTitle")}</DialogTitle>
-            <DialogDescription>{t("common.clearCartConfirm")}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-2">
-            <DialogClose asChild>
-              <Button variant="outline" className="flex-1">
-                {t("common.cancel")}
-              </Button>
-            </DialogClose>
-            <Button
-              variant="destructive"
-              className="flex-1"
-              onClick={() => {
-                clearCart();
-                setConfirmClearOpen(false);
-              }}
-            >
-              {t("common.clearCart")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Sheet>
   );
 }

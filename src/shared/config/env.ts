@@ -3,8 +3,15 @@
  *
  * Pure module — no `@/` alias imports, no React, no property lookup — so it can
  * be loaded from `next.config.ts` (which runs before the app's module graph
- * exists) as well as from runtime config. This is the single source of truth
- * for env precedence; everything else reads through these helpers.
+ * exists), from runtime config, and from a plain `node --test` run. This is the
+ * single source of truth for env precedence; everything else reads through
+ * these helpers.
+ *
+ * Every name below is server-only, deliberately. A `NEXT_PUBLIC_` variable is
+ * inlined into the browser bundle at build time, so a public alias for any of
+ * these would freeze one store's API host, storage host or canonical origin
+ * into the image the whole fleet shares. The browser needs none of them: reads
+ * go through the same-origin `/api/proxy` and `/api/storage` routes.
  */
 
 function normalizeBaseUrl(value: string): string {
@@ -23,19 +30,14 @@ function withApiSegment(value: string): string {
 
 /** Canonical API origin (with `/api` suffix), or null when unset. */
 export function resolveApiUrl(): string | null {
-  const value =
-    process.env.API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.VENDRA_API_URL ||
-    process.env.NEXT_PUBLIC_VENDRA_API_URL;
+  const value = process.env.API_BASE_URL || process.env.VENDRA_API_URL;
 
   return value ? withApiSegment(value) : null;
 }
 
 /** Media origin. Falls back to the API origin, which serves `/storage`. */
 export function resolveStorageUrl(): string | null {
-  const configured =
-    process.env.STORAGE_BASE_URL || process.env.NEXT_PUBLIC_STORAGE_BASE_URL;
+  const configured = process.env.STORAGE_BASE_URL;
 
   if (configured) return normalizeBaseUrl(configured);
 
@@ -45,7 +47,7 @@ export function resolveStorageUrl(): string | null {
 
 /** Public, canonical origin of the storefront (no trailing slash), or null. */
 export function resolveSiteUrl(): string | null {
-  const value = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL;
+  const value = process.env.SITE_URL;
   return value ? normalizeBaseUrl(value) : null;
 }
 

@@ -42,13 +42,32 @@ interface OrderContextType {
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
+/**
+ * A reference a customer can actually read back over the phone — the order date
+ * plus a short random tail — rather than the raw millisecond timestamp and
+ * nine-character base-36 blob this used to produce. It is shown on the
+ * confirmation screen and in order history, so it has to survive being written
+ * on a notepad.
+ */
+function createOrderReference(): string {
+  const now = new Date();
+  const datePart = [
+    String(now.getFullYear()).slice(2),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("");
+  const tail = Math.random().toString(36).slice(2, 6).toUpperCase();
+
+  return `${datePart}-${tail}`;
+}
+
 export function OrderProvider({ children }: { children: React.ReactNode }) {
   const [orders, setOrders] = usePersistentState<Order[]>("orders", []);
 
   const addOrder = (orderData: Omit<Order, "id" | "date">) => {
     const newOrder: Order = {
       ...orderData,
-      id: `order-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+      id: createOrderReference(),
       date: new Date().toISOString(),
     };
     setOrders((prevOrders) => [newOrder, ...prevOrders]);

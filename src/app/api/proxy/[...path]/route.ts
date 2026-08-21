@@ -7,6 +7,7 @@ import {
   getStorefrontKeyHeader,
 } from "@/shared/lib/config";
 import { createApiRequestHeaders, getNetworkErrorStatus } from "@/shared/lib/network";
+import { resolveUpstreamPath } from "@/shared/api/proxy-allowlist";
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -38,44 +39,54 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> }
 ) {
+  const params = await context.params;
+  const path = resolveUpstreamPath(params?.path);
+
+  if (!path) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const queryString = request.nextUrl.searchParams.toString();
+  const url = `${API_BASE_URL}/${path}${queryString ? `?${queryString}` : ""}`;
+
   try {
-    const params = await context.params;
-    const path = params?.path?.join("/");
-
-    if (!path) {
-      return NextResponse.json(
-        { error: "Invalid request parameters" },
-        { status: 400 }
-      );
-    }
-
-    const queryString = request.nextUrl.searchParams.toString();
-    const url = `${API_BASE_URL}/${path}${queryString ? `?${queryString}` : ""}`;
-
     const response = await fetch(url, {
       headers: createProxyHeaders(request),
       cache: "no-store",
     });
 
+    // The upstream status is the browser's to see — a 404 must stay a 404 so
+    // the client can render "not found" rather than a generic failure. The
+    // upstream *body* is not: it is written for an internal audience and can
+    // carry stack traces, SQL or tenant details, so it is logged and dropped.
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "No error details");
+      const details = await response.text().catch(() => "<unreadable>");
+      console.error(
+        `[Proxy] ${response.status} ${response.statusText} for ${path}: ${details}`
+      );
       return NextResponse.json(
-        {
-          error: `API error: ${response.status} ${response.statusText}`,
-          details: errorText,
-        },
+        { error: `Upstream request failed with status ${response.status}` },
         { status: response.status }
       );
     }
 
-    return NextResponse.json(await response.json());
+    const body = await response.text();
+
+    try {
+      return NextResponse.json(JSON.parse(body));
+    } catch {
+      console.error(`[Proxy] Non-JSON response for ${path}`);
+      return NextResponse.json(
+        { error: "Upstream returned a malformed response" },
+        { status: 502 }
+      );
+    }
   } catch (error) {
     console.error("[Proxy] Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const status = error instanceof Error ? getNetworkErrorStatus(error) : 500;
 
     return NextResponse.json(
-      { error: "Failed to proxy request to API", details: errorMessage },
+      { error: "Failed to reach the catalogue API" },
       { status }
     );
   }

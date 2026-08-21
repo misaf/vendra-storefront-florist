@@ -11,12 +11,12 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/shared/components/ui/command";
-import { fetchProductsWithDetails } from "@/modules/products";
+import { Price, fetchProductsWithDetails } from "@/modules/products";
 import type { Product } from "@/modules/products";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 import { Loader2 } from "lucide-react";
 import { SafeImage } from "@/shared/components/ui/safe-image";
-import { useFormatPrice } from "@/shared/property/use-format-price";
+import { DynamicText } from "@/shared/components/dynamic-text";
 
 /**
  * The search palette itself. Split out of the header trigger so cmdk and this
@@ -32,7 +32,6 @@ export default function SearchPanel({
   onOpenChange: (open: boolean) => void;
   onCloseAutoFocus?: (event: Event) => void;
 }) {
-  const formatPrice = useFormatPrice();
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -162,7 +161,7 @@ export default function SearchPanel({
               >
                 <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border">
                   <SafeImage
-                    src={product.image}
+                    src={product.thumbnail || product.image}
                     alt={product.name}
                     width={40}
                     height={40}
@@ -172,7 +171,7 @@ export default function SearchPanel({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="truncate text-sm font-medium leading-5">
-                    <bdi>{product.name}</bdi>
+                    <DynamicText>{product.name}</DynamicText>
                   </div>
                   {product.token ? (
                     <div
@@ -182,29 +181,20 @@ export default function SearchPanel({
                       {t("products.productToken")}: {product.token}
                     </div>
                   ) : null}
-                  <div className="mt-0.5 flex min-w-0 items-baseline gap-2 text-xs font-semibold leading-4" dir="ltr">
-                    {Number(product.price) > 0 && product.inStock !== false ? (
-                      <>
-                        <span
-                          className="truncate"
-                          aria-label={`${t(Number(product.originalPrice) > Number(product.price) ? "products.salePrice" : "products.priceLabel")}: ${formatPrice(product.price, product.formattedPrice)}`}
-                        >
-                          {formatPrice(product.price, product.formattedPrice)}
-                        </span>
-                        {Number(product.originalPrice) > Number(product.price) ? (
-                          <span
-                            className="min-w-0"
-                            aria-label={`${t("products.originalPrice")}: ${formatPrice(product.originalPrice, product.formattedOriginalPrice)}`}
-                          >
-                            <del
-                              aria-hidden="true"
-                              className="block truncate text-xs font-normal text-muted-foreground decoration-1"
-                            >
-                              {formatPrice(product.originalPrice, product.formattedOriginalPrice)}
-                            </del>
-                          </span>
-                        ) : null}
-                      </>
+                  <div className="mt-0.5 flex min-w-0 items-baseline gap-2 text-xs font-semibold leading-4">
+                    {product.inStock === false ? (
+                      <span className="truncate">
+                        {product.availableSoon
+                          ? t("products.backSoon")
+                          : t("products.outOfStock")}
+                      </span>
+                    ) : Number(product.price) > 0 ? (
+                      <Price
+                        product={product}
+                        size="sm"
+                        className="min-w-0"
+                        valueClassName="truncate"
+                      />
                     ) : (
                       <span className="truncate">{t("products.priceOnRequest")}</span>
                     )}

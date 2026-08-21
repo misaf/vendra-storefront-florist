@@ -1,0 +1,35 @@
+{
+  "slug": "development",
+  "domain": "localhost:3000",
+  "siteUrl": "http://localhost:3000",
+  "name": {
+    "en": "Storefront (development)",
+    "fa": "فروشگاه (توسعه)"
+  },
+  "businessType": "Store",
+  "priceCurrency": "IRR",
+  "address": {
+    "locality": "Localhost",
+    "country": "IR"
+  },
+  "contact": {
+    "mobilePhone": "0000-0000000",
+    "officePhone": "000-00000000",
+    "email": "dev@example.invalid",
+    "hoursOpen": "09:00",
+    "hoursClose": "18:00",
+    "mapQuery": "35.6892,51.3890"
+  },
+  "social": {
+    "whatsappPhone": "+000000000000",
+    "telegramUsername": "example",
+    "instagramUsername": "example"
+  },
+  "currency": {
+    "code": "IRR",
+    "label": {
+      "en": "IRR",
+      "fa": "تومان"
+    }
+  }
+}

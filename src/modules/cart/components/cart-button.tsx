@@ -18,7 +18,7 @@ export function CartButton() {
     <Button
       variant="ghost"
       size="icon"
-      className="relative size-11"
+      className="relative"
       onClick={openCart}
       aria-label={
         hydrated && totalItems > 0
@@ -30,7 +30,11 @@ export function CartButton() {
       {hydrated && totalItems > 0 && (
         <Badge
           variant="destructive"
-          className="absolute -top-1 -end-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs"
+          /* A pill floored at 20px rather than locked to it: "99+" never fitted
+             a fixed 20px circle at `p-0`, and the count still has to stay
+             readable when the shopper has raised their font size. The badge is
+             absolutely positioned, so growing costs the header row nothing. */
+          className="absolute -top-1 -end-1 flex min-h-[20px] min-w-[20px] items-center justify-center rounded-full px-1 text-xs leading-none"
         >
           {totalItems > 99 ? `${displayCount}+` : displayCount}
         </Badge>

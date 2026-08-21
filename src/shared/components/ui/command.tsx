@@ -81,13 +81,16 @@ function CommandInput({
   return (
     <div
       data-slot="command-input-wrapper"
-      className="flex h-9 items-center gap-2 border-b px-3"
+      /* The dialog's 44px close button occupies the trailing corner. Reserve
+         that space logically so a long LTR or RTL query never runs underneath
+         the button while it remains immediately discoverable. */
+      className="flex h-12 items-center gap-2 border-b ps-3 pe-12"
     >
       <SearchIcon className="size-4 shrink-0 opacity-50" />
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          "placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+          "placeholder:text-muted-foreground store-focus-inset flex h-11 w-full rounded-md bg-transparent py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
         {...props}

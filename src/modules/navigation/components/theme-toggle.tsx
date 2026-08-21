@@ -5,12 +5,21 @@ import { Button } from "@/shared/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslations } from "@/shared/hooks/use-translations";
+import { writeStorefrontThemeCookie } from "@/shared/lib/theme";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const { t } = useTranslations();
   const [mounted, setMounted] = useState(false);
   const isLightTheme = resolvedTheme !== "dark";
+
+  function toggleTheme() {
+    const nextTheme = isLightTheme ? "dark" : "light";
+    // Write before changing React state so an immediate refresh agrees with
+    // the artwork and class selected by next-themes.
+    writeStorefrontThemeCookie(nextTheme);
+    setTheme(nextTheme);
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -20,8 +29,7 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      className="size-11"
-      onClick={() => setTheme(isLightTheme ? "dark" : "light")}
+      onClick={toggleTheme}
       aria-label={t("common.toggleTheme")}
       aria-pressed={mounted ? !isLightTheme : undefined}
     >

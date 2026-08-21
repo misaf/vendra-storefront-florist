@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
 import type { JSONContent } from "@tiptap/core";
-import { hasRenderableTiptap, parseTiptapDocument } from "@/shared/lib/rich-text";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import {
+  demoteDocumentHeadings,
+  hasRenderableTiptap,
+  parseTiptapDocument,
+} from "@/shared/lib/rich-text";
 import { renderToReactElement } from "@tiptap/static-renderer/pm/react";
+import type { NodeProps } from "@tiptap/static-renderer";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
 import TiptapImage from "@tiptap/extension-image";
@@ -68,6 +74,38 @@ const TIPTAP_RENDER_EXTENSIONS = [
   TableCell,
 ];
 
+function renderTableCell(
+  Tag: "td" | "th"
+): (props: NodeProps<ProseMirrorNode, ReactNode | ReactNode[]>) => ReactNode {
+  return ({ node, children }) => {
+    const colSpan =
+      typeof node.attrs.colspan === "number" ? node.attrs.colspan : undefined;
+    const rowSpan =
+      typeof node.attrs.rowspan === "number" ? node.attrs.rowspan : undefined;
+    const align = ["left", "right", "center"].includes(node.attrs.align)
+      ? (node.attrs.align as "left" | "right" | "center")
+      : undefined;
+    const colwidth = Array.isArray(node.attrs.colwidth)
+      ? node.attrs.colwidth.join(",")
+      : undefined;
+
+    // TipTap's generic React renderer currently forwards the HTML spellings
+    // `colspan` and `rowspan`, which React rejects and reports on every rich
+    // table. This explicit mapping keeps authored spans, widths and alignment
+    // while emitting React's correct DOM property names.
+    return (
+      <Tag
+        colSpan={colSpan}
+        rowSpan={rowSpan}
+        data-colwidth={colwidth}
+        style={align ? { textAlign: align } : undefined}
+      >
+        {children}
+      </Tag>
+    );
+  };
+}
+
 /**
  * Type scale for the surface the copy sits on. The structural rules (links,
  * code, tables, lists, media) are shared across all three; see `.rich-text` in
@@ -98,12 +136,32 @@ export function RichText({
   const tiptapDocument = parseTiptapDocument(content) as JSONContent | null;
 
   if (tiptapDocument && hasRenderableTiptap(tiptapDocument)) {
+    // On an article the page already owns the `h1`, so an authored one is
+    // demoted rather than rendered as a second top-level heading.
+    const document =
+      density === "article"
+        ? (demoteDocumentHeadings(tiptapDocument) as JSONContent)
+        : tiptapDocument;
+
     let rendered: ReactNode = null;
     try {
       rendered = renderToReactElement({
-        content: tiptapDocument,
+        content: document,
         extensions: TIPTAP_RENDER_EXTENSIONS,
         staticEditorOptions: { textDirection: "auto" },
+        options: {
+          nodeMapping: {
+            tableCell: renderTableCell("td"),
+            tableHeader: renderTableCell("th"),
+          },
+          // A node or mark the editor enables before this file learns about it
+          // otherwise throws, and the catch below would blank the *entire*
+          // article. Degrading to the node's children keeps the copy readable
+          // — one paragraph loses its styling instead of the page losing its
+          // content.
+          unhandledNode: ({ children }) => <>{children}</>,
+          unhandledMark: ({ children }) => <>{children}</>,
+        },
       });
     } catch {
       rendered = null;

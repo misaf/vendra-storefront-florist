@@ -10,9 +10,10 @@ import { Button } from "@/shared/components/ui/button";
 import { useCart } from "@/modules/cart";
 import { cn, normalizeImageUrl } from "@/shared/lib/utils";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
-import { useFormatPrice } from "@/shared/property/use-format-price";
 import { formatRemainingQuantity, isLowStock } from "../lib/format";
+import { Price, getDiscountPercent } from "./price";
 import type { Product } from "../types";
+import { DynamicText } from "@/shared/components/dynamic-text";
 
 type Translate = (key: string, values?: Record<string, string | number>) => string;
 
@@ -47,7 +48,6 @@ export function ProductCard({
   showCategory = false,
   className,
 }: ProductCardProps) {
-  const formatPrice = useFormatPrice();
   const { addToCart, openCart } = useCart();
   const [hasImageError, setHasImageError] = useState(false);
 
@@ -58,14 +58,7 @@ export function ProductCard({
   const hasPrice = price > 0;
   const isPurchasable = inStock && hasPrice;
   const hasDiscount = isPurchasable && originalPrice > price;
-  const discountPercent = hasDiscount
-    ? Math.round(((originalPrice - price) / originalPrice) * 100)
-    : 0;
-  const displayPrice = formatPrice(product.price, product.formattedPrice);
-  const displayOriginalPrice = formatPrice(
-    product.originalPrice,
-    product.formattedOriginalPrice
-  );
+  const discountPercent = hasDiscount ? getDiscountPercent(product) : 0;
   const isLowQuantity = isLowStock(product);
   // A sold-out product the shop expects back reads differently from one that
   // is simply gone, and the difference decides whether a customer waits.
@@ -88,22 +81,44 @@ export function ProductCard({
           !inStock && "opacity-90"
         )}
       >
-        {/* The link fills the clipped image frame, so its focus indicator is
-            drawn inside — a 3px outset outline would be cut off by the frame. */}
+        {/* A second route to the same product for a pointer, and nothing at all
+            for anyone else: `tabIndex={-1}` keeps it out of the tab order and
+            `aria-hidden` out of the accessibility tree, so a keyboard user gets
+            one stop per card instead of two and a screen reader hears the
+            product name once instead of twice. The picture's `alt` is empty for
+            the same reason — the title link below carries the name. (Twelve
+            cards were producing twenty-four links to twelve destinations.)
+            The link still fills the clipped frame, so its focus indicator would
+            be drawn inside; it simply never takes focus now. */}
         <Link
           href={detailHref}
+          aria-hidden="true"
+          tabIndex={-1}
           className="store-focus-inset block h-full w-full rounded-xl"
         >
           {hasImageError ? (
             <ProductImageFallback label={t("products.imageUnavailable")} />
           ) : (
             <ThemedProductImage
-              src={normalizeImageUrl(product.image)}
-              alt={product.name}
+              /* The card-sized rendition. `image` is the gallery one — a
+                 ~1.5MB original that this 130-330px tile never needed. */
+              src={normalizeImageUrl(product.thumbnail || product.image)}
+              alt=""
               width={480}
               height={600}
               sizes={sizes}
-              className="h-full w-full object-contain p-3 transition-transform duration-500 group-hover:scale-[1.035] sm:p-4"
+              /* `contain`, not `cover`: a bouquet cropped to fill loses its
+                 stems or its vase.
+                 The 4:5 frame is measured, not assumed. Across 113 catalogue
+                 photographs the shapes are 3:4 (70), taller portrait (14),
+                 square (24) and 4:3 (5); mean fill under `contain` is 0.90 in a
+                 3:4 frame, 0.874 in this one and 0.788 in a square. 4:5 is
+                 within three points of the best fit and keeps the card shorter,
+                 so more of the grid stays above the fold.
+                 What was actually costing the picture room was the padding that
+                 used to sit here: `contain` already insets the image, and the
+                 padding then shrank it again inside its own letterbox. */
+              className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.035]"
               unoptimized
               loading={eager ? "eager" : "lazy"}
               onError={() => setHasImageError(true)}
@@ -128,9 +143,17 @@ export function ProductCard({
         {/* <bdi> isolates a name written in the other script so it orders
             correctly, while the card keeps the page's own alignment — dir="auto"
             on the block pushed Persian titles to the far edge of an LTR grid. */}
+        {/* Muted, not rose. The category is context for the name above the
+            price; rose is the card's one accent and the stock warning below
+            needs it more. Two rose lines stacked made neither one read.
+            Set in the catalogue's own casing rather than uppercased: at 320px
+            a two-up tile is ~135px wide and "FLORAL ARRANGEMENTS" clipped to
+            "FLORAL…", which reads as a fault. The same words in sentence case
+            fit, and the muted weight still separates the line from the title
+            below it. */}
         {showCategory && product.category ? (
-          <p className="store-dynamic-text line-clamp-1 text-xs font-semibold text-rose">
-            <bdi>{product.category}</bdi>
+          <p className="store-dynamic-text line-clamp-1 text-xs font-semibold tracking-wide text-muted-foreground">
+            <DynamicText>{product.category}</DynamicText>
           </p>
         ) : null}
         <h3 className="store-dynamic-text text-sm font-semibold leading-6 sm:text-base">
@@ -138,9 +161,13 @@ export function ProductCard({
             href={detailHref}
             className="-my-1 line-clamp-2 rounded-sm py-1 transition-colors hover:text-rose"
           >
-            <bdi>{product.name}</bdi>
+            <DynamicText>{product.name}</DynamicText>
           </Link>
         </h3>
+        {/* Inside the growth block on purpose: this line exists on a minority
+            of cards, and hanging it between the price and the button pushed
+            those cards' prices off the baseline the rest of the row sits on —
+            which is the one alignment a grid built for comparison needs. */}
         {isLowQuantity ? (
           <p className="truncate text-xs font-semibold leading-4 text-rose">
             {formatRemainingQuantity(t, locale, product.quantity as number)}
@@ -150,34 +177,14 @@ export function ProductCard({
 
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
         {inStock && hasPrice ? (
-          <>
-            <span
-              dir="ltr"
-              className="text-base font-bold leading-6 tabular-nums text-foreground"
-              aria-label={`${t(hasDiscount ? "products.salePrice" : "products.priceLabel")}: ${displayPrice}`}
-            >
-              {displayPrice}
-            </span>
-            {hasDiscount ? (
-              <span
-                dir="ltr"
-                aria-label={`${t("products.originalPrice")}: ${displayOriginalPrice}`}
-              >
-                <del
-                  aria-hidden="true"
-                  className="text-sm font-medium tabular-nums text-muted-foreground decoration-1"
-                >
-                  {displayOriginalPrice}
-                </del>
-              </span>
-            ) : null}
-          </>
+          <Price product={product} showDiscount={hasDiscount} />
         ) : (
           <span className="text-sm font-semibold leading-6 text-muted-foreground">
             {inStock ? t("products.priceOnRequest") : outOfStockLabel}
           </span>
         )}
       </div>
+
 
       {showAddToCart ? (
         <div className="mt-3">

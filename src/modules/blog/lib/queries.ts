@@ -3,7 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ApiClientError, apiClient } from "@/shared/api/client";
 import { getLocalizedValue } from "@/shared/api/localized";
 import { createApiQueryOptions, type ApiQueryOptions } from "@/shared/api/query-client";
-import { PLACEHOLDER_IMAGE, buildMediaUrl } from "@/shared/lib/image";
+import {
+  MEDIA_SIZE_CARD,
+  PLACEHOLDER_IMAGE,
+  buildMediaUrl,
+  type MediaSize,
+} from "@/shared/lib/image";
 import { getLeadingResourceId } from "@/shared/lib/slug-url";
 import { stringifyRichText, stripHtml } from "@/shared/lib/rich-text";
 import { parseNumericId } from "@/shared/lib/utils";
@@ -73,20 +78,26 @@ function getPagination(
   };
 }
 
-function buildImageUrl(media?: PostMedia | null): string | null {
+function buildImageUrl(
+  media?: PostMedia | null,
+  size?: MediaSize
+): string | null {
   if (!media) return null;
-  return buildMediaUrl({
-    url: media.url,
-    uuid: media.uuid,
-    fileName: media.fileName ?? media.file_name,
-    name: media.name,
-    conversions: media.generatedConversions ?? media.generated_conversions,
-  });
+  return buildMediaUrl(
+    {
+      url: media.url,
+      uuid: media.uuid,
+      fileName: media.fileName ?? media.file_name,
+      name: media.name,
+      conversions: media.generatedConversions ?? media.generated_conversions,
+    },
+    size
+  );
 }
 
-function getFirstRelatedImage(post: PostDto): string {
+function getFirstRelatedImage(post: PostDto, size?: MediaSize): string {
   const media = getFirstRelationship(post.multimedia ?? post.media);
-  return buildImageUrl(media) ?? "";
+  return buildImageUrl(media, size) ?? "";
 }
 
 export function transformPost(
@@ -111,12 +122,16 @@ export function transformPost(
     excerpt,
     slug: getLocalizedValue(post.slug, locale) ?? "",
     image: getFirstRelatedImage(post),
+    // The index and related grids draw at a fraction of the lead image's size.
+    thumbnail: getFirstRelatedImage(post, MEDIA_SIZE_CARD),
     // Blog posts carry no separate publication date; creation is the closest
     // equivalent the API exposes.
     publishedAt: post.createdAt,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     category: category?.name ?? reference?.label ?? undefined,
+    categorySlug: category?.slug || undefined,
+    status: post.active,
   };
 }
 
@@ -230,6 +245,10 @@ async function fetchPostCollection(
 function createPostQueryParams(page: number, perPage: number): URLSearchParams {
   const queryParams = createPageQueryParams(page, perPage);
   queryParams.append("include", "multimedia");
+  // Drafts are a console state, not a storefront one. The filter takes 1/0 —
+  // `true` is rejected as a validation error. Categories are filtered the same
+  // way below, client-side, because that collection has no such parameter.
+  queryParams.append("active", "1");
   return queryParams;
 }
 
@@ -278,7 +297,17 @@ async function fetchPostById(
       loadPostCategoryLookup(locale),
     ]);
     const post = getFirstResource(response.data);
-    return post ? transformPost(post, locale, categories) : null;
+
+    if (!post) {
+      return null;
+    }
+
+    const transformed = transformPost(post, locale, categories);
+
+    // Fetching by id bypasses the collection's `active` filter, so an
+    // unpublished post would still render at a guessed URL. Absent means
+    // "the API didn't say", which is not the same as "draft".
+    return transformed.status === false ? null : transformed;
   } catch (error) {
     if (error instanceof ApiClientError && error.status === 404) return null;
     throw error;
@@ -300,7 +329,15 @@ export async function fetchPost(
     return fetchPostById(resourceId, locale);
   }
 
+  // Every link the storefront writes puts the id ahead of the slug, so this
+  // walk only serves bare-slug URLs arriving from outside. The collection's own
+  // `slug` filter looks like the obvious shortcut and is not: it only matches
+  // when Accept-Language is a bare code, and this client sends a q-list, so it
+  // answers 0 for every slug. Scanning the collection is what actually works.
   const perPage = 100;
+  // A ceiling on an API-supplied page count, so a mistyped URL can never turn
+  // into an unbounded request loop against a large archive.
+  const maxPages = 20;
   let page = 1;
   let lastPage = 1;
 
@@ -318,7 +355,7 @@ export async function fetchPost(
       return (await fetchPostById(post.id, locale)) ?? post;
     }
 
-    lastPage = result.pagination.lastPage;
+    lastPage = Math.min(result.pagination.lastPage, maxPages);
     page += 1;
   } while (page <= lastPage);
 

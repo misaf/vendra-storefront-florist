@@ -9,16 +9,13 @@ export const SITE_NAME: Record<Locale, string> = Object.fromEntries(
 ) as Record<Locale, string>;
 
 /**
- * Property social-share image fallback, or `null` when none is configured.
+ * Property social-share image, or `null` when none is configured.
  *
- * Vendra's console sends `ogImage: ""` rather than omitting the key when a
- * property has no share image, so an empty value is a normal input, not a
- * misconfiguration — treat it as "unset" and fall back.
+ * Social crawlers do not share the visitor's interactive color preference, so
+ * theme-specific hero artwork is intentionally not part of this fallback.
+ * Vendra may send `ogImage: ""`; treat that as an unset optional value.
  */
-export const DEFAULT_OG_IMAGE =
-  getProperty().ogImage?.trim() ||
-  getProperty().heroImage?.trim() ||
-  null;
+export const DEFAULT_OG_IMAGE = getProperty().ogImage?.trim() || null;
 
 /** Currency used in Product JSON-LD offers (ISO 4217). */
 export const PRICE_CURRENCY = getProperty().priceCurrency;

@@ -6,4 +6,4 @@ hooks, and FAQ types.
 Import from `@/modules/faq` outside this module. Contact may use the public
 `useFaqs` hook through the module barrel; do not hardcode FAQ content.
 
-Route composition for the FAQ page lives in `src/themes/default/pages/`.
+Route composition for the FAQ page lives in `src/app/[locale]/faq/page.tsx`.

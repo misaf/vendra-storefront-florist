@@ -89,6 +89,8 @@ export interface ProductCategoryDto extends ApiResource {
   slug: LocalizedValue<string>;
   position: number;
   active: boolean;
+  /** Product references the catalogue embeds on the category resource. */
+  products?: ResourceReference[];
   createdAt?: string;
   updatedAt?: string;
   updated_at?: string;
@@ -114,6 +116,8 @@ export interface Product {
   originalPrice?: number;
   formattedOriginalPrice?: string;
   image: string;
+  /** The card-sized rendition of `image`, for grids, rails and the palette. */
+  thumbnail?: string;
   images?: string[];
   description: string;
   richDescription?: unknown;
@@ -141,12 +145,20 @@ export interface ProductCategory {
   status: boolean;
   updated_at?: string;
   image?: string;
+  /**
+   * How many products the category holds, from the references the API embeds on
+   * the category resource — it matches the catalogue's own `total` for the same
+   * filter, so it costs no extra request to show.
+   */
+  productCount: number;
 }
 
 export interface FetchProductsParams {
   page?: number;
   perPage?: number;
   category?: string;
+  /** Exact catalogue stock state, mapped to Vendra's `inStock` filter. */
+  inStock?: boolean;
   locale?: string;
   search?: string;
   slug?: string;

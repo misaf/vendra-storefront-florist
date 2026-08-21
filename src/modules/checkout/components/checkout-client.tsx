@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
 import {
@@ -83,8 +83,8 @@ function createCheckoutFormSchema(t: (key: string) => string) {
         },
         t("checkout.zipCodeInvalid")
       ),
-    // Country is filled by pinning the map, never typed by hand.
-    country: z.string().trim().min(1, t("checkout.pinRequired")),
+    // Pinning the map fills this in, but it stays typeable: see the field.
+    country: z.string().trim().min(1, t("checkout.countryRequired")),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
   });
@@ -95,7 +95,7 @@ type CheckoutFormValues = z.infer<ReturnType<typeof createCheckoutFormSchema>>;
 export default function CheckoutClient() {
   const formatPrice = useFormatPrice();
   const router = useRouter();
-  const { items, getTotalPrice, clearCart, openCart } = useCart();
+  const { items, getTotalPrice, getTotalItems, clearCart, openCart } = useCart();
   const { addOrder } = useOrders();
   const { t, locale } = useTranslations();
   const property = useProperty();
@@ -137,8 +137,6 @@ export default function CheckoutClient() {
     [form]
   );
 
-  const detectedCountry = form.watch("country");
-
   const shippingFee = property.checkout?.shippingFee ?? 10.0;
   const taxRate = property.checkout?.taxRate ?? 0.1;
 
@@ -147,12 +145,18 @@ export default function CheckoutClient() {
     [getTotalPrice, shippingFee, taxRate]
   );
 
-  const onSubmit = async (values: CheckoutFormValues) => {
+  /**
+   * There is no order endpoint in the catalogue API. This step therefore saves
+   * an order request locally; the next screen clearly requires the buyer to
+   * send its details to the shop over WhatsApp or call. It must never imply
+   * that an unsent browser-only record has reached the florist.
+   *
+   * This deliberately no longer waits two seconds on a `setTimeout` dressed up
+   * as a network call: it delayed every buyer by two seconds to imitate work
+   * that was not happening, and its `catch` could never fire.
+   */
+  const onSubmit = (values: CheckoutFormValues) => {
     try {
-      // Submit the order request (no online payment — handled offline/on contact)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Save order to order history
       addOrder({
         items,
         ...totals,
@@ -160,7 +164,6 @@ export default function CheckoutClient() {
         shippingAddress: values,
       });
 
-      // Clear cart and redirect to success page
       clearCart();
       router.push("/checkout/success");
     } catch (error) {
@@ -218,32 +221,63 @@ export default function CheckoutClient() {
     <PageShell showFooter={false}>
       {/* Checkout Content */}
       <div className="store-container pb-16 pt-8 sm:pb-24 sm:pt-12">
-        <button
-          type="button"
-          onClick={openCart}
-          className="-ms-2 mb-4 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <ArrowLeft className="size-4 rtl:rotate-180" />
-          {t("common.backToCart")}
-        </button>
-        <p className="store-eyebrow mb-3">{t("checkout.orderSummary")}</p>
+        {/* The back control needs its own line: `.store-eyebrow` is
+            `inline-flex`, so an eyebrow following an inline-flex button ran up
+            beside it instead of sitting above the title. The eyebrow that used
+            to be here is gone as well — it read "Order Summary", which is the
+            heading of the card in the right-hand column, so the page announced
+            one thing and titled itself another. */}
+        <div className="mb-4 hidden lg:block">
+          <button
+            type="button"
+            onClick={openCart}
+            className="-ms-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <ArrowLeft className="size-4 rtl:rotate-180" />
+            {t("common.backToCart")}
+          </button>
+        </div>
         <h1 className="store-page-title mb-8 text-foreground sm:mb-10">
           {t("checkout.title")}
         </h1>
 
+        <button
+          type="button"
+          onClick={openCart}
+          aria-label={`${t("common.viewCart")}: ${formatPrice(total)}`}
+          className="mb-7 flex min-h-16 w-full items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3 text-start transition-colors hover:bg-secondary lg:hidden"
+        >
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-foreground">
+              {t("checkout.orderSummary")}
+            </span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              {t("common.itemsCount", { count: getTotalItems() })}
+            </span>
+          </span>
+          <span className="shrink-0 text-end">
+            <span className="block font-bold text-foreground" dir="ltr">
+              {formatPrice(total)}
+            </span>
+            <span className="mt-0.5 block text-xs font-semibold text-primary">
+              {t("common.viewCart")}
+            </span>
+          </span>
+        </button>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isSubmitting} className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.75fr)] lg:gap-12">
+          <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isSubmitting} className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.75fr)] lg:gap-12">
             {/* Left Column - Forms */}
-            <div className="space-y-6">
+            <div className="min-w-0 space-y-6">
               {/* Shipping Information */}
-              <Card className="border-0 bg-card/65 shadow-none">
+              <Card className="min-w-0 overflow-hidden border-0 bg-card/65 shadow-none">
                 <CardHeader>
-                  <CardTitle className="font-display flex items-center gap-3 text-xl">
+                  <h2 className="font-display flex items-center gap-3 text-xl font-semibold leading-none">
                     <span className="flex size-9 items-center justify-center rounded-full bg-secondary text-primary">
                       <MapPin className="h-5 w-5" />
                     </span>
                     {t("checkout.shippingInformation")}
-                  </CardTitle>
+                  </h2>
                   <p className="text-xs leading-5 text-muted-foreground">
                     {t("checkout.requiredFieldsHint")}
                   </p>
@@ -390,8 +424,12 @@ export default function CheckoutClient() {
                       )}
                     />
                   </div>
-                  {/* Country is read-only — it comes from the pinned map, not
-                      the keyboard. */}
+                  {/* Pinning the map fills this in, and it is still typeable.
+                      It used to be `readOnly`, which made the one required
+                      field on the form impossible to satisfy by hand — so a
+                      failed tile load, a rate-limited geocoder or a blocked
+                      third-party request left the buyer with a checkout that
+                      could never be submitted and no way to see why. */}
                   <FormField
                     control={form.control}
                     name="country"
@@ -400,13 +438,10 @@ export default function CheckoutClient() {
                         <FormLabel>{t("checkout.country")}</FormLabel>
                         <FormControl>
                           <Input
-                            {...field}
-                            value={detectedCountry}
+                            autoComplete="country-name"
                             placeholder={t("checkout.countryFromMap")}
-                            readOnly
-                            aria-readonly="true"
                             aria-required="true"
-                            className="bg-secondary/50 text-foreground read-only:cursor-default"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -418,16 +453,16 @@ export default function CheckoutClient() {
             </div>
 
             {/* Right Column - Order Summary */}
-            <div>
-              <Card className="store-sticky overflow-hidden border-0 bg-storefront-brand pt-0 text-storefront-brand-foreground shadow-xl shadow-storefront-brand/20">
+            <div className="min-w-0">
+              <Card className="store-sticky min-w-0 overflow-hidden border-0 bg-storefront-brand pt-0 text-storefront-brand-foreground shadow-xl shadow-storefront-brand/20">
                 <div aria-hidden="true" className="h-1.5 w-full bg-rose" />
                 <CardHeader>
-                  <CardTitle className="font-display flex items-center gap-3 text-2xl text-storefront-brand-foreground">
+                  <h2 className="font-display flex items-center gap-3 text-2xl font-semibold leading-none text-storefront-brand-foreground">
                     <span className="flex size-9 items-center justify-center rounded-full bg-storefront-brand-foreground text-storefront-brand">
                       <ShoppingBag className="h-5 w-5" />
                     </span>
                     {t("checkout.orderSummary")}
-                  </CardTitle>
+                  </h2>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">

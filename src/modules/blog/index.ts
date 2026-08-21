@@ -1,4 +1,5 @@
 export { default as BlogPostsClient } from "./components/blog-client";
+export { BlogPageSkeleton } from "./components/blog-page-skeleton";
 export { BlogPostCard } from "./components/blog-post-card";
 export { BlogSection } from "./components/blog-section";
 export { FeaturedBlogPostCard } from "./components/featured-blog-post-card";

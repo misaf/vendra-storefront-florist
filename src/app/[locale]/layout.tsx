@@ -17,6 +17,7 @@ import { ApiQueryProvider } from "@/shared/api/query-client";
 import { getSiteUrl } from "@/shared/lib/config";
 import { getProperty } from "@/shared/property";
 import { PropertyProvider } from "@/shared/property/property-provider";
+import { getRequestTheme } from "@/shared/lib/theme-server";
 import {
   SITE_NAME,
   buildMetadata,
@@ -33,7 +34,9 @@ const geist = Geist({
 const vazirmatn = Vazirmatn({
   variable: "--font-vazirmatn",
   subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  // Only what the storefront actually sets. 800 was requested and never
+  // used — one extra font file per subset on the default locale's critical path.
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -90,6 +93,7 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
   const direction = getDirection(locale);
+  const requestTheme = await getRequestTheme();
 
   const localeClassName = locale === "fa" ? "locale-fa" : "locale-en";
 
@@ -104,7 +108,7 @@ export default async function LocaleLayout({
         <JsonLd data={[organizationSchema(locale), websiteSchema(locale)]} />
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme={requestTheme}
           enableSystem
           disableTransitionOnChange
         >

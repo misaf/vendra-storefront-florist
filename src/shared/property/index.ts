@@ -1,4 +1,4 @@
-import { propertyConfig, propertyMessages } from "@/generated/property";
+import developmentConfig from "../../../config/storefront.development.json";
 import { routing } from "@/shared/i18n/routing";
 import type { PropertyConfig, PropertyMessages } from "@/shared/property/types";
 import { isPropertyConfig } from "@/shared/property/validation";
@@ -14,6 +14,13 @@ export type {
   PropertyTrustSeal,
 } from "@/shared/property/types";
 
+/**
+ * The store this container serves, as supplied by Vendra at startup.
+ *
+ * This is the only path production uses. One image serves every store, so the
+ * identity cannot be built in — it arrives base64-encoded in the environment and
+ * is validated against `config/storefront.schema.json` before anything reads it.
+ */
 function runtimeProperty(): PropertyConfig | null {
   const encoded = process.env.STOREFRONT_CONFIG_BASE64?.trim();
 
@@ -35,25 +42,30 @@ function runtimeProperty(): PropertyConfig | null {
   }
 }
 
-function bundledProperty(): PropertyConfig {
-  // One image serves the whole fleet, so a production container with no runtime
-  // configuration would silently serve whichever property happened to be bundled
-  // at build time — another tenant's brand, under this tenant's domain. Refusing
-  // to boot is the lesser failure.
-  //
-  // The build itself is exempt: `next build` runs with NODE_ENV=production and
-  // legitimately has no runtime config, since the image is built once for every
-  // property. Only a running container must insist on one.
+/**
+ * The development fixture, so a fresh clone runs with `npm run dev` alone.
+ *
+ * It is deliberately the same shape as the runtime blob — decode
+ * `STOREFRONT_CONFIG_BASE64` and you get this document — so development
+ * exercises the production code path rather than a parallel one.
+ *
+ * Production never reaches it: a container with no runtime configuration would
+ * otherwise serve the fixture's brand under a real store's domain, so refusing
+ * to boot is the lesser failure. The build itself is exempt — `next build` runs
+ * with NODE_ENV=production and legitimately has no store, because the image is
+ * built once for the whole fleet.
+ */
+function fallbackProperty(): PropertyConfig {
   const isBuild = process.env.NEXT_PHASE === "phase-production-build";
 
   if (process.env.NODE_ENV === "production" && !isBuild) {
     throw new Error(
-      "STOREFRONT_CONFIG_BASE64 is not set. A production storefront must be " +
-        "configured at runtime; see DEPLOYMENT.md."
+      "STOREFRONT_CONFIG_BASE64 is not set. A production storefront is " +
+        "configured at runtime by Vendra; see README.md."
     );
   }
 
-  return propertyConfig;
+  return developmentConfig as PropertyConfig;
 }
 
 const runtime = runtimeProperty();
@@ -61,36 +73,37 @@ const runtime = runtimeProperty();
 let resolved: PropertyConfig | null = null;
 
 /**
- * Runtime property configuration, falling back to the bundled example locally.
+ * The active store configuration.
  *
  * Resolved on first call rather than at module scope. Evaluating it eagerly made
  * merely *importing* this module throw, and it is reachable from the browser
- * bundle through ordinary shared helpers — `cn()` in @/shared/lib/utils, and
- * @/shared/api/client via @/shared/lib/config. Neither reads the property in the
- * browser (api/client calls the property-dependent getters only when
- * `typeof window === "undefined"`), but the import alone was enough: the page
- * died at module evaluation with "STOREFRONT_CONFIG_BASE64 is not set", which no
- * amount of runtime configuration could fix.
+ * bundle through ordinary shared helpers — `@/shared/api/client` pulls it in via
+ * `@/shared/lib/config`. The client never reads it (api/client calls the
+ * property-dependent getters only when `typeof window === "undefined"`), but the
+ * import alone was enough: the page died at module evaluation with
+ * "STOREFRONT_CONFIG_BASE64 is not set", which no runtime configuration fixed.
  *
  * Client components must not call this — the variable does not exist in the
  * browser, so it would throw there however the container is configured. Read the
- * property from `useProperty()`, which serves the same config through context.
+ * store from `useProperty()`, which serves the same config through context.
  */
 export function getProperty(): PropertyConfig {
-  resolved ??= runtime ?? bundledProperty();
+  resolved ??= runtime ?? fallbackProperty();
 
   return resolved;
 }
 
 /**
- * Per-locale message overrides for the active property.
+ * Per-locale message overrides for the active store, deep-merged over the
+ * brand-neutral base catalogue in `messages/`.
  *
- * A runtime property carries its own inside the encoded config; a build-time one
- * reads `properties/<slug>/messages/`. Either way an unconfigured key falls
- * through to the brand-neutral base catalogue in `messages/`.
+ * A function rather than a constant so a production container never reads the
+ * development fixture's copy: resolution follows the same rules as
+ * `getProperty()`, including the refusal to boot unconfigured.
  */
-export const messageOverrides: PropertyMessages =
-  (runtime ? runtime.messages : propertyMessages) ?? {};
+export function getMessageOverrides(): PropertyMessages {
+  return getProperty().messages ?? {};
+}
 
 /** Brand name for a locale, falling back to the default locale then the slug. */
 export function getPropertyName(locale: string): string {

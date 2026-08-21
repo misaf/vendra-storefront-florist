@@ -8,26 +8,55 @@ export const getPost = cache((slug: string, locale: string) =>
   fetchBlogPost(slug, locale)
 );
 
-/**
- * The latest entries close the article — fetched without blocking the render
- * and streamed in via <Suspense>. Errors degrade to an empty list.
- */
-export async function loadRelatedPosts(
+const RELATED_POST_COUNT = 3;
+
+async function loadPostsExcluding(
   currentPostId: number,
-  locale: string
+  locale: string,
+  category?: string
 ): Promise<BlogPost[]> {
   try {
     const result = await fetchBlogPostsWithDetails({
       page: 1,
-      perPage: 4,
+      // One spare, so excluding the current post still fills the row.
+      perPage: RELATED_POST_COUNT + 1,
       locale,
+      category,
     });
-    return result.posts
-      .filter((entry) => entry.id !== currentPostId)
-      .slice(0, 3);
+    return result.posts.filter((entry) => entry.id !== currentPostId);
   } catch {
     return [];
   }
+}
+
+/**
+ * The entries that close the article — fetched without blocking the render and
+ * streamed in via <Suspense>. Errors degrade to an empty list.
+ *
+ * Posts from the same category come first: "three more on this subject" is a
+ * reason to keep reading, where "three most recent posts" is only a shelf. The
+ * latest entries top the row up when a category is thin or absent, so the
+ * section never appears half-filled.
+ */
+export async function loadRelatedPosts(
+  post: Pick<BlogPost, "id" | "categorySlug">,
+  locale: string
+): Promise<BlogPost[]> {
+  const sameCategory = post.categorySlug
+    ? await loadPostsExcluding(post.id, locale, post.categorySlug)
+    : [];
+
+  if (sameCategory.length >= RELATED_POST_COUNT) {
+    return sameCategory.slice(0, RELATED_POST_COUNT);
+  }
+
+  const latest = await loadPostsExcluding(post.id, locale);
+  const seen = new Set(sameCategory.map((entry) => entry.id));
+
+  return [
+    ...sameCategory,
+    ...latest.filter((entry) => !seen.has(entry.id)),
+  ].slice(0, RELATED_POST_COUNT);
 }
 
 export function normalizeCategory(value: string | undefined): string {

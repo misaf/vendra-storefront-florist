@@ -3,7 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ApiClientError, apiClient } from "@/shared/api/client";
 import { getLocalizedValue } from "@/shared/api/localized";
 import { createApiQueryOptions, type ApiQueryOptions } from "@/shared/api/query-client";
-import { PLACEHOLDER_IMAGE, buildMediaUrl } from "@/shared/lib/image";
+import {
+  MEDIA_SIZE_CARD,
+  PLACEHOLDER_IMAGE,
+  buildMediaUrl,
+  type MediaSize,
+} from "@/shared/lib/image";
 import { getLeadingResourceId } from "@/shared/lib/slug-url";
 import { stripHtml } from "@/shared/lib/rich-text";
 import { parseNumericId } from "@/shared/lib/utils";
@@ -233,20 +238,26 @@ function getPagination(
   };
 }
 
-function buildImageUrl(media?: ProductMedia | null): string | null {
+function buildImageUrl(
+  media?: ProductMedia | null,
+  size?: MediaSize
+): string | null {
   if (!media) return null;
-  return buildMediaUrl({
-    url: media.url,
-    uuid: media.uuid,
-    fileName: media.fileName ?? media.file_name,
-    name: media.name,
-    conversions: media.generatedConversions ?? media.generated_conversions,
-  });
+  return buildMediaUrl(
+    {
+      url: media.url,
+      uuid: media.uuid,
+      fileName: media.fileName ?? media.file_name,
+      name: media.name,
+      conversions: media.generatedConversions ?? media.generated_conversions,
+    },
+    size
+  );
 }
 
-function getFirstRelatedImage(product: ProductDto): string {
+function getFirstRelatedImage(product: ProductDto, size?: MediaSize): string {
   const media = getFirstRelationship(product.multimedia ?? product.media);
-  return buildImageUrl(media) ?? "";
+  return buildImageUrl(media, size) ?? "";
 }
 
 function getRelatedImages(product: ProductDto): string[] {
@@ -264,9 +275,16 @@ function getRelatedImages(product: ProductDto): string[] {
   return urls;
 }
 
+/**
+ * A category's picture, at the rendition the discovery tiles actually draw.
+ *
+ * `large` and not the default `extra-large`: the tiles cap at ~320 CSS px, so
+ * the 1200px original was ~300KB of source per tile for a picture that never
+ * exceeds 640 device pixels.
+ */
 function getFirstRelatedCategoryImage(category: ProductCategoryDto): string {
   const media = getFirstRelationship(category.multimedia ?? category.media);
-  return buildImageUrl(media) ?? "";
+  return buildImageUrl(media, "large") ?? "";
 }
 
 /**
@@ -317,6 +335,9 @@ export function transformProduct(
     originalPrice: pricing.originalValue,
     formattedOriginalPrice: pricing.originalFormatted,
     image: getFirstRelatedImage(product),
+    // The same picture at a rendition a grid tile can actually use. Cards used
+    // to draw `image`, which is the gallery-sized one.
+    thumbnail: getFirstRelatedImage(product, MEDIA_SIZE_CARD),
     images: getRelatedImages(product),
     description: stripHtml(description, 150),
     richDescription: description,
@@ -357,6 +378,7 @@ function transformCategory(
     status: category.active,
     updated_at: category.updatedAt ?? category.updated_at,
     image: getFirstRelatedCategoryImage(category),
+    productCount: category.products?.length ?? 0,
   };
 }
 
@@ -457,8 +479,65 @@ function createProductQueryParams(
   } else if (sort === "asc" || sort === "desc") {
     queryParams.append("sort[createdAt]", sort);
   }
+  // "price-asc" / "price-desc" reach the API as no sort at all: it has no price
+  // parameter, so the ordering is resolved over the whole catalogue instead
+  // (see sortProductsByPrice / fetchProductsSortedByPrice).
 
   return queryParams;
+}
+
+export function isPriceSort(sort: string | undefined): sort is PriceSort {
+  return sort === "price-asc" || sort === "price-desc";
+}
+
+type PriceSort = "price-asc" | "price-desc";
+
+/**
+ * Price order over a resolved list. Ties fall back to the product name so a
+ * shop where everything costs the same still paginates deterministically —
+ * without it, page 2 could repeat a row already shown on page 1.
+ */
+function sortProductsByPrice(
+  products: Product[],
+  sort: PriceSort,
+  locale?: string
+): Product[] {
+  const collator = new Intl.Collator(locale === "fa" ? "fa" : "en", {
+    sensitivity: "base",
+  });
+
+  /**
+   * What a price sort is actually being asked for: the cheapest (or dearest)
+   * thing the shopper can buy. Two groups therefore fall to the bottom before
+   * price is compared at all.
+   *
+   * Sold out — the card shows an "Out of Stock" badge in place of the price, so
+   * ordering these in amongst the rest handed "Cheapest" a first screen of
+   * unbuyable products with no prices on it.
+   *
+   * Unpriced — "price on request" is not free. Ordering on the raw 0 put every
+   * one of them at the head of "cheapest first", which is the one page a
+   * shopper sorting by price must not get.
+   */
+  const rank = (product: Product) => {
+    const price = Number(product.price) || 0;
+    if (product.inStock === false) return 2;
+    if (price <= 0) return 1;
+    return 0;
+  };
+
+  return [...products].sort((a, b) => {
+    const aRank = rank(a);
+    const bRank = rank(b);
+    if (aRank !== bRank) return aRank - bRank;
+
+    const aPrice = Number(a.price) || 0;
+    const bPrice = Number(b.price) || 0;
+    if (aPrice > 0 && bPrice > 0 && aPrice !== bPrice) {
+      return sort === "price-asc" ? aPrice - bPrice : bPrice - aPrice;
+    }
+    return collator.compare(a.name, b.name);
+  });
 }
 
 async function fetchBrowserCatalogSearch(
@@ -468,6 +547,7 @@ async function fetchBrowserCatalogSearch(
     page = 1,
     perPage = 15,
     category,
+    inStock,
     locale,
     search,
     sort,
@@ -480,6 +560,9 @@ async function fetchBrowserCatalogSearch(
   });
 
   if (category) fallbackParams.set("category", category);
+  if (typeof inStock === "boolean") {
+    fallbackParams.set("inStock", inStock ? "1" : "0");
+  }
   if (sort) fallbackParams.set("sort", sort);
 
   const response = await fetch(`/api/catalog-search?${fallbackParams}`);
@@ -491,12 +574,34 @@ async function fetchBrowserCatalogSearch(
 export async function fetchProducts(
   params: FetchProductsParams = {}
 ): Promise<FetchProductsResult> {
-  const { page = 1, perPage = 15, category, locale, search, slug, sort } = params;
+  const {
+    page = 1,
+    perPage = 15,
+    category,
+    inStock,
+    locale,
+    search,
+    slug,
+    sort,
+  } = params;
+
+  // A price order cannot be expressed to the API, so it is resolved over the
+  // whole filtered catalogue rather than over the current page. A text query
+  // already resolves the whole catalogue on the search path below, which
+  // applies the same ordering to what it matched — so it is left to do that.
+  if (isPriceSort(sort) && !slug && !search?.trim()) {
+    return fetchProductsSortedByPrice({ ...params, sort });
+  }
+
   const queryParams = createProductQueryParams(page, perPage, sort);
   const normalizedSearch = search?.trim();
   const path = "catalog/products";
 
   appendOptionalQueryParam(queryParams, "slug", slug);
+
+  if (typeof inStock === "boolean") {
+    queryParams.append("inStock", inStock ? "1" : "0");
+  }
 
   if (category) {
     const categoryId = await resolveProductCategoryId(category, locale);
@@ -522,6 +627,7 @@ export async function fetchProducts(
       page,
       perPage,
       category,
+      inStock,
       locale,
       search: normalizedSearch,
       sort,
@@ -552,6 +658,7 @@ export async function fetchProducts(
           page,
           perPage,
           category,
+          inStock,
           locale,
           search: normalizedSearch,
           sort,
@@ -563,10 +670,21 @@ export async function fetchProducts(
       page,
       perPage,
       category,
+      inStock,
       locale,
       search: normalizedSearch,
       sort,
     });
+  }
+
+  // The API answered the text query itself, in its own order. It cannot sort on
+  // price, so the page it returned is ordered here — over the matches, which is
+  // the set the shopper asked to see.
+  if (isPriceSort(sort)) {
+    return {
+      ...result,
+      products: sortProductsByPrice(result.products, sort, locale),
+    };
   }
 
   return result;
@@ -616,33 +734,64 @@ function productSearchScore(
   return 20;
 }
 
-async function loadCatalogForSearch({
+/**
+ * How many 100-row pages of a catalogue may be pulled in one sweep. Both
+ * callers below need the *whole* filtered set — one to match text the API does
+ * not index, one to order by a price the API cannot sort on — and both fan the
+ * remaining pages out in parallel. The cap keeps a shop with a very large
+ * catalogue from firing hundreds of concurrent requests; past it, callers fall
+ * back to what the API itself can do.
+ */
+const CATALOG_SWEEP_MAX_PAGES = 20;
+const CATALOG_PAGE_SIZE = 100;
+
+/**
+ * Every product in a locale (optionally within one category), memoized briefly.
+ *
+ * Deliberately fetched with no sort: the *set* does not depend on the order, so
+ * one cached copy serves every caller — and passing a price sort back in here
+ * would recurse straight into the branch that called it.
+ */
+async function loadFullCatalog({
   category,
+  inStock,
   locale,
-  sort,
-}: Pick<FetchProductsParams, "category" | "locale" | "sort">): Promise<Product[]> {
-  const cacheKey = `${locale ?? "fa"}|${category ?? "all"}|${sort ?? "default"}`;
+}: Pick<
+  FetchProductsParams,
+  "category" | "inStock" | "locale"
+>): Promise<Product[]> {
+  const availability =
+    typeof inStock === "boolean"
+      ? inStock
+        ? "in-stock"
+        : "out-of-stock"
+      : "all";
+  const cacheKey = `${locale ?? "fa"}|${category ?? "all"}|${availability}`;
   const cached = searchCatalogCache.get(cacheKey);
 
   if (cached && cached.expiresAt > Date.now()) {
     return cached.products;
   }
 
-  const perPage = 100;
+  const perPage = CATALOG_PAGE_SIZE;
   const firstPage = await fetchProducts({
     page: 1,
     perPage,
     category,
+    inStock,
     locale,
-    sort,
   });
+  const lastPage = Math.min(
+    firstPage.pagination.lastPage,
+    CATALOG_SWEEP_MAX_PAGES
+  );
   const remainingPageNumbers = Array.from(
-    { length: Math.max(0, firstPage.pagination.lastPage - 1) },
+    { length: Math.max(0, lastPage - 1) },
     (_, index) => index + 2
   );
   const remainingPages = await Promise.all(
     remainingPageNumbers.map((page) =>
-      fetchProducts({ page, perPage, category, locale, sort })
+      fetchProducts({ page, perPage, category, inStock, locale })
     )
   );
   const products = [
@@ -658,6 +807,45 @@ async function loadCatalogForSearch({
   return products;
 }
 
+/**
+ * A page of the catalogue ordered by price.
+ *
+ * The API exposes no price sort, so the filtered catalogue is resolved in full,
+ * ordered here, and paginated from the result. That is the only way the order
+ * can be true of the shop rather than of whichever twelve rows happened to
+ * arrive first. If the catalogue is larger than one sweep can safely cover, the
+ * request degrades to the API's own paging so the page still renders.
+ */
+async function fetchProductsSortedByPrice(
+  params: FetchProductsParams & { sort: "price-asc" | "price-desc" }
+): Promise<FetchProductsResult> {
+  const { page = 1, perPage = 15, category, inStock, locale, sort } = params;
+
+  let catalog: Product[];
+  try {
+    catalog = await loadFullCatalog({ category, inStock, locale });
+  } catch {
+    return fetchProducts({ ...params, sort: undefined });
+  }
+
+  const ordered = sortProductsByPrice(catalog, sort, locale);
+  const start = (page - 1) * perPage;
+  const total = ordered.length;
+
+  return {
+    products: ordered.slice(start, start + perPage),
+    pagination: {
+      currentPage: page,
+      lastPage: Math.max(1, Math.ceil(total / perPage)),
+      perPage,
+      total,
+      from: total === 0 ? 0 : start + 1,
+      to: Math.min(start + perPage, total),
+    },
+    links: {},
+  };
+}
+
 export async function searchCatalogProducts(
   params: FetchProductsParams = {}
 ): Promise<FetchProductsResult> {
@@ -665,6 +853,7 @@ export async function searchCatalogProducts(
     page = 1,
     perPage = 15,
     category,
+    inStock,
     locale,
     search = "",
     sort,
@@ -675,7 +864,7 @@ export async function searchCatalogProducts(
     return emptyProductsResult(page, perPage);
   }
 
-  const catalog = await loadCatalogForSearch({ category, locale, sort });
+  const catalog = await loadFullCatalog({ category, inStock, locale });
   const matches = catalog
     .map((product) => ({
       product,
@@ -690,9 +879,14 @@ export async function searchCatalogProducts(
       );
     })
     .map((match) => match.product);
+  // Relevance is the default order for a text query, but an explicitly chosen
+  // price sort is the shopper's instruction and outranks it.
+  const orderedMatches = isPriceSort(sort)
+    ? sortProductsByPrice(matches, sort, locale)
+    : matches;
   const start = (page - 1) * perPage;
-  const paginatedProducts = matches.slice(start, start + perPage);
-  const total = matches.length;
+  const paginatedProducts = orderedMatches.slice(start, start + perPage);
+  const total = orderedMatches.length;
 
   return {
     products: paginatedProducts,

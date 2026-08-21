@@ -57,16 +57,51 @@ export function normalizeImageUrl(imageUrl: string | null | undefined): string {
   return toAbsoluteStorageUrl(imageUrl);
 }
 
-// The Spatie media-library conversion priority — prefer the largest rendition
-// the backend generated, falling back to whatever conversion exists.
-const MEDIA_CONVERSION_PRIORITY = ["extra-large", "large", "medium", "small"];
+/**
+ * The renditions the media library generates, smallest first. A caller states
+ * the *smallest* rendition that will still look right where it is drawn, and
+ * the largest generated one at or above it is used.
+ */
+const MEDIA_CONVERSION_LADDER = [
+  "thumb-table",
+  "small",
+  "medium",
+  "large",
+  "extra-large",
+] as const;
 
-function pickConversionName(conversions: Record<string, unknown>): string | null {
-  for (const name of MEDIA_CONVERSION_PRIORITY) {
-    if (conversions[name]) return name;
+export type MediaSize = (typeof MEDIA_CONVERSION_LADDER)[number];
+
+/**
+ * The conversion to request for a given intent.
+ *
+ * `card` covers every tile in a grid or rail (drawn at 130–330 CSS px, so 500px
+ * of source carries a 2x screen); `full` covers the product page's gallery.
+ */
+export const MEDIA_SIZE_CARD: MediaSize = "medium";
+export const MEDIA_SIZE_FULL: MediaSize = "extra-large";
+
+/**
+ * The best generated conversion at or above `minimum`, falling back down the
+ * ladder when the backend generated nothing that large.
+ */
+function pickConversionName(
+  conversions: Record<string, unknown>,
+  minimum: MediaSize
+): string | null {
+  const floor = MEDIA_CONVERSION_LADDER.indexOf(minimum);
+  const atOrAbove = MEDIA_CONVERSION_LADDER.slice(floor).find(
+    (candidate) => conversions[candidate]
+  );
+  if (atOrAbove) return atOrAbove;
+
+  // Nothing that large exists — take the largest that does rather than none.
+  for (let index = floor - 1; index >= 0; index -= 1) {
+    const candidate = MEDIA_CONVERSION_LADDER[index];
+    if (conversions[candidate]) return candidate;
   }
 
-  return Object.keys(conversions)[0] || null;
+  return null;
 }
 
 /** Normalized fields a Spatie media resource exposes for URL building. */
@@ -79,29 +114,35 @@ export interface MediaUrlFields {
 }
 
 /**
- * Build a storage URL from a Spatie media-library resource. Prefers an explicit
- * `url`, otherwise reconstructs the conversion path
- * (`storage/{uuid}/conversions/{base}-{size}.webp`) or the original file
- * (`storage/{uuid}/{file_name}`). Returns null when there's nothing to build.
+ * Build a storage URL from a Spatie media-library resource.
+ *
+ * A generated conversion is preferred over the resource's own `url`, because
+ * that URL is the *original upload* — a 3000x4000 camera JPEG, ~1.5MB, which
+ * was being served into 130px catalogue tiles. The same picture as a `medium`
+ * conversion is 500x670 and 19KB. `url` remains the fallback for a resource the
+ * library never converted (and supplies nothing else to build a path from).
  */
 export function buildMediaUrl(
-  fields: MediaUrlFields | null | undefined
+  fields: MediaUrlFields | null | undefined,
+  size: MediaSize = MEDIA_SIZE_FULL
 ): string | null {
   if (!fields) return null;
   const { url, uuid, fileName, name, conversions } = fields;
 
-  if (url) return toAbsoluteStorageUrl(url);
-  if (!uuid) return null;
-
-  const conversionName = pickConversionName(conversions ?? {});
-  if (conversionName) {
+  if (uuid) {
+    const conversionName = pickConversionName(conversions ?? {}, size);
     const baseName =
       fileName?.replace(/\.[^/.]+$/, "") || name?.replace(/-v\d+$/, "");
-    if (!baseName) return null;
-    return toAbsoluteStorageUrl(
-      `storage/${uuid}/conversions/${baseName}-${conversionName}.webp`
-    );
+
+    if (conversionName && baseName) {
+      return toAbsoluteStorageUrl(
+        `storage/${uuid}/conversions/${baseName}-${conversionName}.webp`
+      );
+    }
   }
+
+  if (url) return toAbsoluteStorageUrl(url);
+  if (!uuid) return null;
 
   return fileName ? toAbsoluteStorageUrl(`storage/${uuid}/${fileName}`) : null;
 }

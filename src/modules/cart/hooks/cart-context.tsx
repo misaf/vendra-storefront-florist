@@ -12,7 +12,28 @@ import type { Product } from "@/modules/products";
 import { usePersistentState } from "@/shared/hooks/use-persistent-state";
 
 export interface CartItem extends Product {
+  /**
+   * How many of this product are in the cart. It shadows `Product.quantity`,
+   * which is how many the shop *has* — so the stock ceiling is carried
+   * separately in `stock`, or the cart has no way to know it and will happily
+   * take an order for fifty of something there are three of.
+   */
   quantity: number;
+  /** Units available when the product was added; null when untracked. */
+  stock: number | null;
+}
+
+/** The catalogue tracks stock only when it reports a positive count. */
+function stockCeiling(product: Product): number | null {
+  return product.quantity != null && product.quantity > 0
+    ? product.quantity
+    : null;
+}
+
+/** Clamp to the ceiling, and never below one — zero means "remove". */
+function clampToStock(quantity: number, stock: number | null): number {
+  const atLeastOne = Math.max(1, quantity);
+  return stock != null ? Math.min(atLeastOne, stock) : atLeastOne;
 }
 
 interface CartContextType {
@@ -55,15 +76,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addToCart = useCallback(
     (product: Product) => {
       setItems((prevItems) => {
+        const stock = stockCeiling(product);
         const existingItem = prevItems.find((item) => item.id === product.id);
         if (existingItem) {
           return prevItems.map((item) =>
             item.id === product.id
-              ? { ...item, quantity: item.quantity + 1 }
+              ? {
+                  ...item,
+                  // Refreshed from the product just handed in, so a cart that
+                  // has sat in localStorage for a week is re-checked against
+                  // today's stock the moment the shopper adds another.
+                  stock,
+                  quantity: clampToStock(item.quantity + 1, stock),
+                }
               : item
           );
         }
-        return [...prevItems, { ...product, quantity: 1 }];
+        return [...prevItems, { ...product, stock, quantity: 1 }];
       });
     },
     [setItems]
@@ -103,7 +132,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       setItems((prevItems) =>
         prevItems.map((item) =>
-          item.id === productId ? { ...item, quantity } : item
+          item.id === productId
+            ? { ...item, quantity: clampToStock(quantity, item.stock) }
+            : item
         )
       );
     },

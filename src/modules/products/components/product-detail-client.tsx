@@ -2,6 +2,7 @@
 
 import { Link } from "@/shared/i18n/navigation";
 import { Suspense, use, useCallback, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { ThemedProductImage } from "./themed-product-image";
 import { ProductCard } from "./product-card";
@@ -19,13 +20,6 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/shared/components/ui/empty";
 import {
   Carousel,
   CarouselContent,
@@ -60,6 +54,7 @@ import { useTranslations } from "@/shared/hooks/use-translations";
 import { useFocusReturn } from "@/shared/hooks/use-focus-return";
 import type { Product } from "../types";
 import { formatRemainingQuantity, isLowStock } from "../lib/format";
+import { Price, getDiscountPercent } from "./price";
 import { cn, normalizeImageUrl } from "@/shared/lib/utils";
 import { PLACEHOLDER_IMAGE } from "@/shared/lib/image";
 import dynamic from "next/dynamic";
@@ -72,7 +67,6 @@ const RichText = dynamic(() =>
   import("@/shared/components/rich-text").then((m) => m.RichText)
 );
 import { toast } from "sonner";
-import { useFormatPrice } from "@/shared/property/use-format-price";
 
 interface ProductDetailClientProps {
   initialProduct: Product | null;
@@ -87,7 +81,6 @@ export default function ProductDetailClient({
   relatedProductsPromise,
   initialError,
 }: ProductDetailClientProps) {
-  const formatPrice = useFormatPrice();
   const { t, locale } = useTranslations();
   const property = useProperty();
   const { addToCart, openCart } = useCart();
@@ -113,14 +106,8 @@ export default function ProductDetailClient({
   const hasPrice = price > 0;
   const isPurchasable = inStock && hasPrice;
   const hasDiscount = isPurchasable && originalPrice > price;
-  const discountPercent = hasDiscount
-    ? Math.round(((originalPrice - price) / originalPrice) * 100)
-    : 0;
-  const displayPrice = formatPrice(product?.price, product?.formattedPrice);
-  const displayOriginalPrice = formatPrice(
-    product?.originalPrice,
-    product?.formattedOriginalPrice
-  );
+  const discountPercent =
+    hasDiscount && product ? getDiscountPercent(product) : 0;
   // Stock tracking is optional in the catalogue: a positive count is a real
   // ceiling, anything else means "not tracked" and must not cap the stepper.
   const maxQuantity =
@@ -150,6 +137,20 @@ export default function ProductDetailClient({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const detailImage = selectedImage ?? galleryImages[0] ?? PLACEHOLDER_IMAGE;
+  const galleryIndex = Math.max(0, galleryImages.indexOf(detailImage));
+  const hasGallery = galleryImages.length > 1;
+
+  /** Move through the gallery, wrapping at both ends. */
+  const stepGallery = useCallback(
+    (delta: number) => {
+      if (galleryImages.length < 2) return;
+      const next =
+        (galleryIndex + delta + galleryImages.length) % galleryImages.length;
+      setSelectedImage(galleryImages[next]);
+      setHasImageError(false);
+    },
+    [galleryImages, galleryIndex]
+  );
 
   const handleShare = useCallback(async () => {
     if (typeof window === "undefined") return;
@@ -283,7 +284,7 @@ export default function ProductDetailClient({
 	                        fill
 	                        sizes="(min-width: 1024px) 52vw, (min-width: 640px) 48vw, 100vw"
 	                        className="object-contain p-3 sm:p-5"
-	                        fetchPriority="high"
+	                        preload
 	                        unoptimized
 	                        onError={() => setHasImageError(true)}
 	                      />
@@ -308,7 +309,10 @@ export default function ProductDetailClient({
 	                                ? "border-primary"
 	                                : "border-transparent hover:border-primary/40"
 	                            }`}
-	                            aria-label={`${product.name} ${index + 1}`}
+	                            aria-label={t("products.galleryImagePosition", {
+	                              current: index + 1,
+	                              total: galleryImages.length,
+	                            })}
 	                            aria-pressed={isActive}
 	                          >
 	                            <ThemedProductImage
@@ -348,26 +352,14 @@ export default function ProductDetailClient({
 
                     <div className="flex flex-col gap-2">
                       {hasPrice ? (
-                        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-3xl font-bold tabular-nums text-foreground sm:text-4xl" dir="ltr">
-                          <span aria-label={`${t(hasDiscount ? "products.salePrice" : "products.priceLabel")}: ${displayPrice}`}>
-                            {displayPrice}
-                          </span>
+                        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                          <Price product={product} size="lg" showDiscount={hasDiscount} />
                           {hasDiscount ? (
-                            <>
-                              <span aria-label={`${t("products.originalPrice")}: ${displayOriginalPrice}`}>
-                                <del
-                                  aria-hidden="true"
-                                  className="text-base font-medium text-muted-foreground decoration-1 sm:text-lg"
-                                >
-                                  {displayOriginalPrice}
-                                </del>
-                              </span>
-                              <span className="rounded-full bg-rose px-2.5 py-1 text-xs font-bold text-rose-foreground">
-                                {t("products.discountBadge", {
-                                  percent: new Intl.NumberFormat(locale).format(discountPercent),
-                                })}
-                              </span>
-                            </>
+                            <span className="rounded-full bg-rose px-2.5 py-1 text-xs font-bold text-rose-foreground">
+                              {t("products.discountBadge", {
+                                percent: new Intl.NumberFormat(locale).format(discountPercent),
+                              })}
+                            </span>
                           ) : null}
                         </p>
                       ) : (
@@ -426,7 +418,7 @@ export default function ProductDetailClient({
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="size-11 rounded-full"
+                              className="rounded-full"
                               disabled={quantity <= 1}
                               aria-label={t("common.decreaseQuantity")}
                               onClick={() => setQuantity((value) => Math.max(1, value - 1))}
@@ -444,7 +436,7 @@ export default function ProductDetailClient({
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="size-11 rounded-full"
+                              className="rounded-full"
                               disabled={maxQuantity != null && quantity >= maxQuantity}
                               aria-label={t("common.increaseQuantity")}
                               onClick={() =>
@@ -600,29 +592,42 @@ export default function ProductDetailClient({
             </div>
           </section>
 
-          <section className="store-section border-t border-border bg-background">
-            <div className="store-container">
-              <div className="mb-8">
-                <p className="store-eyebrow mb-3">{t("common.browseByCategory")}</p>
-                <h2 className="store-section-title text-foreground">
-                  {t("products.detailRelatedTitle")}
-                </h2>
-              </div>
-              <Suspense fallback={<RelatedProductsSkeleton />}>
-                <RelatedProductsContent promise={relatedProductsPromise} isRTL={isRTL} />
-              </Suspense>
-            </div>
-          </section>
+          {/* The heading lives inside the boundary with the rail it names: an
+              empty result now removes the whole band rather than leaving a
+              "Related products" title over a "no products in this category"
+              notice, which reads as a fault on a page that is working. */}
+          <Suspense fallback={<RelatedProductsSkeleton title={t("products.detailRelatedTitle")} eyebrow={t("common.browseByCategory")} />}>
+            <RelatedProductsContent promise={relatedProductsPromise} isRTL={isRTL} />
+          </Suspense>
 
           <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
             <DialogContent
               closeLabel={t("common.close")}
               className="max-w-[calc(100vw-1rem)] gap-0 p-2 sm:max-w-6xl sm:p-3"
               onCloseAutoFocus={onImageDialogClose}
+              // Arrow keys move through the gallery, the convention every
+              // lightbox sets. Without them the enlarged view was a dead end:
+              // it showed the one image it was opened on and the only way to
+              // see another was to close it and pick a different thumbnail.
+              onKeyDown={(event) => {
+                if (!hasGallery) return;
+                if (event.key === "ArrowRight") {
+                  event.preventDefault();
+                  stepGallery(isRTL ? -1 : 1);
+                } else if (event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  stepGallery(isRTL ? 1 : -1);
+                }
+              }}
             >
               <DialogTitle className="sr-only">{product.name}</DialogTitle>
               <DialogDescription className="sr-only">
-                {product.name}
+                {hasGallery
+                  ? t("products.galleryImagePosition", {
+                      current: galleryIndex + 1,
+                      total: galleryImages.length,
+                    })
+                  : product.name}
               </DialogDescription>
               <div className="relative h-[82vh] max-h-[760px] w-full overflow-hidden rounded-md bg-secondary">
                 <ThemedProductImage
@@ -633,6 +638,40 @@ export default function ProductDetailClient({
                   className="object-contain p-2 sm:p-4"
                   unoptimized
                 />
+                {hasGallery ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      aria-label={t("common.previousSlide")}
+                      onClick={() => stepGallery(-1)}
+                      className="absolute start-2 top-1/2 -translate-y-1/2 rounded-full bg-card/95 shadow-md hover:bg-card"
+                    >
+                      {isRTL ? <ArrowRight className="size-4" /> : <ArrowLeft className="size-4" />}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      aria-label={t("common.nextSlide")}
+                      onClick={() => stepGallery(1)}
+                      className="absolute end-2 top-1/2 -translate-y-1/2 rounded-full bg-card/95 shadow-md hover:bg-card"
+                    >
+                      {isRTL ? <ArrowLeft className="size-4" /> : <ArrowRight className="size-4" />}
+                    </Button>
+                    <p
+                      className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-foreground/85 px-3 py-1 text-xs font-semibold text-background tabular-nums"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {t("products.galleryImagePosition", {
+                        current: galleryIndex + 1,
+                        total: galleryImages.length,
+                      })}
+                    </p>
+                  </>
+                ) : null}
               </div>
             </DialogContent>
           </Dialog>
@@ -643,17 +682,56 @@ export default function ProductDetailClient({
   );
 }
 
-function RelatedProductsSkeleton() {
+/** The band the rail sits in, so its skeleton and its content share a frame. */
+function RelatedProductsSection({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div key={index} className="flex flex-col">
-          <Skeleton className="aspect-[4/5] w-full rounded-xl" />
-          <Skeleton className="mt-3 h-4 w-3/4" />
-          <Skeleton className="mt-2 h-5 w-1/2" />
+    <section className="store-section border-t border-border bg-background">
+      <div className="store-container">
+        <div className="mb-8">
+          <p className="store-eyebrow mb-3">{eyebrow}</p>
+          <h2 className="store-section-title text-foreground">{title}</h2>
         </div>
-      ))}
-    </div>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Mirrors the carousel's own track — a partially visible fourth card at the
+ * viewport edge — rather than the four-up grid it used to draw, which
+ * rearranged the whole band the moment the real rail arrived.
+ */
+function RelatedProductsSkeleton({
+  eyebrow,
+  title,
+}: {
+  eyebrow: string;
+  title: string;
+}) {
+  return (
+    <RelatedProductsSection eyebrow={eyebrow} title={title}>
+      <div className="flex gap-3 overflow-hidden sm:gap-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex w-[74%] shrink-0 flex-col min-[480px]:w-1/2 sm:w-1/3 lg:w-1/4"
+          >
+            <Skeleton className="aspect-[4/5] w-full rounded-xl" />
+            <Skeleton className="mt-3 h-4 w-3/4" />
+            <Skeleton className="mt-2 h-5 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </RelatedProductsSection>
   );
 }
 
@@ -672,21 +750,17 @@ function RelatedProductsContent({
   const { t, locale } = useTranslations();
   const numberFormat = new Intl.NumberFormat(locale);
 
+  // Nothing to cross-sell is not an error worth a panel — the band simply
+  // isn't there.
   if (relatedProducts.length === 0) {
-    return (
-      <Empty className="py-10">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Package className="size-6" />
-          </EmptyMedia>
-          <EmptyTitle>{t("products.noProducts")}</EmptyTitle>
-          <EmptyDescription>{t("products.noProductsInCategory")}</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    );
+    return null;
   }
 
   return (
+    <RelatedProductsSection
+      eyebrow={t("common.browseByCategory")}
+      title={t("products.detailRelatedTitle")}
+    >
     <Carousel
       opts={{ align: "start", loop: false, direction: isRTL ? "rtl" : "ltr" }}
       className="w-full"
@@ -730,5 +804,6 @@ function RelatedProductsContent({
         <span className="sr-only">{t("common.nextSlide")}</span>
       </CarouselNext>
     </Carousel>
+    </RelatedProductsSection>
   );
 }

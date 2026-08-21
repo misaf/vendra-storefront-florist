@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ImageOff } from "lucide-react";
 import { normalizeImageUrl } from "@/shared/lib/utils";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
+import { DynamicText } from "@/shared/components/dynamic-text";
 import type { Post as BlogPost } from "../types";
 
 interface FeaturedBlogPostCardProps {
@@ -32,8 +33,16 @@ export function FeaturedBlogPostCard({
       ) : (
         <Image
           src={normalizeImageUrl(post.image)}
-          alt={post.title}
+          /* Empty on purpose: the title this picture illustrates is drawn over
+             it, inside the same link. Repeating it here makes the link announce
+             its own name twice — "Floral Design… , Floral Design…" — and adds
+             nothing, because the alt would only ever restate the heading. */
+          alt=""
           fill
+          /* Inert while `unoptimized` is set — next/image emits a single `src`
+             and no `srcset`, so one rendition has to serve every device. That is
+             why `image` (extra-large, 1200px) is used and not a card-sized one:
+             the worst case here is 100vw on a 430px phone at DPR 3, ~1290px. */
           sizes="(min-width: 1024px) 40vw, 100vw"
           unoptimized
           className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -42,8 +51,8 @@ export function FeaturedBlogPostCard({
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-        <h3 className="store-dynamic-text line-clamp-3 text-xl font-bold leading-snug text-white transition-colors group-hover:text-white/80 sm:text-2xl lg:text-3xl" dir="auto">
-          {post.title}
+        <h3 className="store-dynamic-text line-clamp-3 text-xl font-bold leading-snug text-white transition-colors group-hover:text-white/80 sm:text-2xl lg:text-3xl">
+          <DynamicText>{post.title}</DynamicText>
         </h3>
       </div>
     </Link>

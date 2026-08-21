@@ -15,6 +15,13 @@ export async function GET(request: NextRequest) {
   const locale = (routing.locales as readonly string[]).includes(requestedLocale)
     ? requestedLocale
     : routing.defaultLocale;
+  const inStockParam = request.nextUrl.searchParams.get("inStock");
+  const inStock =
+    inStockParam === "1" || inStockParam === "true"
+      ? true
+      : inStockParam === "0" || inStockParam === "false"
+        ? false
+        : undefined;
 
   if (query.length < 2) {
     return NextResponse.json(
@@ -27,6 +34,7 @@ export async function GET(request: NextRequest) {
     search: query,
     locale,
     category: request.nextUrl.searchParams.get("category") || undefined,
+    inStock,
     sort: request.nextUrl.searchParams.get("sort") || undefined,
     page: positiveInteger(request.nextUrl.searchParams.get("page"), 1, 100),
     perPage: positiveInteger(

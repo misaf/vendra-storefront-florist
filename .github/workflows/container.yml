@@ -11,7 +11,22 @@ permissions:
   packages: write
 
 jobs:
+  # The image is pinned by digest and rolled out per store, so a broken build
+  # ships as a perfectly valid digest. Gate publishing on the same checks a
+  # developer runs locally.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check:strict
+
   publish:
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

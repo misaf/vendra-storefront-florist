@@ -117,12 +117,13 @@ export async function GET(
       headers: buildResponseHeaders(response),
     });
   } catch (error) {
+    // Logged, not returned: a fetch failure message names the upstream storage
+    // host, which is internal infrastructure the browser has no business seeing.
     console.error("[Storage Proxy] Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const status = error instanceof Error ? getNetworkErrorStatus(error) : 500;
 
     return NextResponse.json(
-      { error: "Failed to proxy storage request", details: errorMessage },
+      { error: "Failed to load the requested asset" },
       { status }
     );
   }

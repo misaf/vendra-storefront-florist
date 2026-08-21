@@ -25,6 +25,7 @@ import { cn, telHref } from "@/shared/lib/utils";
 import { isRtlLocale } from "@/shared/lib/locale";
 import { ArrowLeft, ArrowRight, ChevronDown, Menu, Phone } from "lucide-react";
 import { useBrandIcon } from "@/shared/property/use-brand-icon";
+import { DynamicText } from "@/shared/components/dynamic-text";
 
 interface HeaderProps {
   showNav?: boolean;
@@ -47,7 +48,8 @@ export function Header({ showNav = true }: HeaderProps) {
   const storeName = usePropertyName();
   const property = useProperty();
   const pathname = usePathname();
-  const { data: categories = [] } = useProductCategories(locale);
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useProductCategories(locale);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isProductsActive = isPathActive(pathname, "/products");
   // Null until the shopper has an opinion, so the disclosure follows the route
@@ -157,14 +159,16 @@ export function Header({ showNav = true }: HeaderProps) {
             </nav>
           ) : null}
 
-          <div className="ms-auto flex items-center gap-0.5 lg:ms-2">
+          {/* min-w-0 so the cluster may shrink rather than force the row wider
+              than the viewport when text is scaled up. */}
+          <div className="ms-auto flex min-w-0 items-center gap-0.5 lg:ms-2">
             <GlobalSearch />
             {showNav ? <span className="hidden sm:inline-flex"><UserButton /></span> : null}
             <CartButton />
             {showNav ? (
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="size-11 lg:hidden" aria-label={t("common.mainNavigation")}>
+                  <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("common.mainNavigation")}>
                     <Menu className="size-5" />
                   </Button>
                 </SheetTrigger>
@@ -243,6 +247,18 @@ export function Header({ showNav = true }: HeaderProps) {
                               </button>
                             </div>
                             {mobileCategoriesOpen ? (
+                              categories.length === 0 ? (
+                                /* An empty disclosure reads as "this shop has
+                                   no categories". Say which of the two it is. */
+                                <p
+                                  id="mobile-product-categories"
+                                  className="mt-1 border-s border-border px-4 py-3 text-sm text-muted-foreground"
+                                >
+                                  {categoriesLoading
+                                    ? t("common.loading")
+                                    : t("common.noCategories")}
+                                </p>
+                              ) : (
                               <ul id="mobile-product-categories" className="mt-1 space-y-0.5 border-s border-border ps-3">
                                 {categories.map((category) => (
                                   <li key={category.id}>
@@ -251,12 +267,13 @@ export function Header({ showNav = true }: HeaderProps) {
                                         href={{ pathname: "/products", query: { category: category.slug } }}
                                         className="store-dynamic-text flex min-h-11 items-center rounded-lg px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                                       >
-                                        <bdi>{category.name}</bdi>
+                                        <DynamicText>{category.name}</DynamicText>
                                       </Link>
                                     </SheetClose>
                                   </li>
                                 ))}
                               </ul>
+                              )
                             ) : null}
                           </div>
                         );

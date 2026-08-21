@@ -7,6 +7,7 @@ import { Link, usePathname } from "@/shared/i18n/navigation";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { cn } from "@/shared/lib/utils";
 import { useProductCategories } from "../lib/queries";
+import { DynamicText } from "@/shared/components/dynamic-text";
 
 interface CategoryMenuProps {
   /**
@@ -205,7 +206,7 @@ export function CategoryMenu({ className, active = false }: CategoryMenuProps) {
                     onClick={close}
                     className={CATEGORY_LINK_CLASS}
                   >
-                    <bdi>{category.name}</bdi>
+                    <DynamicText>{category.name}</DynamicText>
                   </Link>
                 </li>
               ))}

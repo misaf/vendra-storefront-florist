@@ -374,6 +374,7 @@ export default function FaqClient({
                                 <div
                                   id={panelId}
                                   data-open={open ? "" : undefined}
+                                  aria-hidden={!open}
                                   className="grid grid-rows-[0fr] motion-safe:transition-[grid-template-rows] motion-safe:duration-300 data-[open]:grid-rows-[1fr]"
                                 >
                                   <div className="overflow-hidden">

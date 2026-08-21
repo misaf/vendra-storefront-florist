@@ -54,8 +54,12 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
         {showNewsletter ? (
           <div className="store-section-sm grid gap-6 border-b border-white/15 lg:grid-cols-[1fr_minmax(22rem,0.85fr)] lg:items-center">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/75 [.locale-fa_&]:tracking-normal">{t("newsletter.title")}</p>
-              <h2 className="store-section-title mt-2 max-w-xl text-white">{t("newsletter.description")}</h2>
+              <h2 className="font-display text-2xl text-white sm:text-3xl [.locale-fa_&]:leading-[1.5]">
+                {t("newsletter.title")}
+              </h2>
+              <p className="store-lede mt-2 max-w-xl text-sm text-white/75 sm:text-base">
+                {t("newsletter.description")}
+              </p>
             </div>
             <Newsletter variant="compact" />
           </div>

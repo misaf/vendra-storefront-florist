@@ -1,17 +1,17 @@
 "use client";
 
 import { useFavorites } from "../hooks/favorites-context";
-import { useOrders, type Order } from "../hooks/order-context";
+import { useOrders } from "../hooks/order-context";
 import { useCart } from "@/modules/cart";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/shared/components/ui/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
-import { Badge } from "@/shared/components/ui/badge";
 import {
   Empty,
   EmptyContent,
@@ -24,37 +24,26 @@ import { Link } from "@/shared/i18n/navigation";
 import {
   Heart,
   Package,
-  User,
+  Bookmark,
   Trash2,
   ShoppingBag,
   Calendar,
   type LucideIcon,
 } from "lucide-react";
-import type { ComponentProps } from "react";
 import { useTranslations } from "@/shared/hooks/use-translations";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/shared/components/ui/card";
 import { formatLocaleDate } from "@/shared/lib/date";
 import { SafeImage } from "@/shared/components/ui/safe-image";
 import { toast } from "sonner";
 import { useFormatPrice } from "@/shared/property/use-format-price";
+import { createReadableResourcePath } from "@/shared/lib/slug-url";
 
 interface UserPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCloseAutoFocus?: (event: Event) => void;
 }
-
-const STATUS_BADGE_VARIANT: Record<
-  Order["status"],
-  ComponentProps<typeof Badge>["variant"]
-> = {
-  pending: "outline",
-  processing: "outline",
-  shipped: "secondary",
-  delivered: "default",
-  cancelled: "destructive",
-};
 
 /** Shared empty state for the favorites/orders tabs: a neutral icon and a
  *  real "Shop Now" CTA that closes the panel. */
@@ -108,9 +97,12 @@ export function UserPanel({ open, onOpenChange, onCloseAutoFocus }: UserPanelPro
       >
         <SheetHeader className="border-b border-border px-5 py-6 text-start sm:px-7">
           <SheetTitle className="font-display flex items-center gap-3 text-2xl">
-            <span className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground"><User className="h-5 w-5" /></span>
+            <span className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground"><Bookmark className="h-5 w-5" /></span>
             {t("common.myAccount")}
           </SheetTitle>
+          <SheetDescription className="sr-only">
+            {t("common.accountDrawerDescription")}
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-7">
@@ -142,19 +134,31 @@ export function UserPanel({ open, onOpenChange, onCloseAutoFocus }: UserPanelPro
                       key={item.id}
                       className="flex gap-4 border-b border-border py-5 text-card-foreground last:border-b-0"
                     >
-                      <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                      <Link
+                        href={`/products/${createReadableResourcePath(item.id, item.slug)}`}
+                        onClick={() => onOpenChange(false)}
+                        aria-hidden="true"
+                        tabIndex={-1}
+                        className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md bg-muted"
+                      >
                         <SafeImage
                           src={item.image}
-                          alt={item.name}
+                          alt=""
                           fill
                           sizes="80px"
                           className="object-contain p-1"
                         />
-                      </div>
+                      </Link>
                       <div className="flex flex-1 flex-col gap-2">
                         <div>
                           <h3 className="store-dynamic-text font-medium text-card-foreground">
-                            <bdi>{item.name}</bdi>
+                            <Link
+                              href={`/products/${createReadableResourcePath(item.id, item.slug)}`}
+                              onClick={() => onOpenChange(false)}
+                              className="rounded-sm transition-colors hover:text-primary"
+                            >
+                              <bdi>{item.name}</bdi>
+                            </Link>
                           </h3>
                           <p className="text-sm text-muted-foreground" dir="ltr">
                             {formatPrice(item.price, item.formattedPrice)}
@@ -185,7 +189,7 @@ export function UserPanel({ open, onOpenChange, onCloseAutoFocus }: UserPanelPro
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="size-11 text-destructive hover:text-destructive"
+                            className="text-destructive hover:text-destructive"
                             aria-label={t("common.removeFromFavorites")}
                             onClick={() => {
                               removeFromFavorites(item.id);
@@ -226,13 +230,10 @@ export function UserPanel({ open, onOpenChange, onCloseAutoFocus }: UserPanelPro
                   {orders.map((order) => (
                     <Card key={order.id}>
                       <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-base">
-                            {t("common.orderNumber")} <span dir="ltr">{order.id.slice(-8).toUpperCase()}</span>
-                          </CardTitle>
-                          <Badge variant={STATUS_BADGE_VARIANT[order.status]}>
-                            {t(`common.${order.status}`)}
-                          </Badge>
+                        <div>
+                          <h3 className="text-base font-semibold leading-none">
+                            {t("common.orderNumber")} <span dir="ltr">{order.id.toUpperCase()}</span>
+                          </h3>
                         </div>
                         <CardDescription className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />

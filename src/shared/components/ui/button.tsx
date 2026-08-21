@@ -32,7 +32,10 @@ const buttonVariants = cva(
         default: "h-11 px-5 py-2 has-[>svg]:px-4",
         sm: "h-11 gap-1.5 px-4 has-[>svg]:px-3",
         lg: "h-12 px-7 has-[>svg]:px-5",
-        icon: "size-11",
+        /* px, like the floor in globals.css: an icon-only control holds no text
+           to read, so scaling it with the reader's font size only consumes the
+           row it sits in. Its glyph still scales, up to the box. */
+        icon: "size-[44px]",
       },
     },
     defaultVariants: {

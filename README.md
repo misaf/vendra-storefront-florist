@@ -2,329 +2,194 @@
 
 > **Ecosystem documentation:** <https://misaf.github.io/vendra-ecosystem-docs>
 >
-> Property configuration, the runtime environment contract, feature flags, and
-> deployment are documented there. This README covers the template itself.
+> Store provisioning, the runtime environment contract, and deployment are
+> documented there. This README covers the application itself.
 
-A bilingual (EN/FA) florist storefront template for Vendra properties, built with Next.js 16 and React 19. **One codebase, one image per property.**
+A bilingual (EN/FA) florist storefront for Vendra, built with Next.js 16 and
+React 19.
 
-Nothing in `src/` names a property. Everything that identifies a storefront — brand, contacts, socials, canonical origin, business type — lives in `properties/<slug>/`, and the build selects one.
+**One template. One image. Many stores.** This repository builds a single
+storefront design. Vendra runs one container per store from that shared image
+and hands each container its store's configuration at startup. Nothing in `src/`
+names a store, and no build step selects one.
 
-## Properties
+If Vendra ever needs a fundamentally different storefront design, it belongs in
+its own repository and its own image — not as a second theme in here.
 
+```text
+Vendra
+  └─ provisions a container per store
+       └─ vendra-storefront-florist image  (identical for every store)
+            └─ STOREFRONT_CONFIG_BASE64    (this store's identity)
+                 └─ Vendra APIs            (catalogue, content, business data)
 ```
-properties/
-└── houshang-flowers/            # the bundled example property
-    ├── property.config.json     # brand, theme, domain, contacts, socials, map, JSON-LD
-    └── messages/
-        ├── en.json              # overrides merged over messages/en.json
-        └── fa.json
+
+## Store configuration
+
+A container is told which store it serves through one environment variable:
+
+- **`STOREFRONT_CONFIG_BASE64`** — base64-encoded JSON: brand name per locale,
+  domain, canonical origin, contacts, socials, currency, artwork, optional
+  message overrides. Validated against `config/storefront.schema.json` on boot.
+- **`VENDRA_API_URL`** — the canonical Vendra API, as an origin
+  (`https://api.example.com`) or with the `/api` suffix. Either form works.
+- **`VENDRA_STOREFRONT_KEY`** — optional opaque credential sent to the API as
+  `X-Storefront-Key`. Server-side only; it must never have a `NEXT_PUBLIC_`
+  variant.
+
+Vendra renders `STOREFRONT_CONFIG_BASE64` itself when it provisions a store.
+`scripts/storefront-config.mjs` is the manual equivalent:
+
+```bash
+npm run storefront:config -- path/to/store.json          # STOREFRONT_CONFIG_BASE64=…
+npm run storefront:config -- path/to/store.json --raw    # the base64 only
+npm run storefront:config -- path/to/store.json --json   # validated JSON, pretty
 ```
 
-`scripts/select-property.mjs` validates the chosen config and generates static property and theme adapters under `src/generated/`. It runs automatically before `dev`, `build` and `typecheck`.
+It validates against the same schema the container applies on boot, so a config
+that fails here would have failed there.
 
-Select a property with `PROPERTY=<slug>`; with only one directory under `properties/`, it is optional.
+**A production container with no `STOREFRONT_CONFIG_BASE64` refuses to serve.**
+That is deliberate: silently falling back would serve the development fixture's
+brand under a real store's domain.
 
-### Adding a property
-
-1. `cp -r properties/houshang-flowers properties/<slug>` and edit `property.config.json` — `slug` must match the directory name.
-2. In `messages/`, restate only the strings that carry the brand. The base catalogue is deliberately brand-neutral; anything not overridden falls through to it.
-3. Register `domain` as an **active tenant domain** in Vendra. The canonical API resolves the tenant from this storefront's origin, so an unregistered domain gets 404 on every call.
-4. Build its image: `PROPERTY=<slug> npm run build`.
-
-## Storefront themes
-
-Each property selects a build-time storefront implementation with `"theme": "default"` in `property.config.json`. The bundled current design lives at `src/themes/default/` and is the starter theme.
-
-To add another theme:
-
-1. Create `src/themes/<theme-id>/index.ts` with the same named route exports as `src/themes/default/index.ts`.
-2. Reuse feature modules for API access, state, and shared behavior; keep theme-specific page composition in the theme directory.
-3. Set the property's `theme` to `<theme-id>` and run `PROPERTY=<slug> npm run property`.
-
-Theme selection is compiled into each property image. It is intentionally not a runtime toggle and is separate from the visitor's light/dark color preference.
-
-## Quick Start
+## Standalone development
 
 ```bash
 npm install
-npm run dev            # PROPERTY from .env, or the only property present
+npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open <http://localhost:3000>. There is no property to select and no generation
+step — `npm run dev` is the whole setup.
+
+Configuration resolves in one order, in both development and production:
+
+| Source | When | Contains |
+| --- | --- | --- |
+| `STOREFRONT_CONFIG_BASE64` | whenever set | the real store |
+| `config/storefront.development.json` | development only | neutral placeholder |
+
+`config/storefront.development.json` exists so a fresh clone runs. It holds
+deliberately fake identity — no real store's name, phone, socials or trust seal
+— because it is the one config document compiled into the shared image, and the
+image must carry no store's identity. It is a fixture, not a store registry:
+adding a second file to it is not how a second store is served.
+
+To develop against a real Vendra tenant, put its config in `.env.local` using
+the same mechanism production uses:
+
+```bash
+npm run storefront:config -- path/to/store.json >> .env.local
+```
+
+Local dev then exercises the production code path rather than a parallel one.
 
 ### Environment files
 
-- `.env.local` is for `npm run dev` overrides and local secrets. Next.js loads
-  it automatically; never commit it.
-- `.env` is for this repository's Docker Compose build, Traefik router, and
-  container environment. Create it from `.env.traefik.example`; never
-  commit it.
-- `.env.traefik.example` documents this repository's local integrated Docker
-  variables and contains no real credentials. Production environment files are
-  generated by `vendra-cp` — either the `vendra` host CLI or the
-  `provisioner` service that Vendra's console drives. See `DEPLOYMENT.md`.
-- Property defaults belong in `properties/<slug>/property.config.json`.
-  `CONTACT_*` variables are optional deployment overrides.
-- `NEXT_PUBLIC_*` values are compiled into the browser bundle. Rebuild the
-  image after changing one. Never put a secret in a `NEXT_PUBLIC_*` variable.
+- `.env.local` — local development overrides and secrets. Loaded automatically
+  by Next.js; never committed.
+- `NEXT_PUBLIC_*` values are inlined into the browser bundle at build time.
+  Because one image serves every store, no store-specific value may ever be a
+  `NEXT_PUBLIC_*` variable — the API, storage and site origins are read from
+  server-only names for exactly this reason, and a test enforces it. Rebuild the
+  image after changing a public value, and never put a secret in one.
 
 Use `NEXT_PUBLIC_MAP_PROVIDER=osm` without keys, or set it to `neshan` and
 provide both `NEXT_PUBLIC_NESHAN_MAP_KEY` (browser-visible) and
 `NESHAN_SERVICE_KEY` (server-only).
 
-## Available Scripts
+## Structure
 
-- `npm run dev` — Start local development server
-- `npm run build` — Create production build
-- `npm run start` — Run production server
-- `npm run property` — Regenerate the selected property and theme adapters
-- `npm run lint` — Run ESLint
-- `npm run typecheck` — Run TypeScript without emitting files
-- `npm run check` — Run lint, typecheck, and production build
+```text
+config/          storefront schema + the development fixture
+messages/        brand-neutral base catalogue (en, fa)
+src/app/         routes, layouts, and the API routes the browser talks to
+src/modules/     feature modules (products, cart, blog, checkout, …)
+src/shared/      API client, UI primitives, i18n, store configuration
+```
+
+Pages live in their route files, the ordinary Next.js way. Feature modules own
+data access, state and components, and expose them through a barrel
+(`@/modules/products`); ESLint blocks reaching into module internals from
+outside. `src/shared/property/` resolves and validates the store configuration.
 
 ## API
 
-The storefront talks to **one** canonical Vendra API (`VENDRA_API_URL`, e.g. `https://api.vendra.test`) — never to its own domain. Because that host serves every property, the request `Host` cannot identify the
-tenant. The storefront states its identity explicitly:
+The storefront talks to **one** canonical Vendra API — never to its own domain.
+Because that host serves every store, the request `Host` cannot identify the
+tenant, so the storefront states its identity explicitly:
 
-- Server-rendered calls send the property's `siteUrl` as `Origin`, its registered
+- Server-rendered calls send the store's `siteUrl` as `Origin`, its registered
   `domain` as `X-Storefront-Domain`, and — when `VENDRA_STOREFRONT_KEY` is set —
-  an opaque credential in `X-Storefront-Key`.
-- Browser calls go through the same-origin `/api/proxy` route, which attaches all
-  three server-side, so the credential never reaches the client bundle.
+  the credential in `X-Storefront-Key`.
+- Browser reads go through the same-origin `/api/proxy` route, which attaches
+  all three server-side so the credential never reaches the client bundle. That
+  proxy forwards only an explicit allowlist of catalogue and content endpoints,
+  because anything it forwards is requested as this storefront.
+- Catalogue images are served through `/api/storage`, same-origin, for the same
+  reason: the upstream storage origin is a runtime input and must not be baked
+  into the browser bundle.
 
-**The backend does not read these yet.** Tenant scoping for storefront API calls
-is still an open gap; the transport is in place waiting for it.
+Vendra remains the source of truth for catalogue, content and business data.
+None of it is duplicated in this repository.
 
-The `/api` path segment is appended automatically, so `VENDRA_API_URL` may be given with or without it.
+**The backend does not read the tenant headers yet.** Tenant scoping for
+storefront API calls is still an open gap; the transport is in place waiting
+for it.
 
-## Integrated Docker development with Vendra Traefik
+## Available scripts
 
-The storefront container does not publish a host port or run its own reverse
-proxy. Vendra's single Traefik instance terminates TLS and discovers this
-container over the external `traefik-public` network.
+- `npm run dev` — start the local development server
+- `npm run build` — production build
+- `npm run start` — run the production server
+- `npm test` — unit tests (`node:test`, no test-framework dependency)
+- `npm run lint` / `npm run lint:strict` — ESLint (strict fails on warnings)
+- `npm run typecheck` — TypeScript, no emit
+- `npm run check` — lint, typecheck, test, and build
+- `npm run check:strict` — strict lint, typecheck, and test
+- `npm run storefront:config` — encode a store config for a container
 
-```bash
-# Start Traefik and the backend with the vendra-cp CLI.
-# (Build it once from ../vendra-cp: go build -o ./bin/vendra ./cmd/vendra)
-vendra init --config /etc/vendra/controller.yaml
-vendra stack up
-vendra stack hosts --write
+CI runs `check:strict` and will not publish an image unless it passes.
 
-# Return here and start this locally built storefront behind that Traefik.
-cd ../vendra-storefront-florist
-cp .env.traefik.example .env
-# Edit PROPERTY, DOMAIN, ROUTER_NAME, VENDRA_API_URL and optional integrations.
-docker compose -f docker-compose.traefik.yml up -d --build
-```
+### Tests
 
-Open `https://<DOMAIN>/en`.
+Tests live beside the code as `*.test.ts` and run on Node's built-in runner —
+no Jest or Vitest, and no new dependency. They cover the pure rules where a
+regression would be quiet and expensive: the storefront config schema check
+(including that the development fixture still satisfies it), the `/api/proxy`
+allowlist, the message merge, and environment resolution.
 
-- `PROPERTY` and every `NEXT_PUBLIC_*` value are baked at image build time. Rebuild after changing them.
-- Server-side values (`VENDRA_API_URL`, `CONTACT_*`) are read from the container environment at runtime; unset, the property config applies.
-- In production a property is rendered by `vendra-cp` from a Compose template embedded in its Go binary, using a digest-pinned image. This repository's Compose file is local integration tooling, not a second production definition — see `deploy/CONTRACT.md` for how the two differ.
-- Both this repository's Compose file and the controller's production template health-check `/api/health`; the production router also carries a matching Traefik health check.
-- Vendra owns Traefik, ports `80/443` and TLS certificates. Property routers apply `www-redirect`, security-header, and compression middlewares.
-
-### Live source development in Docker
-
-Use the committed development override to bind-mount this checkout while keeping
-Linux-compatible dependencies and generated Next state in Docker volumes:
+## Container
 
 ```bash
-docker compose \
-  -f docker-compose.traefik.yml \
-  -f docker-compose.dev.yml \
-  up -d --build
-```
-
-Source changes are served by `next dev` without rebuilding. Rebuild only after
-`package.json` or `package-lock.json` changes so the development target can run
-`npm ci` again. Other storefront projects can reuse the same `development`
-target and Compose override pattern while remaining independently owned and
-deployed as images through Vendra.
-
-Useful commands:
-
-```bash
-docker compose -f docker-compose.traefik.yml ps
-docker compose -f docker-compose.traefik.yml logs -f app
-docker compose -f docker-compose.traefik.yml up -d --build
-docker compose -f docker-compose.traefik.yml stop
-docker compose -f docker-compose.traefik.yml down
-```
-
-## End-to-end property deployment
-
-A property needs two registrations: a backend tenant in Vendra and a
-domain-routed container using the shared storefront image. Use the same slug
-and domain in both systems.
-
-### Automated creation from Vendra panels
-
-Vendra's Console property form can optionally request this storefront; its
-Reseller property form requires it. Both collect the complete property config
-and persist a deployment request. Configure Vendra's queue-facing provisioner:
-
-```dotenv
-STOREFRONT_PROVISIONER_URL=http://provisioner:8080/storefronts
-STOREFRONT_PROVISIONER_TOKEN=replace-with-a-secret-token
-STOREFRONT_IMAGE=ghcr.io/misaf/vendra-storefront-florist:1.x
-STOREFRONT_THEMES=default
-```
-
-The provisioner accepts the documented JSON request, starts a new container
-from the shared image, injects the property's runtime configuration, registers
-its domain router, and returns `status`, `reference`, and `image_digest`. Until
-both URL and token are configured, Vendra safely keeps
-the request in `pending`; it never runs Docker or shell commands in the web
-process. See Vendra's `deploy/README.md` for the provider contract and status
-lifecycle.
-
-The examples below use:
-
-```text
-slug:   houshang-flowers
-domain: houshang-flowers.com
-image:  ghcr.io/<organization>/houshang-flowers-storefront:<version>
-```
-
-### 1. Prepare and verify the property
-
-From this repository:
-
-```bash
-cp -r properties/houshang-flowers properties/<slug>
-# Edit properties/<slug>/property.config.json and its message overrides.
-
-PROPERTY=<slug> npm run property
-PROPERTY=<slug> npm run check
-```
-
-The config's `slug` must match its directory, its `domain` and `siteUrl` must
-match the intended public storefront, and its `theme` must exist under
-`src/themes/`.
-
-### 2. Build and publish the shared image
-
-Only fleet-wide browser settings belong in build arguments:
-
-```bash
-docker build \
-  --build-arg NEXT_PUBLIC_MAP_PROVIDER=osm \
-  -t ghcr.io/<organization>/vendra-storefront-florist:<version> .
-
+docker build -t ghcr.io/<organization>/vendra-storefront-florist:<version> .
 docker push ghcr.io/<organization>/vendra-storefront-florist:<version>
 ```
 
-The canonical API, storage origin, site origin, property identity, and credentials
-are runtime inputs. Additional build arguments are limited to
-`NEXT_PUBLIC_NESHAN_MAP_KEY` and `NEXT_PUBLIC_NESHAN_MAP_TYPE`. In production,
-deploy the pushed image by digest instead of a moving tag.
+Only fleet-wide browser settings belong in build arguments
+(`NEXT_PUBLIC_MAP_PROVIDER`, `NEXT_PUBLIC_NESHAN_MAP_KEY`,
+`NEXT_PUBLIC_NESHAN_MAP_TYPE`). Store identity, the API origin and credentials
+are runtime inputs. In production, deploy by digest rather than a moving tag.
 
-### 3. Provision the backend property
+The image health-checks `/api/health`.
 
-From the Vendra repository, start the platform and create the tenant with the
-same public domain:
+## Adding a store
 
-```bash
-cd ../vendra-platform
-vendra stack up
+A store needs a backend tenant in Vendra and a domain-routed container from this
+image. Both are Vendra operations — nothing in this repository changes:
 
-php artisan vendra-subscription:provision \
-  "<Property name>" \
-  <domain> \
-  <owner-username> \
-  <owner-email> \
-  --reseller=<reseller-id-or-slug> \
-  --plan=<plan>
-```
+1. Provision the tenant in Vendra and register its domain as active. The
+   canonical API resolves the tenant from the storefront's origin, so an
+   unregistered domain gets 404 on every call.
+2. Provision the storefront container with `STOREFRONT_CONFIG_BASE64` and
+   `VENDRA_API_URL` set for that store.
+3. Verify `/en` and `/fa`, products, blog, FAQ, contact, cart and checkout in
+   both light and dark modes. A page can render while API calls fail, so
+   confirm that API-backed products and FAQs load for the correct tenant.
 
-The domain must be active in Vendra. Otherwise every storefront API request is
-rejected because Vendra cannot resolve the tenant from the request origin.
+## Tech stack
 
-### 4. Register and start the storefront
-
-Production onboarding runs from Vendra's console: the storefront form creates a
-`StorefrontDeployment`, and `ProvisionStorefrontJob` posts the encoded
-configuration to the `provisioner` service, which renders and starts the
-property. Nothing below is needed for that path.
-
-For a manual or local deployment, use the `vendra` CLI from `vendra-cp`:
-
-```bash
-# The configuration file must satisfy properties/schema.json in this repo —
-# not just slug and domain. Generate it from a property directory:
-npm run property:config <slug> -- --json > /tmp/<slug>.json
-
-sudo vendra property add <slug> <domain> \
-  --image ghcr.io/<organization>/vendra-storefront-florist@sha256:<digest> \
-  --configuration /tmp/<slug>.json \
-  --config /etc/vendra/controller.yaml
-
-# Local development only: resolve the property domain and extend local TLS.
-sudo vendra stack hosts --write
-
-sudo vendra property up <slug>
-sudo vendra stack status
-```
-
-`property add` refuses to overwrite an existing property; `property render`
-rewrites one in place. The controller validates that the configuration's `slug`
-and `domain` match the property before writing anything.
-
-`vendra property ls` shows the fleet and any drift between the registry and what
-is rendered on the host; `vendra property sync` re-renders every registered
-property. The registry (`<state_dir>/properties.yml`) records slug, domain, image
-and theme only — no configuration, so it is safe to back up. A full restore still
-needs the `storefront_deployments` table, since that is where the configurations
-live; `sync` reports any property it cannot rebuild from the host alone.
-
-For a public deployment, point the domain's DNS A/AAAA records at the server
-running Traefik and set `certificate_mode: acme` in the controller config; the
-resolver is HTTP-01, so the domain only needs an A record. Use
-`certificate_mode: self-signed` for local `.test` development.
-
-### 5. Verify end to end
-
-```bash
-cd ../vendra-platform
-sudo vendra stack status
-sudo vendra stack logs <slug>
-sudo vendra stack urls
-
-curl -kI https://<domain>/en
-curl -k https://api.<vendra-base-domain>/up
-```
-
-Then verify `/en`, `/fa`, products, blog, FAQ, contact, cart, and checkout in
-both light and dark modes. A storefront page can load while API calls fail, so
-confirm that API-backed products or FAQs render for the correct tenant.
-
-### Updating and removing properties
-
-```bash
-# After publishing a new digest, re-render the property with the new image,
-# then restart it:
-sudo vendra property render <slug> <domain> \
-  --image ghcr.io/<organization>/vendra-storefront-florist@sha256:<digest> \
-  --configuration /tmp/<slug>.json
-sudo vendra property restart <slug>
-
-# Stop one property without removing it:
-sudo vendra property down <slug>
-
-# Remove it (destructive; prompts unless --yes):
-sudo vendra property remove <slug>
-```
-
-Backend tenant deletion is a separate Vendra data operation and is not implied
-by removing the storefront deployment.
-
-## Tech Stack
-
-- Next.js 16.2
-- React 19.2
-- TypeScript
-- Tailwind CSS 4
-- Radix UI + shadcn/ui components
+- Next.js 16 (App Router) · React 19 · TypeScript
+- Tailwind CSS 4 · Radix UI + shadcn/ui
+- next-intl (EN/FA, RTL) · TanStack Query

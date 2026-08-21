@@ -4,13 +4,14 @@ import { Link } from "@/shared/i18n/navigation";
 import Image from "next/image";
 import { useState } from "react";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Card, CardDescription, CardFooter, CardHeader } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
 import { ArrowLeft, ArrowRight, Calendar, ImageOff } from "lucide-react";
 import { cn, normalizeImageUrl } from "@/shared/lib/utils";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 import { isRtlLocale } from "@/shared/lib/locale";
 import type { Post as BlogPost } from "../types";
+import { DynamicText } from "@/shared/components/dynamic-text";
 
 interface BlogPostCardProps {
   post: BlogPost;
@@ -67,8 +68,9 @@ export function BlogPostCard({
             </div>
           ) : (
             <Image
-              src={normalizeImageUrl(post.image)}
-              alt={post.title}
+              src={normalizeImageUrl(post.thumbnail || post.image)}
+              /* The title is inside the same link — see FeaturedBlogPostCard. */
+              alt=""
               width={400}
               height={225}
               sizes={compact ? "(min-width: 1024px) 18rem, 45vw" : "(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"}
@@ -78,8 +80,8 @@ export function BlogPostCard({
             />
           )}
           {showCategory && post.category && (
-            <Badge variant="secondary" dir="auto" className="store-dynamic-text absolute start-3 top-3 max-w-[calc(100%-1.5rem)] whitespace-normal bg-card/90 text-primary shadow-sm backdrop-blur">
-              {post.category}
+            <Badge variant="secondary" className="store-dynamic-text absolute start-3 top-3 max-w-[calc(100%-1.5rem)] whitespace-normal bg-card/90 text-primary shadow-sm backdrop-blur">
+              <DynamicText>{post.category}</DynamicText>
             </Badge>
           )}
         </div>
@@ -92,17 +94,16 @@ export function BlogPostCard({
               </time>
             </div>
           ) : null}
-          <CardTitle
-            dir="auto"
+          <h3
             className={cn(
-              "store-dynamic-text line-clamp-2 transition-colors",
+              "store-dynamic-text line-clamp-2 font-semibold transition-colors",
               compact
-                ? "text-sm leading-5 text-storefront-brand-foreground group-hover:text-storefront-brand-foreground/70 dark:text-foreground dark:group-hover:text-muted-foreground"
+                ? "text-sm leading-5 text-foreground group-hover:text-primary sm:text-base sm:leading-6"
                 : "font-display text-2xl font-medium leading-7 group-hover:text-rose [.locale-fa_&]:leading-[1.65]"
             )}
           >
-            {post.title}
-          </CardTitle>
+            <DynamicText>{post.title}</DynamicText>
+          </h3>
           {showExcerpt ? (
             <CardDescription className="line-clamp-3 leading-6">
               {post.excerpt}

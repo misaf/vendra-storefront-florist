@@ -8,21 +8,9 @@ import {
   PhoneCall,
   Smartphone,
 } from "lucide-react";
+import { formatBusinessHours, toLocaleDigits } from "@/shared/lib/hours";
 import { telHref } from "@/shared/lib/utils";
 import type { ContactInfo } from "@/shared/lib/config";
-
-const PERSIAN_DIGITS = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
-
-function toLocaleDigits(value: string, locale: string): string {
-  return locale === "fa"
-    ? value.replace(/[0-9]/g, (digit) => PERSIAN_DIGITS[Number(digit)])
-    : value;
-}
-
-function formatBusinessHours(open: string, close: string, locale: string): string {
-  const separator = locale === "fa" ? "تا" : "–";
-  return `${toLocaleDigits(open, locale)} ${separator} ${toLocaleDigits(close, locale)}`;
-}
 
 /**
  * The contact page's opening: masthead and the four contact facts. All static

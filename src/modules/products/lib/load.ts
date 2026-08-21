@@ -6,6 +6,10 @@ import {
   type ProductSortValue,
 } from "./keys";
 import type { FetchProductsResult, Product } from "../types";
+import {
+  availabilityToInStock,
+  type ProductAvailability,
+} from "./filter-state";
 
 /** Deduplicate the product fetch across generateMetadata + the page render. */
 export const getProduct = cache((slug: string, locale: string) =>
@@ -87,18 +91,22 @@ export interface LoadProductsPageResult {
 export async function loadProductsPage({
   locale,
   category,
+  availability,
   search,
   sort,
 }: {
   locale: string;
   category: string | undefined;
+  availability: ProductAvailability | undefined;
   search: string;
   sort: ProductSortValue | undefined;
 }): Promise<LoadProductsPageResult> {
   const apiSort = getProductsApiSort(sort);
+  const inStock = availabilityToInStock(availability);
   const initialQueryKey = buildProductsQueryKey(
     locale,
     category,
+    inStock,
     search,
     apiSort
   );
@@ -112,6 +120,7 @@ export async function loadProductsPage({
       page: 1,
       perPage: 12,
       category,
+      inStock,
       locale,
       search: search || undefined,
       sort: apiSort,

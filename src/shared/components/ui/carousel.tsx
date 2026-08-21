@@ -75,17 +75,25 @@ function Carousel({
     api?.scrollNext()
   }, [api])
 
+  // Which way the track actually runs. Embla's own `direction` decides whether
+  // "next" moves the content left or right, so the arrow keys have to follow it
+  // — ArrowLeft was hardwired to `scrollPrev`, which in Persian meant the left
+  // arrow walked the rail backwards, away from the direction it points.
+  const isRtl = opts?.direction === "rtl"
+
   const handleKeyDown = React.useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key === "ArrowLeft") {
         event.preventDefault()
-        scrollPrev()
+        if (isRtl) scrollNext()
+        else scrollPrev()
       } else if (event.key === "ArrowRight") {
         event.preventDefault()
-        scrollNext()
+        if (isRtl) scrollPrev()
+        else scrollNext()
       }
     },
-    [scrollPrev, scrollNext]
+    [scrollPrev, scrollNext, isRtl]
   )
 
   React.useEffect(() => {
@@ -145,9 +153,12 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
       data-slot="carousel-content"
     >
       <div
+        /* Logical, not physical. `-ml-4` here fought the `-ms-*` the callers
+           pass — tailwind-merge treats `ml` and `ms` as different groups, so in
+           RTL both survived and every slide ended up padded on both sides. */
         className={cn(
           "flex",
-          orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
+          orientation === "horizontal" ? "-ms-4" : "-mt-4 flex-col",
           className
         )}
         {...props}
@@ -166,7 +177,7 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
       data-slot="carousel-item"
       className={cn(
         "min-w-0 shrink-0 grow-0 basis-full",
-        orientation === "horizontal" ? "pl-4" : "pt-4",
+        orientation === "horizontal" ? "ps-4" : "pt-4",
         className
       )}
       {...props}
@@ -189,14 +200,21 @@ function CarouselPrevious({
       variant={variant}
       size={size}
       className={cn(
-        "absolute size-11 rounded-full",
+        "absolute rounded-full",
         orientation === "horizontal"
           ? "top-1/2 -left-12 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+        !canScrollPrev && "pointer-events-none opacity-50",
         className
       )}
-      disabled={!canScrollPrev}
-      onClick={scrollPrev}
+      /* aria-disabled, not disabled: taking `disabled` on the focused button
+         blurs it, so a keyboard user paging to the end of a rail was dropped
+         back to the top of the document. */
+      aria-disabled={!canScrollPrev}
+      onClick={() => {
+        if (!canScrollPrev) return
+        scrollPrev()
+      }}
       {...props}
     >
       {children ?? (
@@ -224,14 +242,18 @@ function CarouselNext({
       variant={variant}
       size={size}
       className={cn(
-        "absolute size-11 rounded-full",
+        "absolute rounded-full",
         orientation === "horizontal"
           ? "top-1/2 -right-12 -translate-y-1/2"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
+        !canScrollNext && "pointer-events-none opacity-50",
         className
       )}
-      disabled={!canScrollNext}
-      onClick={scrollNext}
+      aria-disabled={!canScrollNext}
+      onClick={() => {
+        if (!canScrollNext) return
+        scrollNext()
+      }}
       {...props}
     >
       {children ?? (

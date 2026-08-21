@@ -9,4 +9,4 @@ in shared components/utilities.
 
 Server-side data loading lives in `lib/load.ts` (`getPost`, `loadPostsPage`,
 `loadRelatedPosts`). Route composition for the blog listing and detail pages
-lives in `src/themes/default/pages/`.
+lives in `src/app/[locale]/blog/`.

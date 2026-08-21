@@ -3,9 +3,14 @@ import { Skeleton } from "@/shared/components/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
 
 /**
- * Column ramp for the catalogue grid: 2 up on phones, 3 from `md`, 4 on very
- * wide screens. The gutters are tighter horizontally than vertically so cards
- * group into rows rather than into a uniform mesh.
+ * Column ramp for the catalogue grid: 2 up on phones, 3 from `md`, 4 from `xl`.
+ * The gutters are tighter horizontally than vertically so cards group into rows
+ * rather than into a uniform mesh.
+ *
+ * The fourth column used to wait for `2xl` (1536px), which left a 560-product
+ * catalogue three cards wide on every ordinary laptop — the content column next
+ * to the 240px sidebar is ~1090px at 1440, so a 4-up row is still a comfortable
+ * ~250px card rather than a cramped one.
  *
  * This string used to be written out three times — in the grid, in the grid's
  * own loading branch and again in `products/loading.tsx` — so a column change
@@ -13,7 +18,7 @@ import { cn } from "@/shared/lib/utils";
  * page it was standing in for.
  */
 const GRID_CLASS =
-  "grid grid-cols-2 items-stretch gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10 md:grid-cols-3 2xl:grid-cols-4";
+  "grid grid-cols-2 items-stretch gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10 md:grid-cols-3 xl:grid-cols-4";
 
 /**
  * What a card in this grid actually occupies, matched to the ramp above. Passed
@@ -21,7 +26,7 @@ const GRID_CLASS =
  * the drawn size instead of the full-width one.
  */
 export const PRODUCT_GRID_IMAGE_SIZES =
-  "(min-width: 1536px) 18vw, (min-width: 1024px) 22vw, (min-width: 768px) 30vw, 45vw";
+  "(min-width: 1280px) 17vw, (min-width: 768px) 24vw, 45vw";
 
 export function ProductGrid({
   children,

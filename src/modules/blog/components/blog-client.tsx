@@ -27,6 +27,7 @@ import { createReadableResourcePath } from "@/shared/lib/slug-url";
 import { cn, normalizeImageUrl } from "@/shared/lib/utils";
 import { isRtlLocale } from "@/shared/lib/locale";
 import { buildBlogQueryKey } from "../lib/keys";
+import { DynamicText } from "@/shared/components/dynamic-text";
 
 interface BlogPostsClientProps {
   initialPosts: BlogPost[];
@@ -70,7 +71,8 @@ function FeaturedPost({
           ) : (
             <Image
               src={normalizeImageUrl(post.image)}
-              alt={post.title}
+              /* The title is inside the same link — see FeaturedBlogPostCard. */
+              alt=""
               fill
               sizes="(min-width: 1024px) 58vw, 100vw"
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
@@ -92,8 +94,8 @@ function FeaturedPost({
             ) : null}
           </div>
 
-          <h2 className="store-dynamic-text font-display mt-4 text-3xl leading-[1.1] tracking-tight text-foreground transition-colors group-hover:text-muted-foreground [.locale-fa_&]:leading-[1.45] sm:text-4xl lg:text-5xl" dir="auto">
-            {post.title}
+          <h2 className="store-dynamic-text font-display mt-4 text-3xl leading-[1.1] tracking-tight text-foreground transition-colors group-hover:text-muted-foreground [.locale-fa_&]:leading-[1.45] sm:text-4xl lg:text-5xl">
+            <DynamicText>{post.title}</DynamicText>
           </h2>
 
           {post.excerpt ? (
