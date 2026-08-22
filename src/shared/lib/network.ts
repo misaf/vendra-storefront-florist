@@ -27,31 +27,26 @@ export function getAcceptLanguageHeader(
 }
 
 /**
- * Shared JSON:API request headers. Applies the Accept-Language header, states
- * the storefront's public origin (server-side calls have no browser Origin for
- * the canonical API to resolve the tenant from), and attaches an optional
- * bearer token. Used by the API client and the same-origin proxy route.
+ * Shared JSON:API request headers. Used by the API client and the same-origin
+ * proxy route.
  *
- * Two independent identities can ride one request and must not share a header:
- * `token` is the *end user* (Authorization: Bearer), while
- * `storefrontKey`/`storefrontDomain` are the *tenant*. The domain is a hint the
- * backend may only act on after it has verified the key — never on its own.
+ * `origin` is how the tenant is identified: Vendra's `ResolveApiTenant` matches
+ * the request's `Origin` (then `Referer`) against the active storefront
+ * domains. A server render has no browser-supplied Origin, so it states the
+ * store's public origin explicitly.
+ *
+ * `token` is a separate identity — the *end user*, as `Authorization: Bearer`.
+ * It must never be conflated with the tenant.
  */
 export function createApiRequestHeaders({
   headers,
   locale,
   origin,
-  storefrontDomain,
-  storefrontKey,
-  storefrontKeyHeader,
   token,
 }: {
   headers?: HeadersInit;
   locale?: string;
   origin?: string;
-  storefrontDomain?: string | null;
-  storefrontKey?: string | null;
-  storefrontKeyHeader?: string;
   token?: string | null;
 }): Headers {
   const requestHeaders = new Headers(JSON_API_HEADERS);
@@ -63,14 +58,6 @@ export function createApiRequestHeaders({
 
   if (origin) {
     requestHeaders.set("Origin", origin);
-  }
-
-  if (storefrontKey) {
-    requestHeaders.set(storefrontKeyHeader || "X-Storefront-Key", storefrontKey);
-  }
-
-  if (storefrontDomain) {
-    requestHeaders.set("X-Storefront-Domain", storefrontDomain);
   }
 
   if (token) {

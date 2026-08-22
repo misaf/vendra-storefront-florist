@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getApiBaseUrl,
-  getSiteUrl,
-  getStorefrontDomain,
-  getStorefrontKey,
-  getStorefrontKeyHeader,
-} from "@/shared/config";
+import { getApiBaseUrl, getSiteUrl } from "@/shared/config";
 import { createApiRequestHeaders, getNetworkErrorStatus } from "@/shared/lib/network";
 import { resolveUpstreamPath } from "@/shared/api/proxy-allowlist";
 
@@ -13,12 +7,10 @@ const API_BASE_URL = getApiBaseUrl();
 
 function createProxyHeaders(request: NextRequest): Headers {
   // The browser's own origin is this storefront's runtime host, which in
-  // development is localhost. The canonical API selects the tenant by origin,
-  // so the proxy forwards the configured public origin instead. The browser's
-  // Accept-Language header is forwarded verbatim.
-  //
-  // This hop is also where the tenant credential is attached: it keeps the
-  // secret server-side while still letting browser reads be credentialed.
+  // development is localhost. Vendra's ResolveApiTenant selects the tenant from
+  // Origin, so the proxy forwards the configured public origin instead — that
+  // substitution is the whole reason browser reads go through this hop rather
+  // than straight to the API. Accept-Language is forwarded verbatim.
   const acceptLanguage = request.headers.get("Accept-Language");
   const authorization = request.headers.get("Authorization");
   const headers = new Headers();
@@ -28,9 +20,6 @@ function createProxyHeaders(request: NextRequest): Headers {
 
   return createApiRequestHeaders({
     origin: getSiteUrl(),
-    storefrontDomain: getStorefrontDomain(),
-    storefrontKey: getStorefrontKey(),
-    storefrontKeyHeader: getStorefrontKeyHeader(),
     headers,
   });
 }

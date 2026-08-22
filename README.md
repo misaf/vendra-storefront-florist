@@ -40,9 +40,6 @@ A container is told which store it serves through one environment variable:
   option nothing can set.
 - **`VENDRA_API_URL`** — the canonical Vendra API, as an origin
   (`https://api.example.com`) or with the `/api` suffix. Either form works.
-- **`VENDRA_STOREFRONT_KEY`** — optional opaque credential sent to the API as
-  `X-Storefront-Key`. Server-side only; it must never have a `NEXT_PUBLIC_`
-  variant.
 
 Vendra renders `STOREFRONT_CONFIG_BASE64` itself when it provisions a store.
 `scripts/storefront-config.mjs` is the manual equivalent:
@@ -127,15 +124,17 @@ container serves, and `storefront-context.tsx` to hand that store to the client.
 
 The storefront talks to **one** canonical Vendra API — never to its own domain.
 Because that host serves every store, the request `Host` cannot identify the
-tenant, so the storefront states its identity explicitly:
+tenant. Vendra resolves it from the request `Origin` instead
+(`app/Http/Middleware/ResolveApiTenant.php`), matched against the active
+storefront domains:
 
-- Server-rendered calls send the store's `siteUrl` as `Origin`, its registered
-  `domain` as `X-Storefront-Domain`, and — when `VENDRA_STOREFRONT_KEY` is set —
-  the credential in `X-Storefront-Key`.
-- Browser reads go through the same-origin `/api/proxy` route, which attaches
-  all three server-side so the credential never reaches the client bundle. That
-  proxy forwards only an explicit allowlist of catalogue and content endpoints,
-  because anything it forwards is requested as this storefront.
+- Server-rendered calls have no browser-supplied `Origin`, so they send the
+  store's `siteUrl` as `Origin` explicitly.
+- Browser reads go through the same-origin `/api/proxy` route, which replaces
+  the browser's own origin — this container's runtime host — with the store's
+  registered one. That proxy forwards only an explicit allowlist of catalogue
+  and content endpoints, because anything it forwards is requested as this
+  storefront.
 - Catalogue images are served through `/api/storage`, same-origin, for the same
   reason: the upstream storage origin is a runtime input and must not be baked
   into the browser bundle.
@@ -178,8 +177,8 @@ docker push ghcr.io/<organization>/vendra-storefront-florist:<version>
 
 Only fleet-wide browser settings belong in build arguments
 (`NEXT_PUBLIC_MAP_PROVIDER`, `NEXT_PUBLIC_NESHAN_MAP_KEY`,
-`NEXT_PUBLIC_NESHAN_MAP_TYPE`). Store identity, the API origin and credentials
-are runtime inputs. In production, deploy by digest rather than a moving tag.
+`NEXT_PUBLIC_NESHAN_MAP_TYPE`). Store identity and the API origin are runtime
+inputs. In production, deploy by digest rather than a moving tag.
 
 The image health-checks `/api/health`.
 

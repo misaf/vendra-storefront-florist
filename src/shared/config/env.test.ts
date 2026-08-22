@@ -5,8 +5,6 @@ import {
   resolveApiUrl,
   resolveSiteUrl,
   resolveStorageUrl,
-  resolveStorefrontKey,
-  resolveStorefrontKeyHeader,
 } from "./env.ts";
 
 const MANAGED = [
@@ -14,8 +12,6 @@ const MANAGED = [
   "VENDRA_API_URL",
   "STORAGE_BASE_URL",
   "SITE_URL",
-  "VENDRA_STOREFRONT_KEY",
-  "VENDRA_STOREFRONT_KEY_HEADER",
   "NEXT_PUBLIC_API_BASE_URL",
   "NEXT_PUBLIC_VENDRA_API_URL",
   "NEXT_PUBLIC_STORAGE_BASE_URL",
@@ -79,23 +75,6 @@ test("site URL loses any trailing slash", () => {
   // It is concatenated into canonical URLs and sent as an Origin header.
   process.env.SITE_URL = "https://store.example.com///";
   assert.equal(resolveSiteUrl(), "https://store.example.com");
-});
-
-test("the storefront credential is trimmed, and blank means unset", () => {
-  assert.equal(resolveStorefrontKey(), null);
-
-  process.env.VENDRA_STOREFRONT_KEY = "   ";
-  assert.equal(resolveStorefrontKey(), null);
-
-  process.env.VENDRA_STOREFRONT_KEY = "  secret-value  ";
-  assert.equal(resolveStorefrontKey(), "secret-value");
-});
-
-test("the credential header name has a default", () => {
-  assert.equal(resolveStorefrontKeyHeader(), "X-Storefront-Key");
-
-  process.env.VENDRA_STOREFRONT_KEY_HEADER = " X-Other ";
-  assert.equal(resolveStorefrontKeyHeader(), "X-Other");
 });
 
 test("hostnameOf falls back rather than throwing on junk", () => {

@@ -11,7 +11,8 @@
  * inlined into the browser bundle at build time, so a public alias for any of
  * these would freeze one store's API host, storage host or canonical origin
  * into the image the whole fleet shares. The browser needs none of them: reads
- * go through the same-origin `/api/proxy` and `/api/storage` routes.
+ * go through the same-origin `/api/proxy` and `/api/storage` routes, and the
+ * proxy is what states this store's origin to the API on their behalf.
  */
 
 function normalizeBaseUrl(value: string): string {
@@ -49,23 +50,6 @@ export function resolveStorageUrl(): string | null {
 export function resolveSiteUrl(): string | null {
   const value = process.env.SITE_URL;
   return value ? normalizeBaseUrl(value) : null;
-}
-
-/**
- * Per-storefront credential the canonical API resolves the tenant from.
- *
- * Deliberately opaque: an API key, an HMAC token or a JWT all fit, so the
- * backend can settle on a mechanism without a storefront change. Server-only —
- * there is no `NEXT_PUBLIC_` variant, and there must never be one, because a
- * credential in the client bundle is a credential the fleet has published.
- */
-export function resolveStorefrontKey(): string | null {
-  return process.env.VENDRA_STOREFRONT_KEY?.trim() || null;
-}
-
-/** Header carrying the storefront credential. */
-export function resolveStorefrontKeyHeader(): string {
-  return process.env.VENDRA_STOREFRONT_KEY_HEADER?.trim() || "X-Storefront-Key";
 }
 
 /** Hostname from an origin URL, or the fallback when unparsable. */

@@ -3,8 +3,6 @@ import {
   resolveApiUrl,
   resolveSiteUrl,
   resolveStorageUrl,
-  resolveStorefrontKey,
-  resolveStorefrontKeyHeader,
 } from "@/shared/config/env";
 
 /**
@@ -35,27 +33,4 @@ export function getApiBaseUrl(): string {
 /** Media host. Defaults to the API origin, which serves `/storage`. */
 export function getStorageBaseUrl(): string {
   return resolveStorageUrl() ?? getApiBaseUrl().replace(/\/api$/, "");
-}
-
-/**
- * This storefront's credential for the canonical API, or null when unset.
- *
- * Every store calls one API host, so the request Host no longer identifies
- * the tenant and an unverified origin must not be trusted to. This is the
- * server-validated channel that identity is meant to come from. Never send it
- * from the browser: server renders attach it directly, browser reads reach the
- * API only through the same-origin proxy, which attaches it on their behalf.
- */
-export function getStorefrontKey(): string | null {
-  return resolveStorefrontKey();
-}
-
-/** Header name the credential travels in. */
-export function getStorefrontKeyHeader(): string {
-  return resolveStorefrontKeyHeader();
-}
-
-/** Registered tenant domain for this store. */
-export function getStorefrontDomain(): string {
-  return getStorefrontConfig().domain;
 }

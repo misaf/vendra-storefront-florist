@@ -1,11 +1,5 @@
 import Jsona from "jsona";
-import {
-  getApiBaseUrl,
-  getSiteUrl,
-  getStorefrontDomain,
-  getStorefrontKey,
-  getStorefrontKeyHeader,
-} from "@/shared/config";
+import { getApiBaseUrl, getSiteUrl } from "@/shared/config";
 import type { JsonApiLinks, JsonApiMeta } from "@/shared/api/types";
 import { createApiRequestHeaders } from "@/shared/lib/network";
 import { routing } from "@/shared/i18n/routing";
@@ -180,21 +174,19 @@ function createRequestHeaders({
   locale?: string;
   token?: string | null;
 }): Headers {
-  // The canonical API serves every store from one host, so the request Host
-  // no longer identifies the tenant. A browser sets Origin itself; a
-  // server-side render has none, so the storefront states its own public origin
-  // and attaches its tenant credential. Browser requests carry neither — their
-  // GETs go through the same-origin proxy, which adds both server-side, and the
-  // credential must never be reachable from the client bundle.
+  // The canonical API serves every store from one host, so the request Host no
+  // longer identifies the tenant — Vendra resolves it from Origin. A browser
+  // sets Origin itself, but to this container's runtime host, which is not the
+  // store's registered domain in development; a server render sets none at all.
+  // So server-side calls state the store's public origin explicitly, and
+  // browser GETs go through the same-origin proxy, which does the same on
+  // their behalf.
   const isServer = typeof window === "undefined";
 
   return createApiRequestHeaders({
     headers,
     locale: locale ?? getBrowserLocale(),
     origin: isServer ? getSiteUrl() : undefined,
-    storefrontDomain: isServer ? getStorefrontDomain() : undefined,
-    storefrontKey: isServer ? getStorefrontKey() : undefined,
-    storefrontKeyHeader: isServer ? getStorefrontKeyHeader() : undefined,
     token,
   });
 }
