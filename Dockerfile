@@ -26,10 +26,13 @@ USER node
 CMD ["npm", "run", "dev"]
 
 FROM base AS builder
+
 # The canonical API, as an origin (https://api.<base>) or with the /api suffix.
 ARG VENDRA_API_URL
+
 # Optional fleet-wide storage override. Left empty, the API origin applies.
 ARG STORAGE_BASE_URL
+
 # Browser-side and fleet-wide, so safe to bake in. There is deliberately no
 # NEXT_PUBLIC_ API or storage URL: NEXT_PUBLIC_* is inlined at build time, so
 # one would freeze a single tenant's host into the shared image. The browser
