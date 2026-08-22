@@ -2,7 +2,7 @@
 
 import { cva, type VariantProps } from "class-variance-authority";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { useFormatPrice } from "@/shared/property/use-format-price";
+import { useFormatPrice } from "@/shared/config/storefront-context";
 import { cn } from "@/shared/lib/utils";
 import type { Product } from "../types";
 

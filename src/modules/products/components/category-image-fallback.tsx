@@ -1,7 +1,7 @@
 import { cn } from "@/shared/lib/utils";
 
 /**
- * The tile a category gets when neither the catalogue nor the theme has a
+ * The tile a category gets when neither the catalogue nor this template has a
  * photograph for it.
  *
  * Seven of this shop's thirteen categories carry no media, so the fallback is

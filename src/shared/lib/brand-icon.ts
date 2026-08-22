@@ -10,9 +10,9 @@ import {
 } from "lucide-react";
 
 /**
- * The brand mark, chosen from the property's schema.org `businessType`.
+ * The brand mark, chosen from the store's schema.org `businessType`.
  *
- * One image serves every property, so the logo cannot be a florist icon
+ * One image serves every store, so the logo cannot be a florist icon
  * compiled into the bundle. Extending the fleet to a new vertical is one entry
  * in this map rather than an edit at every call site.
  */

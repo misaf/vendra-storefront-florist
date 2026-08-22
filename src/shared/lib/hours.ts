@@ -16,7 +16,7 @@ export function toLocaleDigits(value: string, locale: string): string {
 /**
  * A shop's opening span, e.g. "08:00 – 21:00" or "۰۸:۰۰ تا ۲۱:۰۰".
  *
- * Shared because two pages state the same fact from the same property
+ * Shared because two pages state the same fact from the same store
  * configuration: the contact page's hours panel and the home page's hero. It
  * used to be private to the contact page, so the second caller would have had
  * to restate the Persian separator and the digit mapping.

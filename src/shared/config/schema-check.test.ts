@@ -2,7 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { checkAgainstSchema, type SchemaNode } from "./schema-check.ts";
+import {
+  checkAgainstSchema,
+  isUnknownFieldError,
+  type SchemaNode,
+} from "./schema-check.ts";
 
 const ROOT = join(import.meta.dirname, "..", "..", "..");
 const read = (...parts: string[]) =>
@@ -49,22 +53,28 @@ test("a blank required field counts as missing", () => {
   );
 });
 
-test("accepts `theme` for provisioner compatibility, and ignores it", () => {
-  // Vendra provisioners still send it; additionalProperties:false would
-  // otherwise reject the whole config over a field nothing reads.
-  const config = validConfig();
-  config.theme = "default";
-
-  assert.deepEqual(checkAgainstSchema(config, schema), []);
-});
-
-test("rejects fields the schema does not declare", () => {
+test("reports fields the schema does not declare", () => {
   const config = validConfig();
   config.somethingInvented = "x";
 
   assert.deepEqual(checkAgainstSchema(config, schema), [
     "somethingInvented is not allowed",
   ]);
+});
+
+test("an undeclared field is separable from a real validation failure", () => {
+  // Boot ignores the first and refuses to start on the second: Vendra deploys
+  // independently and still sends `theme`, so a field this image does not know
+  // must not take the container down — while a malformed email still must.
+  const config = validConfig();
+  config.theme = "default";
+  (config.contact as Record<string, unknown>).email = "not-an-email";
+
+  const errors = checkAgainstSchema(config, schema);
+  const fatal = errors.filter((error) => !isUnknownFieldError(error));
+
+  assert.deepEqual(errors.filter(isUnknownFieldError), ["theme is not allowed"]);
+  assert.deepEqual(fatal, ["contact.email is not a valid email"]);
 });
 
 test("validates nested objects and reports a dotted path", () => {
@@ -85,15 +95,6 @@ test("validates uri format on siteUrl", () => {
   ]);
 });
 
-test("enforces numeric bounds on checkout pricing", () => {
-  const config = validConfig();
-  config.checkout = { shippingFee: 0, taxRate: -1 };
-
-  const errors = checkAgainstSchema(config, schema);
-  assert.ok(errors.includes("checkout.shippingFee must be > 0"), errors.join("; "));
-  assert.ok(errors.includes("checkout.taxRate must be >= 0"), errors.join("; "));
-});
-
 test("rejects a non-object config", () => {
   for (const value of [null, "a string", 42, ["an", "array"]]) {
     assert.deepEqual(checkAgainstSchema(value, schema), [
@@ -107,4 +108,34 @@ test("reports every problem at once, not just the first", () => {
   // mean one round trip per typo.
   const errors = checkAgainstSchema({}, schema);
   assert.equal(errors.length, (schema.required ?? []).length);
+});
+
+test("declares no field Vendra's provisioner cannot send", () => {
+  // The schema is the storefront's half of a two-repository contract. A field
+  // here that `StorefrontConfigurationMap` and `StorefrontProvisionRequest` do
+  // not produce is not configuration — it is a constant nothing can ever set,
+  // and it reads as a supported option to whoever finds it next.
+  const provisioned = new Set([
+    // StorefrontProvisionRequest::for(). `theme` is sent too, but is
+    // deliberately not declared here: it belongs to a deploy-time design
+    // selection this image no longer has, and boot ignores it as an unknown
+    // field like any other.
+    "slug",
+    "domain",
+    "siteUrl",
+    // StorefrontConfigurationMap::FIELDS + messages
+    "name",
+    "businessType",
+    "priceCurrency",
+    "ogImage",
+    "address",
+    "contact",
+    "social",
+    "messages",
+  ]);
+
+  const declared = Object.keys(schema.properties ?? {});
+  const unreachable = declared.filter((key) => !provisioned.has(key));
+
+  assert.deepEqual(unreachable, []);
 });

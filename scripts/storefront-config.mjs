@@ -17,7 +17,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 // Node strips the types: one checker serves the app and this script.
-import { checkAgainstSchema } from "../src/shared/property/schema-check.ts";
+import { checkAgainstSchema } from "../src/shared/config/schema-check.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SCHEMA_FILE = join(ROOT, "config", "storefront.schema.json");

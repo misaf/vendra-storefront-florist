@@ -2,10 +2,9 @@ import { getTranslations } from "next-intl/server";
 import { MessageCircle, PhoneCall } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Link } from "@/shared/i18n/navigation";
-import { getContactInfo } from "@/shared/lib/config";
+import { getStorefrontConfig } from "@/shared/config/storefront";
 import { formatBusinessHours, toLocaleDigits } from "@/shared/lib/hours";
 import { telHref } from "@/shared/lib/utils";
-import { getProperty } from "@/shared/property";
 
 /**
  * The page's closing band, and its second conversion path.
@@ -18,7 +17,7 @@ import { getProperty } from "@/shared/property";
  *
  * Every fact here is configuration the storefront already holds: the shop's
  * number, its messaging account and its opening hours. Nothing is promised
- * about response times, because nothing in the property configuration says so.
+ * about response times, because nothing in the store configuration says so.
  *
  * Set on the warm brand surface rather than the ink one. Ink is what the footer
  * is made of, and an ink band directly above it merged into a single dark block
@@ -26,8 +25,8 @@ import { getProperty } from "@/shared/property";
  */
 export async function OrderHelp({ locale }: { locale: string }) {
   const t = await getTranslations({ locale });
-  const contact = getContactInfo();
-  const { social } = getProperty();
+  const contact = getStorefrontConfig().contact;
+  const { social } = getStorefrontConfig();
   const phone = contact.mobilePhone;
   const whatsappNumber = social.whatsappPhone?.trim();
 

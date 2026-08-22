@@ -21,7 +21,7 @@ export function getCategoryTileImage(category: ProductCategory): string | null {
 /**
  * Catalogue images come from the API's storage host through the same-origin
  * proxy, which `/_next/image` cannot resolve (see next.config.ts), so those
- * stay unoptimized exactly as the product tiles do. Theme art lives in
+ * stay unoptimized exactly as the product tiles do. Bundled art lives in
  * `public/` and is optimized normally, so the flag is decided per source rather
  * than once for the whole grid.
  */

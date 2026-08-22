@@ -22,7 +22,6 @@ import {
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from "@/shared/components/ui/empty";
 import { useCart } from "@/modules/cart";
 import { useOrders } from "@/modules/account";
-import { useProperty } from "@/shared/property/property-provider";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { useHydrated } from "@/shared/hooks/use-hydrated";
 
@@ -30,7 +29,19 @@ import { ShoppingBag, MapPin, ArrowLeft, ArrowRight, Loader2 } from "lucide-reac
 import { SafeImage } from "@/shared/components/ui/safe-image";
 import { toast } from "sonner";
 import type { ResolvedLocation } from "./address-map-picker";
-import { useFormatPrice } from "@/shared/property/use-format-price";
+import { useFormatPrice } from "@/shared/config/storefront-context";
+
+/**
+ * Placeholder delivery pricing.
+ *
+ * There is no order endpoint in the catalogue API and Vendra's provisioner has
+ * no shipping or tax field, so these are demo constants, not configuration —
+ * writing them as an optional config override only made a hardcoded number look
+ * negotiable. Real pricing belongs to Vendra's checkout API when one exists.
+ */
+const SHIPPING_FEE = 10.0;
+const TAX_RATE = 0.1;
+
 
 // Leaflet touches `window` on import, so the picker is client-only.
 const AddressMapPicker = dynamic(() => import("./address-map-picker"), {
@@ -98,7 +109,6 @@ export default function CheckoutClient() {
   const { items, getTotalPrice, getTotalItems, clearCart, openCart } = useCart();
   const { addOrder } = useOrders();
   const { t, locale } = useTranslations();
-  const property = useProperty();
   const hydrated = useHydrated();
   const numberFormat = useMemo(() => new Intl.NumberFormat(locale), [locale]);
 
@@ -137,12 +147,9 @@ export default function CheckoutClient() {
     [form]
   );
 
-  const shippingFee = property.checkout?.shippingFee ?? 10.0;
-  const taxRate = property.checkout?.taxRate ?? 0.1;
-
   const totals = useMemo(
-    () => getOrderTotals(getTotalPrice(), shippingFee, taxRate),
-    [getTotalPrice, shippingFee, taxRate]
+    () => getOrderTotals(getTotalPrice(), SHIPPING_FEE, TAX_RATE),
+    [getTotalPrice]
   );
 
   /**

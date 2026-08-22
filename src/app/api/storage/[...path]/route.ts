@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStorageBaseUrl } from "@/shared/lib/config";
+import { getStorageBaseUrl } from "@/shared/config";
 import { getNetworkErrorStatus } from "@/shared/lib/network";
 
 const STORAGE_BASE_URL = getStorageBaseUrl();

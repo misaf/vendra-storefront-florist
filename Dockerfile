@@ -59,7 +59,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV NODE_OPTIONS=--use-system-ca
 
-# Every property runs this same image. Its base64-encoded JSON configuration and
+# Every store runs this same image. Its base64-encoded JSON configuration and
 # server-side API origin are supplied by the deployment at container startup.
 ARG VENDRA_API_URL
 ENV VENDRA_API_URL=$VENDRA_API_URL

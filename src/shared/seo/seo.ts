@@ -1,24 +1,27 @@
 import type { Metadata } from "next";
-import { getContactInfo, getSiteUrl } from "@/shared/lib/config";
-import { getProperty, getPropertyName } from "@/shared/property";
+import { getSiteUrl } from "@/shared/config";
+import {
+  getStorefrontConfig,
+  getStorefrontName,
+} from "@/shared/config/storefront";
 import { routing, type Locale } from "@/shared/i18n/routing";
 
 /** Brand name per locale (used for OG site name, JSON-LD, title templates). */
 export const SITE_NAME: Record<Locale, string> = Object.fromEntries(
-  routing.locales.map((locale) => [locale, getPropertyName(locale)])
+  routing.locales.map((locale) => [locale, getStorefrontName(locale)])
 ) as Record<Locale, string>;
 
 /**
- * Property social-share image, or `null` when none is configured.
+ * The store's social-share image, or `null` when none is configured.
  *
- * Social crawlers do not share the visitor's interactive color preference, so
- * theme-specific hero artwork is intentionally not part of this fallback.
+ * Deliberately not backed by the template's own artwork: a share card should
+ * show the store, and the bundled florist art says nothing about which store.
  * Vendra may send `ogImage: ""`; treat that as an unset optional value.
  */
-export const DEFAULT_OG_IMAGE = getProperty().ogImage?.trim() || null;
+export const DEFAULT_OG_IMAGE = getStorefrontConfig().ogImage?.trim() || null;
 
 /** Currency used in Product JSON-LD offers (ISO 4217). */
-export const PRICE_CURRENCY = getProperty().priceCurrency;
+export const PRICE_CURRENCY = getStorefrontConfig().priceCurrency;
 
 const OG_LOCALE: Record<Locale, string> = {
   fa: "fa_IR",
@@ -99,7 +102,7 @@ export interface BuildMetadataParams {
   path?: string;
   title?: string;
   description?: string;
-  /** Absolute or root-relative image URLs. Falls back to the property image. */
+  /** Absolute or root-relative image URLs. Falls back to the store image. */
   images?: string[];
   type?: "website" | "article";
   publishedTime?: string;
@@ -173,12 +176,12 @@ type JsonLd = Record<string, unknown>;
 
 /** Organization / LocalBusiness — emit once site-wide (root layout). */
 export function organizationSchema(locale: string): JsonLd {
-  const contact = getContactInfo();
+  const contact = getStorefrontConfig().contact;
   const image = DEFAULT_OG_IMAGE ? absoluteUrl(DEFAULT_OG_IMAGE) : null;
 
   return {
     "@context": "https://schema.org",
-    "@type": getProperty().businessType,
+    "@type": getStorefrontConfig().businessType,
     "@id": `${getSiteUrl()}/#organization`,
     name: siteName(locale),
     url: getSiteUrl(),
@@ -187,8 +190,8 @@ export function organizationSchema(locale: string): JsonLd {
     email: contact.email,
     address: {
       "@type": "PostalAddress",
-      addressLocality: getProperty().address.locality,
-      addressCountry: getProperty().address.country,
+      addressLocality: getStorefrontConfig().address.locality,
+      addressCountry: getStorefrontConfig().address.country,
     },
     openingHours: `Mo-Su ${contact.hoursOpen}-${contact.hoursClose}`,
     contactPoint: [

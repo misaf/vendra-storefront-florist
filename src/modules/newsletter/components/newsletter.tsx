@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { useProperty } from "@/shared/property/property-provider";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { Mail } from "lucide-react";
 import { Skeleton } from "@/shared/components/ui/skeleton";
@@ -22,7 +21,6 @@ interface NewsletterProps {
 
 export function Newsletter({ variant = "default", className = "" }: NewsletterProps) {
   const { t } = useTranslations();
-  const property = useProperty();
 
   if (variant === "compact") {
     return (
@@ -38,7 +36,7 @@ export function Newsletter({ variant = "default", className = "" }: NewsletterPr
         <div className="grid overflow-hidden rounded-3xl bg-secondary dark:bg-storefront-surface lg:grid-cols-[0.92fr_1.08fr]">
           <div className="relative min-h-72 overflow-hidden bg-primary lg:min-h-[30rem]">
             <Image
-              src={property.aboutImage ?? "/hero-florist-studio.webp"}
+              src="/hero-florist-studio.webp"
               alt=""
               fill
               sizes="(min-width: 1024px) 40vw, 100vw"

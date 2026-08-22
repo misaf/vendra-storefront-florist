@@ -1,13 +1,12 @@
 "use client";
 
 import { Link } from "@/shared/i18n/navigation";
-import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { useProperty } from "@/shared/property/property-provider";
-import { usePropertyName } from "@/shared/property/use-property-name";
+import { useStorefrontConfig } from "@/shared/config/storefront-context";
+import { useStorefrontName } from "@/shared/config/storefront-context";
 import { Newsletter } from "@/modules/newsletter";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
-import { useBrandIcon } from "@/shared/property/use-brand-icon";
+import { useBrandIcon } from "@/shared/config/storefront-context";
 
 const footerLink =
   "store-focus-invert -my-2 inline-flex min-h-11 items-center gap-1.5 rounded-sm py-2 text-sm text-white/80 transition-colors hover:text-white";
@@ -15,37 +14,12 @@ const footerLink =
 export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) {
   const BrandIcon = useBrandIcon();
   const { t } = useTranslations();
-  const property = useProperty();
-  const storeName = usePropertyName();
-  const sealRef = useRef<HTMLDivElement | null>(null);
-  const [showSealFallback, setShowSealFallback] = useState(true);
-  const trustSeal = property.trustSeal;
-  const trustSealLabel = t("footer.enamadLabel");
-  const sealHtml = trustSeal
-    ? `<a aria-label='${trustSealLabel}' referrerpolicy='origin' target='_blank' rel='noreferrer' href='https://trustseal.enamad.ir/?id=${trustSeal.id}&Code=${trustSeal.code}'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=${trustSeal.id}&Code=${trustSeal.code}' alt='${trustSealLabel}' style='cursor:pointer' code='${trustSeal.code}'></a>`
-    : null;
-
-  useEffect(() => {
-    const image = sealRef.current?.querySelector("img");
-    if (!image) return;
-    const loaded = () => image.complete && image.naturalWidth > 0;
-    const handleLoad = () => setShowSealFallback(false);
-    const handleError = () => setShowSealFallback(true);
-    image.addEventListener("load", handleLoad);
-    image.addEventListener("error", handleError);
-    if (loaded()) setShowSealFallback(false);
-    const timer = window.setTimeout(() => setShowSealFallback(!loaded()), 3500);
-    return () => {
-      image.removeEventListener("load", handleLoad);
-      image.removeEventListener("error", handleError);
-      window.clearTimeout(timer);
-    };
-  }, []);
-
+  const storefront = useStorefrontConfig();
+  const storeName = useStorefrontName();
   const socialLinks = [
-    ["Instagram", `https://www.instagram.com/${property.social.instagramUsername}`],
-    ["Telegram", `https://t.me/${property.social.telegramUsername}`],
-    ["WhatsApp", `https://wa.me/${property.social.whatsappPhone}`],
+    ["Instagram", `https://www.instagram.com/${storefront.social.instagramUsername}`],
+    ["Telegram", `https://t.me/${storefront.social.telegramUsername}`],
+    ["WhatsApp", `https://wa.me/${storefront.social.whatsappPhone}`],
   ] as const;
 
   return (
@@ -106,12 +80,6 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
 
         <div className="flex flex-col items-center justify-between gap-5 border-t border-white/15 py-6 text-xs text-white/75 sm:flex-row">
           <p>{t("footer.copyright")}</p>
-          {sealHtml ? (
-            <div className="text-center">
-              <div ref={sealRef} className="[&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_img]:max-h-14 [&_img]:w-auto" dangerouslySetInnerHTML={{ __html: sealHtml }} />
-              {showSealFallback ? <p>{t("footer.enamadFallback")}</p> : null}
-            </div>
-          ) : null}
         </div>
       </div>
     </footer>

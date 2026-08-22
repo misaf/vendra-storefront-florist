@@ -19,12 +19,12 @@ import {
 } from "@/shared/components/ui/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { usePropertyName } from "@/shared/property/use-property-name";
-import { useProperty } from "@/shared/property/property-provider";
+import { useStorefrontName } from "@/shared/config/storefront-context";
+import { useStorefrontConfig } from "@/shared/config/storefront-context";
 import { cn, telHref } from "@/shared/lib/utils";
 import { isRtlLocale } from "@/shared/lib/locale";
 import { ArrowLeft, ArrowRight, ChevronDown, Menu, Phone } from "lucide-react";
-import { useBrandIcon } from "@/shared/property/use-brand-icon";
+import { useBrandIcon } from "@/shared/config/storefront-context";
 import { DynamicText } from "@/shared/components/dynamic-text";
 
 interface HeaderProps {
@@ -45,8 +45,8 @@ function isPathActive(pathname: string | null, href: string) {
 export function Header({ showNav = true }: HeaderProps) {
   const { t, locale } = useTranslations();
   const BrandIcon = useBrandIcon();
-  const storeName = usePropertyName();
-  const property = useProperty();
+  const storeName = useStorefrontName();
+  const storefront = useStorefrontConfig();
   const pathname = usePathname();
   const { data: categories = [], isLoading: categoriesLoading } =
     useProductCategories(locale);
@@ -60,7 +60,7 @@ export function Header({ showNav = true }: HeaderProps) {
   const isRTL = isRtlLocale(locale);
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
   const localeClass = locale === "fa" ? "locale-fa" : "locale-en";
-  const phone = property.contact.mobilePhone;
+  const phone = storefront.contact.mobilePhone;
   const links = [
     { href: "/", label: t("common.home") },
     { href: "/about", label: t("common.about") },

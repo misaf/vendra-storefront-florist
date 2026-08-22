@@ -36,7 +36,7 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/shared/compone
 import { formatLocaleDate } from "@/shared/lib/date";
 import { SafeImage } from "@/shared/components/ui/safe-image";
 import { toast } from "sonner";
-import { useFormatPrice } from "@/shared/property/use-format-price";
+import { useFormatPrice } from "@/shared/config/storefront-context";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 
 interface UserPanelProps {

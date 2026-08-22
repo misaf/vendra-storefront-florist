@@ -5,7 +5,6 @@
 .DS_Store
 .env*
 !.env.example
-!.env.traefik.example
 /.
 .pnp.*
 .pnpm-debug.log*

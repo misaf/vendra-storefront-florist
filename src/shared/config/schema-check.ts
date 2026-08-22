@@ -132,6 +132,17 @@ function checkValue(
   if (node.type === "number") return checkNumber(value, node, path, errors);
 }
 
+/**
+ * True when an error is only about a field the schema does not declare.
+ *
+ * Callers differ on whether that is fatal. Authoring a config, it is a typo;
+ * receiving one from a separately-deployed Vendra, it is a field this image is
+ * simply too old to know about.
+ */
+export function isUnknownFieldError(error: string): boolean {
+  return error.endsWith(" is not allowed");
+}
+
 /** Validate a value against a schema. Returns errors; empty means valid. */
 export function checkAgainstSchema(
   value: unknown,

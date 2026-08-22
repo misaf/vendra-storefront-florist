@@ -1,6 +1,6 @@
 import { hasLocale } from "next-intl";
 import { getRequestConfig } from "next-intl/server";
-import { getMessageOverrides } from "@/shared/property";
+import { getMessageOverrides } from "@/shared/config/storefront";
 import { mergeMessages } from "./merge-messages";
 import { routing } from "./routing";
 

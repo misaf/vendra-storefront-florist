@@ -5,10 +5,10 @@ import { PageShell } from "@/shared/components/layout/page-shell";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/shared/components/ui/card";
 import { useOrders } from "@/modules/account";
-import { useProperty } from "@/shared/property/property-provider";
+import { useStorefrontConfig } from "@/shared/config/storefront-context";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { useHydrated } from "@/shared/hooks/use-hydrated";
-import { useFormatPrice } from "@/shared/property/use-format-price";
+import { useFormatPrice } from "@/shared/config/storefront-context";
 import { formatLocaleDate } from "@/shared/lib/date";
 import { CheckCircle2, MessageCircle, Phone } from "lucide-react";
 import { telHref } from "@/shared/lib/utils";
@@ -16,7 +16,7 @@ import { telHref } from "@/shared/lib/utils";
 export default function CheckoutSuccess() {
   const { t, locale } = useTranslations();
   const { orders } = useOrders();
-  const property = useProperty();
+  const storefront = useStorefrontConfig();
   const formatPrice = useFormatPrice();
   // Orders live in localStorage, so the first render cannot know them. Until
   // then the screen shows the confirmation without a reference rather than
@@ -101,7 +101,7 @@ export default function CheckoutSuccess() {
             <div className="grid gap-2 sm:grid-cols-2">
               <Button asChild className="w-full gap-2">
                 <a
-                  href={`https://wa.me/${property.social.whatsappPhone.replace(/\D/g, "")}${
+                  href={`https://wa.me/${storefront.social.whatsappPhone.replace(/\D/g, "")}${
                     whatsappMessage
                       ? `?text=${encodeURIComponent(whatsappMessage)}`
                       : ""
@@ -114,10 +114,10 @@ export default function CheckoutSuccess() {
                 </a>
               </Button>
               <Button asChild variant="outline" className="w-full gap-2">
-                <a href={telHref(property.contact.mobilePhone)} dir="ltr">
+                <a href={telHref(storefront.contact.mobilePhone)} dir="ltr">
                   <Phone className="size-4" aria-hidden="true" />
                   <span className="sr-only">{t("common.callStore")}</span>
-                  {property.contact.mobilePhone}
+                  {storefront.contact.mobilePhone}
                 </a>
               </Button>
             </div>

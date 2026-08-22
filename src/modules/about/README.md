@@ -10,5 +10,5 @@ renders without the catalogue.
 Keep page copy localized in `messages/en.json` and `messages/fa.json`, with
 brand-specific wording in the store config's `messages`. Do not invent
 unverified business claims — founding dates, years of experience, team sizes,
-awards, delivery promises, statistics or testimonials. Nothing in the property
+awards, delivery promises, statistics or testimonials. Nothing in the store
 configuration or the Vendra API supplies them.

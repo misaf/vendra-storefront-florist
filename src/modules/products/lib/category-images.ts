@@ -22,7 +22,7 @@ const THEME_CATEGORY_IMAGES: Record<string, string> = {};
  * The picture for a category, or `null` to draw the fallback tile.
  *
  * The catalogue's own media wins: the shop's picture for its category always
- * beats anything the theme ships.
+ * beats anything this template ships.
  */
 export function resolveCategoryImage(
   slug: string,

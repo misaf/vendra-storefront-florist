@@ -18,8 +18,8 @@ import { useTranslations } from "@/shared/hooks/use-translations";
 import { formatRemainingQuantity } from "@/modules/products";
 
 import { SafeImage } from "@/shared/components/ui/safe-image";
-import { useBrandIcon } from "@/shared/property/use-brand-icon";
-import { useFormatPrice } from "@/shared/property/use-format-price";
+import { useBrandIcon } from "@/shared/config/storefront-context";
+import { useFormatPrice } from "@/shared/config/storefront-context";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 import { toast } from "sonner";
 

@@ -1,11 +1,20 @@
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { HeroArtwork } from "./hero-artwork";
+import Image from "next/image";
 import { Button } from "@/shared/components/ui/button";
 import { Link } from "@/shared/i18n/navigation";
 import { isRtlLocale } from "@/shared/lib/locale";
-import { getRequestTheme } from "@/shared/lib/theme-server";
-import { getProperty, getPropertyName } from "@/shared/property";
+import { getStorefrontName } from "@/shared/config/storefront";
+
+/**
+ * The florist template's own hero art.
+ *
+ * Bundled rather than configured: Vendra's provisioner has no hero-image field,
+ * so a config-driven source resolved to null in every real container and the
+ * panel rendered empty. Imagery is what makes this image the *florist*
+ * storefront — a shop that wants different art wants a different template.
+ */
+const HERO_ARTWORK = "/hero-florist-studio-storefront.webp";
 
 interface HeroProps {
   locale: string;
@@ -35,14 +44,8 @@ export async function Hero({
   collectionCount,
 }: HeroProps) {
   const t = await getTranslations({ locale });
-  const property = getProperty();
-  const storeName = getPropertyName(locale);
+  const storeName = getStorefrontName(locale);
   const ArrowIcon = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
-  const initialTheme = await getRequestTheme();
-  const lightImage =
-    property.heroImageLight?.trim() || property.heroImageDark?.trim() || null;
-  const darkImage =
-    property.heroImageDark?.trim() || property.heroImageLight?.trim() || null;
 
   const formatCount = new Intl.NumberFormat(locale);
   const facts = [
@@ -107,10 +110,14 @@ export async function Hero({
           </div>
 
           <div className="relative min-h-72 overflow-hidden bg-secondary sm:min-h-96 lg:min-h-0">
-            <HeroArtwork
-              lightImage={lightImage}
-              darkImage={darkImage}
-              initialTheme={initialTheme}
+            <Image
+              src={HERO_ARTWORK}
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 56vw, (min-width: 640px) calc(100vw - 3rem), calc(100vw - 2rem)"
+              quality={85}
+              preload
+              className="object-cover object-center"
             />
           </div>
         </div>

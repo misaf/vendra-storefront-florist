@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
-import { getProperty } from "@/shared/property";
 
 /**
  * The about page's opening.
@@ -15,7 +14,6 @@ import { getProperty } from "@/shared/property";
  */
 export async function AboutMasthead({ locale }: { locale: string }) {
   const t = await getTranslations({ locale });
-  const property = getProperty();
 
   return (
     <section className="store-section-sm bg-background">
@@ -39,7 +37,7 @@ export async function AboutMasthead({ locale }: { locale: string }) {
 
           <div className="relative min-h-72 overflow-hidden bg-storefront-brand-soft sm:min-h-96 lg:min-h-[28rem]">
             <Image
-              src={property.aboutImage ?? "/hero-florist-studio.webp"}
+              src="/hero-florist-studio.webp"
               alt={t("about.heroImageAlt")}
               fill
               preload

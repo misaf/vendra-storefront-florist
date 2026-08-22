@@ -1,9 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import { HandHeart, Leaf, ScanHeart } from "lucide-react";
-import { getProperty } from "@/shared/property";
-import { getBrandIcon } from "@/shared/property/brand-icon";
+import { getStorefrontConfig } from "@/shared/config/storefront";
+import { getBrandIcon } from "@/shared/lib/brand-icon";
 
-const BrandIcon = getBrandIcon(getProperty().businessType);
+const BrandIcon = getBrandIcon(getStorefrontConfig().businessType);
 
 const commitments = [
   { key: "valueFreshness", Icon: Leaf },

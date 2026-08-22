@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { formatBusinessHours, toLocaleDigits } from "@/shared/lib/hours";
 import { telHref } from "@/shared/lib/utils";
-import type { ContactInfo } from "@/shared/lib/config";
+import type { StorefrontContact } from "@/shared/config/types";
 
 /**
  * The contact page's opening: masthead and the four contact facts. All static
@@ -21,7 +21,7 @@ export async function ContactIntro({
   contactInfo,
   locale,
 }: {
-  contactInfo: ContactInfo;
+  contactInfo: StorefrontContact;
   locale: string;
 }) {
   const t = await getTranslations({ locale });

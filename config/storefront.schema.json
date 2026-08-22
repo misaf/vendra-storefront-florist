@@ -20,10 +20,6 @@
       "type": "string",
       "minLength": 1
     },
-    "theme": {
-      "type": "string",
-      "description": "Accepted for compatibility with Vendra provisioners that still send it. Ignored: this image ships exactly one storefront template."
-    },
     "domain": {
       "type": "string",
       "minLength": 1
@@ -43,18 +39,6 @@
     },
     "ogImage": {
       "type": "string"
-    },
-    "heroImageLight": {
-      "type": "string",
-      "minLength": 1
-    },
-    "heroImageDark": {
-      "type": "string",
-      "minLength": 1
-    },
-    "aboutImage": {
-      "type": "string",
-      "minLength": 1
     },
     "messages": {
       "type": "object"
@@ -138,55 +122,6 @@
           "minLength": 1
         },
         "instagramUsername": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "checkout": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "shippingFee": {
-          "type": "number",
-          "exclusiveMinimum": 0
-        },
-        "taxRate": {
-          "type": "number",
-          "minimum": 0
-        }
-      }
-    },
-    "currency": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "code": {
-          "type": "string",
-          "minLength": 1
-        },
-        "label": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      }
-    },
-    "trustSeal": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "id",
-        "code"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "minLength": 1
-        },
-        "code": {
           "type": "string",
           "minLength": 1
         }

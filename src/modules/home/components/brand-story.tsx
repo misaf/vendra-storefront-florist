@@ -3,7 +3,6 @@ import { getTranslations } from "next-intl/server";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Link } from "@/shared/i18n/navigation";
 import { isRtlLocale } from "@/shared/lib/locale";
-import { getProperty } from "@/shared/property";
 
 /**
  * The editorial pause between the shop's commerce bands and its journal.
@@ -17,7 +16,6 @@ import { getProperty } from "@/shared/property";
  */
 export async function BrandStory({ locale }: { locale: string }) {
   const t = await getTranslations({ locale });
-  const property = getProperty();
   const ArrowIcon = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
 
   return (
@@ -25,7 +23,7 @@ export async function BrandStory({ locale }: { locale: string }) {
       <div className="store-container store-section-lg grid items-center gap-9 min-[43.75rem]:grid-cols-12 min-[43.75rem]:gap-10 lg:gap-14">
         <div className="relative aspect-[5/4] overflow-hidden rounded-2xl bg-secondary sm:aspect-[16/10] min-[43.75rem]:col-span-7 min-[43.75rem]:aspect-[7/5]">
           <Image
-            src={property.aboutImage ?? "/hero-florist-studio.webp"}
+            src="/hero-florist-studio.webp"
             alt={t("home.storyImageAlt")}
             fill
             sizes="(min-width: 43.75rem) 58vw, 100vw"

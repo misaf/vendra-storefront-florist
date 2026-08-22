@@ -1,11 +1,11 @@
 /**
  * Environment resolution for the API and storage origins.
  *
- * Pure module — no `@/` alias imports, no React, no property lookup — so it can
- * be loaded from `next.config.ts` (which runs before the app's module graph
- * exists), from runtime config, and from a plain `node --test` run. This is the
- * single source of truth for env precedence; everything else reads through
- * these helpers.
+ * Pure module — no `@/` alias imports, no React, no store-configuration
+ * lookup — so it can be loaded from `next.config.ts` (which runs before the
+ * app's module graph exists), from runtime config, and from a plain
+ * `node --test` run. This is the single source of truth for env precedence;
+ * everything else reads through these helpers.
  *
  * Every name below is server-only, deliberately. A `NEXT_PUBLIC_` variable is
  * inlined into the browser bundle at build time, so a public alias for any of

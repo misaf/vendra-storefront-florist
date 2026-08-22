@@ -5,7 +5,7 @@ import {
   getStorefrontDomain,
   getStorefrontKey,
   getStorefrontKeyHeader,
-} from "@/shared/lib/config";
+} from "@/shared/config";
 import type { JsonApiLinks, JsonApiMeta } from "@/shared/api/types";
 import { createApiRequestHeaders } from "@/shared/lib/network";
 import { routing } from "@/shared/i18n/routing";
@@ -180,7 +180,7 @@ function createRequestHeaders({
   locale?: string;
   token?: string | null;
 }): Headers {
-  // The canonical API serves every property from one host, so the request Host
+  // The canonical API serves every store from one host, so the request Host
   // no longer identifies the tenant. A browser sets Origin itself; a
   // server-side render has none, so the storefront states its own public origin
   // and attaches its tenant credential. Browser requests carry neither — their

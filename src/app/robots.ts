@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "@/shared/lib/config";
+import { getSiteUrl } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 

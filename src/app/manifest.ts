@@ -7,7 +7,7 @@ import { getDirection } from "@/shared/lib/locale";
 export const dynamic = "force-dynamic";
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
-  // Description and direction follow the active property, not the florist that
+  // Description and direction follow the active store, not the florist that
   // happened to be bundled: one image serves the whole fleet.
   const t = await getTranslations({ locale: routing.defaultLocale });
 

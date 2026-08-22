@@ -5,7 +5,7 @@ import {
   getStorefrontDomain,
   getStorefrontKey,
   getStorefrontKeyHeader,
-} from "@/shared/lib/config";
+} from "@/shared/config";
 import { createApiRequestHeaders, getNetworkErrorStatus } from "@/shared/lib/network";
 import { resolveUpstreamPath } from "@/shared/api/proxy-allowlist";
 

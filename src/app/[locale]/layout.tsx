@@ -14,9 +14,9 @@ import { FavoritesProvider } from "@/modules/account";
 import { OrderProvider } from "@/modules/account";
 import { routing } from "@/shared/i18n/routing";
 import { ApiQueryProvider } from "@/shared/api/query-client";
-import { getSiteUrl } from "@/shared/lib/config";
-import { getProperty } from "@/shared/property";
-import { PropertyProvider } from "@/shared/property/property-provider";
+import { getSiteUrl } from "@/shared/config";
+import { getStorefrontConfig } from "@/shared/config/storefront";
+import { StorefrontConfigProvider } from "@/shared/config/storefront-context";
 import { getRequestTheme } from "@/shared/lib/theme-server";
 import {
   SITE_NAME,
@@ -40,8 +40,8 @@ const vazirmatn = Vazirmatn({
   display: "swap",
 });
 
-// Every container supplies its property at runtime; no route may bake the
-// bundled development property into the shared production image.
+// Every container supplies its store configuration at runtime; no route may
+// bake the bundled development fixture into the shared production image.
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
@@ -113,7 +113,7 @@ export default async function LocaleLayout({
           disableTransitionOnChange
         >
           <ApiQueryProvider>
-            <PropertyProvider value={getProperty()}>
+            <StorefrontConfigProvider value={getStorefrontConfig()}>
               <NextIntlClientProvider>
                 <CartProvider>
                   <FavoritesProvider>
@@ -127,7 +127,7 @@ export default async function LocaleLayout({
                   </FavoritesProvider>
                 </CartProvider>
               </NextIntlClientProvider>
-            </PropertyProvider>
+            </StorefrontConfigProvider>
           </ApiQueryProvider>
         </ThemeProvider>
       </body>

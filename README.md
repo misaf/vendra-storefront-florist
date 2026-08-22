@@ -28,9 +28,16 @@ Vendra
 
 A container is told which store it serves through one environment variable:
 
-- **`STOREFRONT_CONFIG_BASE64`** — base64-encoded JSON: brand name per locale,
-  domain, canonical origin, contacts, socials, currency, artwork, optional
-  message overrides. Validated against `config/storefront.schema.json` on boot.
+- **`STOREFRONT_CONFIG_BASE64`** — base64-encoded JSON: slug, domain, canonical
+  origin, brand name per locale, business type, price currency, address,
+  contacts, socials, an optional share image and optional message overrides.
+  Validated against `config/storefront.schema.json` on boot.
+
+  The schema declares exactly the fields Vendra's provisioner can send
+  (`StorefrontProvisionRequest` plus `StorefrontConfigurationMap`), and a test
+  enforces that. Presentation Vendra has no field for — hero and about artwork,
+  delivery pricing — is bundled in this template rather than declared as an
+  option nothing can set.
 - **`VENDRA_API_URL`** — the canonical Vendra API, as an origin
   (`https://api.example.com`) or with the `/api` suffix. Either form works.
 - **`VENDRA_STOREFRONT_KEY`** — optional opaque credential sent to the API as
@@ -60,7 +67,7 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>. There is no property to select and no generation
+Open <http://localhost:3000>. There is no store to select and no generation
 step — `npm run dev` is the whole setup.
 
 Configuration resolves in one order, in both development and production:
@@ -112,7 +119,9 @@ src/shared/      API client, UI primitives, i18n, store configuration
 Pages live in their route files, the ordinary Next.js way. Feature modules own
 data access, state and components, and expose them through a barrel
 (`@/modules/products`); ESLint blocks reaching into module internals from
-outside. `src/shared/property/` resolves and validates the store configuration.
+outside. `src/shared/config/` resolves and validates the store configuration:
+`env.ts` for the estate-wide origins, `storefront.ts` for the one store this
+container serves, and `storefront-context.tsx` to hand that store to the client.
 
 ## API
 

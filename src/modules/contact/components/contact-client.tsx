@@ -18,9 +18,9 @@ import { Input } from "@/shared/components/ui/input";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { usePropertyName } from "@/shared/property/use-property-name";
+import { useStorefrontName } from "@/shared/config/storefront-context";
 import { Link } from "@/shared/i18n/navigation";
-import type { ContactInfo } from "@/shared/lib/config";
+import type { StorefrontContact } from "@/shared/config/types";
 import { useFaqs } from "@/modules/faq";
 import {
   ArrowRight,
@@ -33,7 +33,7 @@ import {
   MapPin,
   Send,
 } from "lucide-react";
-import { useBrandIcon } from "@/shared/property/use-brand-icon";
+import { useBrandIcon } from "@/shared/config/storefront-context";
 
 function createContactFormSchema(t: (key: string) => string) {
   return z.object({
@@ -51,7 +51,7 @@ export default function ContactClient({
   contactInfo,
   initialSubject = "",
 }: {
-  contactInfo: ContactInfo;
+  contactInfo: StorefrontContact;
   initialSubject?: string;
 }) {
   const { t, locale } = useTranslations();
@@ -143,7 +143,7 @@ function VisitStudioMap({
   locale: string;
   t: (key: string) => string;
 }) {
-  const storeName = usePropertyName();
+  const storeName = useStorefrontName();
   const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=16&hl=${locale}&output=embed`;
   const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
 

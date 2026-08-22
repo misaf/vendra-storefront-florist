@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from "@/shared/components/ui/form";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { useProperty } from "@/shared/property/property-provider";
+import { useStorefrontConfig } from "@/shared/config/storefront-context";
 import { Loader2, CheckCircle2, Send } from "lucide-react";
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 
@@ -33,7 +33,7 @@ type NewsletterFormValues = z.infer<ReturnType<typeof createNewsletterSchema>>;
  */
 export default function NewsletterForm({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslations();
-  const property = useProperty();
+  const storefront = useStorefrontConfig();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -74,7 +74,7 @@ export default function NewsletterForm({ compact = false }: { compact?: boolean 
          pre-addressed email keeps the feature useful without falsely claiming
          an address was subscribed when nothing left the browser. The visitor
          still reviews and sends the message in their own mail application. */
-      window.location.href = `mailto:${property.contact.email}?subject=${encodeURIComponent(
+      window.location.href = `mailto:${storefront.contact.email}?subject=${encodeURIComponent(
         t("newsletter.requestSubject")
       )}&body=${encodeURIComponent(t("newsletter.requestBody", { email }))}`;
 

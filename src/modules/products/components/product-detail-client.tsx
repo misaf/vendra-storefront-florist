@@ -13,7 +13,7 @@ import { ErrorState } from "@/shared/components/ui/error-state";
 import { Card } from "@/shared/components/ui/card";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { isRtlLocale } from "@/shared/lib/locale";
-import { useProperty } from "@/shared/property/property-provider";
+import { useStorefrontConfig } from "@/shared/config/storefront-context";
 import {
   Dialog,
   DialogContent,
@@ -82,7 +82,7 @@ export default function ProductDetailClient({
   initialError,
 }: ProductDetailClientProps) {
   const { t, locale } = useTranslations();
-  const property = useProperty();
+  const storefront = useStorefrontConfig();
   const { addToCart, openCart } = useCart();
   const { toggleFavorite, isFavorite } = useFavorites();
   const isRTL = isRtlLocale(locale);
@@ -187,7 +187,7 @@ export default function ProductDetailClient({
 
       if (platform === "whatsapp") {
         window.open(
-          `https://wa.me/${property.social.whatsappPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
+          `https://wa.me/${storefront.social.whatsappPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
             message
           )}`,
           "_blank",
@@ -202,7 +202,7 @@ export default function ProductDetailClient({
       }
 
       window.open(
-        `https://t.me/${property.social.telegramUsername}`,
+        `https://t.me/${storefront.social.telegramUsername}`,
         "_blank",
         "noopener,noreferrer"
       );

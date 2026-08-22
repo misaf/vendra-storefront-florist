@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ContactClient, ContactIntro } from "@/modules/contact";
 import { PageShell } from "@/shared/components/layout/page-shell";
-import { getContactInfo } from "@/shared/lib/config";
+import { getStorefrontConfig } from "@/shared/config/storefront";
 import { buildMetadata } from "@/shared/seo";
 
 export async function generateMetadata({
@@ -30,7 +30,7 @@ export default async function ContactPage({
 }) {
   const { locale } = await params;
   const query = await searchParams;
-  const contactInfo = getContactInfo();
+  const contactInfo = getStorefrontConfig().contact;
   const subject = Array.isArray(query.subject) ? query.subject[0] : query.subject;
 
   return (
