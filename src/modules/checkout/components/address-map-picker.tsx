@@ -114,6 +114,20 @@ function makeAttributionAccessible(container: HTMLElement) {
     }
 
     if (node.tagName === "A") {
+      const link = node as HTMLAnchorElement;
+      if (!link.textContent?.trim() && !link.getAttribute("aria-label")) {
+        try {
+          link.setAttribute("aria-label", new URL(link.href).hostname);
+        } catch {
+          // Leave an unusual provider URL untouched; visible attribution text,
+          // when present, remains the link's name.
+        }
+      }
+
+      link.querySelectorAll("img:not([alt])").forEach((image) => {
+        image.setAttribute("alt", "");
+      });
+
       // `padding` is locked by the SDK's inline `!important`, so the target is
       // grown with box metrics it does not set.
       node.style.setProperty("display", "inline-flex", "important");
@@ -364,7 +378,7 @@ export default function AddressMapPicker({
 
       <div
         data-provider={tileProvider}
-        className="golzar-pinmap relative w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-muted"
+        className="store-pinmap relative w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-muted"
       >
         <div
           ref={containerRef}
@@ -376,13 +390,13 @@ export default function AddressMapPicker({
 
         {/* The single ink accent: a petal-pin fixed at map centre. */}
         <div
-          className="golzar-pin"
+          className="store-pin"
           data-moving={status === "moving"}
           aria-hidden="true"
         >
-          <span className="golzar-pin__shadow" />
-          <span className="golzar-pin__drop">
-            <span className="golzar-pin__dot" />
+          <span className="store-pin__shadow" />
+          <span className="store-pin__drop">
+            <span className="store-pin__dot" />
           </span>
         </div>
 

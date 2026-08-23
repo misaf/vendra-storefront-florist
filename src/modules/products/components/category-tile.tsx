@@ -40,6 +40,8 @@ interface CategoryTileProps {
   tone?: number;
   /** Feature tiles caption themselves with the catalogue's own description. */
   showDescription?: boolean;
+  /** An editorial arch for image-led home-page collection cards. */
+  shape?: "soft" | "arch";
 }
 
 /**
@@ -65,6 +67,7 @@ export function CategoryTile({
   aspect = "aspect-[5/4]",
   tone = 0,
   showDescription = false,
+  shape = "soft",
 }: CategoryTileProps) {
   const ArrowIcon = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
   const src = getCategoryTileImage(category);
@@ -76,7 +79,11 @@ export function CategoryTile({
     >
       {/* Fixed aspect on a `fill` image reserves the row before media arrives. */}
       <div
-        className={`relative ${aspect} w-full overflow-hidden rounded-xl bg-secondary ring-1 ring-border/70 transition-shadow duration-300 group-hover:shadow-card`}
+        className={`relative ${aspect} w-full overflow-hidden bg-secondary ring-1 ring-border/70 transition-shadow duration-300 group-hover:shadow-card ${
+          shape === "arch"
+            ? "rounded-b-2xl rounded-t-[min(10rem,45%)]"
+            : "rounded-xl"
+        }`}
       >
         {src ? (
           <Image

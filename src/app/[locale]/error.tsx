@@ -23,18 +23,18 @@ export default function Error({
 
   return (
     <PageShell>
-      <section className="bg-background pb-20 pt-10 sm:pb-28 sm:pt-14">
-        <div className="store-container max-w-2xl text-center">
-          <p className="store-eyebrow justify-center">
+      <section className="store-section-lg bg-background">
+        <div className="store-container max-w-3xl border-y border-border bg-secondary/30 px-6 py-12 sm:px-12 sm:py-16">
+          <p className="store-eyebrow">
             {t("errors.errorEyebrow")}
           </p>
           <h1 className="store-page-title mt-4 text-foreground">
             {t("errors.errorTitle")}
           </h1>
-          <p className="mt-4 leading-7 text-muted-foreground">
+          <p className="store-lede mt-4 max-w-xl leading-7 text-muted-foreground">
             {t("errors.errorDescription")}
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row">
             <Button onClick={() => reset()} className="gap-2">
               <RotateCcw className="h-4 w-4" />
               {t("errors.tryAgain")}

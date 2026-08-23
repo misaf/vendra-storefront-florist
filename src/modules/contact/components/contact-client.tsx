@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/shared/components/ui/card";
 import {
   Form,
   FormControl,
@@ -96,11 +95,11 @@ export default function ContactClient({
 
   return (
     <>
-        <VisitStudioMap mapQuery={contactInfo.mapQuery} locale={locale} t={t} />
+      <VisitStudioMap mapQuery={contactInfo.mapQuery} locale={locale} t={t} />
 
-        <section className="store-section">
-          <div className="store-container grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-            <ContactFormCard
+      <section className="border-b border-border bg-secondary/25">
+        <div className="store-container store-section grid gap-10 lg:grid-cols-[1.25fr_0.75fr] lg:gap-14">
+          <ContactForm
               form={form}
               isSubmitted={isSubmitted}
               isSubmitting={form.formState.isSubmitting}
@@ -110,26 +109,26 @@ export default function ContactClient({
               t={t}
             />
 
-            <aside className="space-y-4 store-sticky-lg">
-              <Card className="rounded-lg border-primary/10 bg-primary text-primary-foreground shadow-sm dark:border-white/10">
-                <CardContent className="p-5">
-                  <BrandIcon className="size-6 text-primary-foreground/80" />
-                  <h2 className="mt-4 text-lg font-semibold">{t("contact.customerHelpTitle")}</h2>
-                  <div className="mt-4 space-y-3">
-                    {guidanceItems.map((item) => (
-                      <p key={item} className="flex gap-3 text-sm leading-6 text-primary-foreground">
-                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary-foreground/80" />
-                        <span>{item}</span>
-                      </p>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+          <aside className="space-y-8 store-sticky-lg">
+              <section className="bg-storefront-brand px-6 py-8 text-storefront-brand-foreground sm:px-8 sm:py-10">
+                <BrandIcon className="size-6 text-storefront-brand-foreground/70" />
+                <h2 className="font-display mt-6 text-2xl leading-tight">
+                  {t("contact.customerHelpTitle")}
+                </h2>
+                <div className="mt-6 divide-y divide-storefront-brand-foreground/15 border-y border-storefront-brand-foreground/15">
+                  {guidanceItems.map((item) => (
+                    <p key={item} className="flex gap-3 py-4 text-sm leading-6 text-storefront-brand-foreground/85">
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-storefront-brand-foreground/65" />
+                      <span>{item}</span>
+                    </p>
+                  ))}
+                </div>
+              </section>
 
               <ContactFaqCard locale={locale} t={t} />
-            </aside>
-          </div>
-        </section>
+          </aside>
+        </div>
+      </section>
     </>
   );
 }
@@ -151,7 +150,7 @@ function VisitStudioMap({
     <section className="border-b border-border bg-background">
       <div className="store-container store-section">
         <div className="mb-7 max-w-2xl sm:mb-9">
-          <span className="golzar-seam mb-3 max-w-[7rem]">
+          <span className="store-seam mb-3 max-w-[7rem]">
             <span className="petal-dot" aria-hidden="true" />
             <span className="h-px flex-1" aria-hidden="true" />
           </span>
@@ -176,7 +175,7 @@ function VisitStudioMap({
             <iframe
               title={t("contact.mapLabel")}
               src={embedUrl}
-              className="golzar-map block h-80 w-full border-0 sm:h-[26rem] lg:h-[30rem]"
+              className="store-map block h-80 w-full border-0 sm:h-[26rem] lg:h-[30rem]"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               allowFullScreen
@@ -197,7 +196,7 @@ function VisitStudioMap({
                   href={directionsUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="store-focus-invert mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary-foreground px-4 py-2 text-sm font-semibold text-primary shadow-sm motion-safe:transition hover:opacity-90"
+                  className="store-focus-invert mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-sm bg-primary-foreground px-4 py-2 text-sm font-semibold text-primary motion-safe:transition hover:opacity-90"
                 >
                   {t("contact.getDirections")}
                   <ArrowUpRight className="size-4 rtl:rotate-180" />
@@ -223,8 +222,8 @@ function ContactFaqCard({
   // Secondary content: skeleton while loading, hide entirely on error/empty.
   if (isPending) {
     return (
-      <Card className="rounded-lg border-border bg-card shadow-sm">
-        <CardContent className="p-5">
+      <section className="border-y border-border py-6">
+        <div>
           <div className="flex items-center gap-2">
             <HelpCircle className="size-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">{t("contact.faqTitle")}</h2>
@@ -234,8 +233,8 @@ function ContactFaqCard({
               <Skeleton key={i} className="h-5 w-full" />
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     );
   }
 
@@ -250,8 +249,8 @@ function ContactFaqCard({
   }
 
   return (
-    <Card className="rounded-lg border-border bg-card shadow-sm">
-      <CardContent className="p-5">
+    <section className="border-y border-border py-6">
+      <div>
         <div className="flex items-center gap-2">
           <HelpCircle className="size-5 text-muted-foreground" />
           <h2 className="text-lg font-semibold">{t("contact.faqTitle")}</h2>
@@ -278,12 +277,12 @@ function ContactFaqCard({
           {t("contact.faqViewAll")}
           <ArrowRight className="size-4 rtl:rotate-180" />
         </Link>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
-function ContactFormCard({
+function ContactForm({
   form,
   isSubmitted,
   isSubmitting,
@@ -312,17 +311,18 @@ function ContactFormCard({
   }, [isSubmitted]);
 
   return (
-    <Card className="overflow-hidden rounded-lg border-border bg-card py-0 shadow-lg shadow-storefront-brand/5">
-      <CardHeader className="gap-0 px-5 pt-7 pb-0 sm:px-9 sm:pt-9">
-        <h2 className="text-2xl font-semibold leading-tight sm:text-3xl lg:text-4xl">
+    <section className="border-y border-border bg-background">
+      <header className="border-b border-border px-5 py-7 sm:px-9 sm:py-9">
+        <p className="store-eyebrow">{t("contact.subtitle")}</p>
+        <h2 className="font-display mt-3 text-3xl leading-tight tracking-tight sm:text-4xl lg:text-5xl">
           {t("contact.formTitle")}
         </h2>
-        <CardDescription className="mt-2 max-w-xl text-sm leading-6">
+        <p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground">
           {t("contact.formDescription")}
-        </CardDescription>
-      </CardHeader>
+        </p>
+      </header>
 
-      <CardContent className="px-5 py-7 sm:px-9 sm:py-9">
+      <div className="px-5 py-7 sm:px-9 sm:py-9">
         {isSubmitted ? (
           <div
             ref={successRef}
@@ -351,7 +351,7 @@ function ContactFormCard({
               type="button"
               variant="outline"
               onClick={onReset}
-              className="mt-6 rounded-full px-6"
+              className="mt-6 px-6"
             >
               {t("contact.sendAnother")}
             </Button>
@@ -474,7 +474,7 @@ function ContactFormCard({
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full gap-2 rounded-full px-8 shadow-lg shadow-storefront-brand/15"
+                  className="w-full gap-2 px-8"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -497,8 +497,8 @@ function ContactFormCard({
             </form>
           </Form>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 

@@ -278,9 +278,9 @@ export default function BlogPostsClient({
                 onChange={(event) => setSearchInput(event.target.value)}
                 aria-label={t("blog.searchPlaceholder") || "Search the journal"}
                 placeholder={t("blog.searchPlaceholder") || "Search the journal"}
-                className="h-11 rounded-full bg-card px-4"
+                className="h-11 rounded-sm bg-card px-4"
               />
-              <Button type="submit" className="h-11 rounded-full px-4">
+              <Button type="submit" className="h-11 rounded-sm px-4">
                 <Search className="h-4 w-4" aria-hidden="true" />
                 <span>{t("blog.searchAction") || "Search"}</span>
               </Button>
@@ -469,7 +469,7 @@ export default function BlogPostsClient({
                 ) : null}
                 {!hasMore && posts.length > 0 && (
                   <div className="mt-10">
-                    <span className="golzar-seam mx-auto max-w-xs">
+                    <span className="store-seam mx-auto max-w-xs">
                       <span className="h-px flex-1" aria-hidden="true" />
                       <span className="font-mono text-xs uppercase tracking-[0.18em]">
                         {t("blog.allPostsLoaded") || "All posts loaded"}

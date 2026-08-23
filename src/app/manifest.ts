@@ -19,8 +19,8 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     display: "standalone",
     lang: routing.defaultLocale,
     dir: getDirection(routing.defaultLocale),
-    background_color: "#ffffff",
-    theme_color: "#ffffff",
+    background_color: "#f8f3e8",
+    theme_color: "#123326",
     icons: [
       {
         src: "/favicon.ico",

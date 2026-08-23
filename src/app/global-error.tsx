@@ -45,7 +45,7 @@ export default function GlobalError({
             onClick={() => reset()}
             style={{
               cursor: "pointer",
-              borderRadius: "9999px",
+              borderRadius: "0.35rem",
               border: "none",
               background: "#173c30",
               color: "#f8f4e9",

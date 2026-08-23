@@ -46,14 +46,14 @@ export function ProductGrid({
 export function ProductCardSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <Skeleton className="aspect-[4/5] w-full rounded-xl" />
+      <Skeleton className="aspect-[4/5] w-full rounded-b-2xl rounded-t-[min(10rem,45%)]" />
       <div className="flex flex-1 flex-col gap-2 pt-3">
         <Skeleton className="h-3.5 w-20" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-2/3" />
       </div>
       <Skeleton className="mt-2 h-5 w-28" />
-      <Skeleton className="mt-3 h-11 w-full rounded-full" />
+      <Skeleton className="mt-3 h-11 w-full rounded-sm" />
     </div>
   );
 }

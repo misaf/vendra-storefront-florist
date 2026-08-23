@@ -41,7 +41,7 @@ export function FreshArrivals({ products }: FreshArrivalsProps) {
   }
 
   return (
-    <section className="store-scroll-anchor bg-secondary/45">
+    <section className="boho-arrivals store-scroll-anchor bg-secondary/55">
       <div className="store-container store-section-lg">
         <SectionHeader
           eyebrow={t("home.arrivalsEyebrow")}
@@ -75,6 +75,7 @@ export function FreshArrivals({ products }: FreshArrivalsProps) {
                 locale={locale}
                 t={t}
                 showCategory
+                imageShape="arch"
                 sizes="(min-width: 1280px) 18rem, (min-width: 768px) 22vw, (min-width: 640px) 46vw, 72vw"
               />
             </li>

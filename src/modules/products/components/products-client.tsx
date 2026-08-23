@@ -73,7 +73,7 @@ function CategoryRichTextDescription({ content }: { content: unknown }) {
   }
 
   return (
-    <section className="mt-10 rounded-lg border border-border bg-card p-5 text-card-foreground shadow-sm shadow-storefront-brand/[0.03] sm:p-6">
+    <section className="mt-10 border-s-2 border-rose/60 bg-secondary/35 px-5 py-6 text-card-foreground sm:px-7">
       <RichText content={content} density="compact" />
     </section>
   );
@@ -306,7 +306,7 @@ export default function ProductsClient({
   return (
     <PageShell>
 
-      <section className="bg-background pb-16 dark:bg-background sm:pb-20">
+      <section className="bg-background pb-16 dark:bg-background sm:pb-24">
         <PageHeader
           breadcrumbs={
             <Breadcrumbs
@@ -320,7 +320,7 @@ export default function ProductsClient({
           eyebrow={t("products.title")}
           title={headingText}
           description={!search ? t("products.subtitle") : undefined}
-          className="pb-7 sm:pb-9"
+          className="pb-8 sm:pb-11"
         >
           {search ? (
             <button
@@ -333,7 +333,7 @@ export default function ProductsClient({
         </PageHeader>
 
         <div className="store-container">
-          <div className="grid min-w-0 gap-7 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-8 xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-10">
+          <div className="grid min-w-0 gap-7 border-t border-border pt-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-8 lg:pt-8 xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-10">
             <aside
               className="hidden min-w-0 border-e border-border pe-6 text-card-foreground lg:block xl:pe-8"
               aria-label={t("products.filtersTitle")}

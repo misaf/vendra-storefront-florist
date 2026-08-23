@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { HelpCircle, Search } from "lucide-react";
+import { ArrowRight, HelpCircle, Search } from "lucide-react";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { PageHeader } from "@/shared/components/layout/page-header";
 import {
@@ -395,6 +395,32 @@ export default function FaqClient({
             </div>
           </div>
         )}
+      </section>
+
+      <section className="border-t border-storefront-brand-foreground/15 bg-storefront-brand text-storefront-brand-foreground">
+        <div className="store-container grid gap-8 py-12 sm:py-16 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-16">
+          <div className="max-w-3xl">
+            <p className="font-mono text-xs font-semibold uppercase tracking-[0.22em] text-storefront-brand-foreground/65">
+              {t("faq.closingEyebrow")}
+            </p>
+            <h2 className="font-display mt-4 text-3xl leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+              {t("faq.closingTitle")}
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-storefront-brand-foreground/75 sm:text-base">
+              {t("faq.closingDescription")}
+            </p>
+          </div>
+          <Button
+            asChild
+            size="lg"
+            className="w-full gap-2 bg-storefront-brand-foreground text-storefront-brand hover:bg-storefront-brand-foreground/90 sm:w-auto"
+          >
+            <Link href="/contact">
+              {t("faq.contactForAnswer")}
+              <ArrowRight className="size-4 rtl:rotate-180" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
       </section>
     </PageShell>
   );

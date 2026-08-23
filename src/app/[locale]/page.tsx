@@ -39,8 +39,8 @@ export async function generateMetadata({
  * The order is one journey, not a stack of blocks:
  *
  *   Hero            what this shop sells, and one way in
+ *   ServicePromises    a thin rule: why buy here, immediately after the promise
  *   CategoryDiscovery  every collection it sells, so "what for?" is answerable
- *   ServicePromises    a thin rule: why buy here, read just before prices
  *   FreshArrivals      the one product surface — newest, buyable, today
  *   BrandStory         the editorial turn, in its own words
  *   BlogSection        what the shop knows, secondary to what it sells
@@ -67,8 +67,8 @@ export default async function HomePage({
         inStockTotal={catalogue.inStockTotal}
         collectionCount={catalogue.categories.length}
       />
-      <CategoryDiscovery categories={catalogue.categories} locale={locale} />
       <ServicePromises locale={locale} />
+      <CategoryDiscovery categories={catalogue.categories} locale={locale} />
       <FreshArrivals products={catalogue.arrivals} />
       <BrandStory locale={locale} />
       <BlogSection

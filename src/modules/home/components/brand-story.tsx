@@ -19,24 +19,25 @@ export async function BrandStory({ locale }: { locale: string }) {
   const ArrowIcon = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
 
   return (
-    <section className="store-scroll-anchor bg-background">
-      <div className="store-container store-section-lg grid items-center gap-9 min-[43.75rem]:grid-cols-12 min-[43.75rem]:gap-10 lg:gap-14">
-        <div className="relative aspect-[5/4] overflow-hidden rounded-2xl bg-secondary sm:aspect-[16/10] min-[43.75rem]:col-span-7 min-[43.75rem]:aspect-[7/5]">
+    <section className="store-scroll-anchor overflow-hidden bg-background">
+      <div className="store-container store-section-lg grid items-center gap-10 min-[43.75rem]:grid-cols-12 min-[43.75rem]:gap-12 lg:gap-16">
+        <div className="relative mx-auto aspect-[4/5] w-full max-w-xl overflow-hidden rounded-b-[2rem] rounded-t-[min(16rem,48%)] bg-secondary min-[43.75rem]:col-span-5 min-[43.75rem]:mx-0">
           <Image
-            src="/hero-florist-studio.webp"
+            src="/hero-florist-studio-storefront.webp"
             alt={t("home.storyImageAlt")}
             fill
-            sizes="(min-width: 43.75rem) 58vw, 100vw"
+            sizes="(min-width: 43.75rem) 42vw, 100vw"
             className="object-cover"
           />
         </div>
 
-        <div className="min-[43.75rem]:col-span-5 min-[43.75rem]:ps-3">
+        <div className="relative min-[43.75rem]:col-span-7 min-[43.75rem]:ps-3 lg:ps-10">
+          <span className="font-display absolute -start-2 -top-16 hidden text-[9rem] leading-none text-rose/12 lg:block" aria-hidden="true">&ldquo;</span>
           <p className="store-eyebrow">{t("home.storyEyebrow")}</p>
-          <h2 className="store-section-title mt-4 max-w-xl text-foreground">
+          <h2 className="font-display mt-5 max-w-2xl text-[clamp(2.35rem,5vw,4.5rem)] leading-[1.02] tracking-[-0.045em] text-foreground [.locale-fa_&]:leading-[1.5] [.locale-fa_&]:tracking-normal">
             {t("home.storyTitle")}
           </h2>
-          <p className="store-lede mt-5 max-w-xl text-base text-muted-foreground">
+          <p className="store-lede mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
             {t("home.storyBody")}
           </p>
           <Link

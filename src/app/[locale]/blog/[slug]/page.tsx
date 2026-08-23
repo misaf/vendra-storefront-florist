@@ -172,7 +172,7 @@ export default async function BlogPostDetail({
       {error ? (
         <section className="bg-background pb-20 pt-10 sm:pb-28 sm:pt-14">
           <div className="store-container max-w-2xl text-center">
-            <span className="golzar-seam mx-auto mb-8 max-w-[10rem]">
+            <span className="store-seam mx-auto mb-8 max-w-[10rem]">
               <span className="petal-dot" aria-hidden="true" />
             </span>
             <p className="font-mono text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
@@ -285,7 +285,7 @@ export default async function BlogPostDetail({
                 </div>
 
                 <div className="order-1 min-w-0 md:order-2">
-                  <span className="golzar-seam mb-5 max-w-[8rem]">
+                  <span className="store-seam mb-5 max-w-[8rem]">
                     <span className="petal-dot" aria-hidden="true" />
                   </span>
                   <h1

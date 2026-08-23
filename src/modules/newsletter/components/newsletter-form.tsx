@@ -52,7 +52,7 @@ export default function NewsletterForm({ compact = false }: { compact?: boolean 
         form: "flex gap-2",
         input: "min-w-0 border-border bg-card/80",
         buttonSize: "default" as const,
-        button: "rounded-full",
+        button: "rounded-sm",
         alert: "mt-2",
         successAlert:
           "mt-2 border-primary/30 bg-storefront-brand-soft text-primary dark:bg-storefront-brand-soft dark:text-primary",
@@ -60,9 +60,9 @@ export default function NewsletterForm({ compact = false }: { compact?: boolean 
     : {
         form: "flex flex-col gap-3 sm:flex-row",
         input:
-          "h-11 rounded-full border-border bg-card px-5 text-card-foreground placeholder:text-muted-foreground focus:bg-card",
+          "h-11 rounded-sm border-border bg-card px-5 text-card-foreground placeholder:text-muted-foreground focus:bg-card",
         buttonSize: "lg" as const,
-        button: "gap-2 whitespace-nowrap rounded-full",
+        button: "gap-2 whitespace-nowrap rounded-sm",
         alert: "mt-4",
         successAlert: "mt-4 border-border bg-secondary text-foreground",
       };

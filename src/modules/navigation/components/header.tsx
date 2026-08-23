@@ -71,8 +71,10 @@ export function Header({ showNav = true }: HeaderProps) {
 
   const navLinkClass = (active: boolean) =>
     cn(
-      "inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-semibold transition-colors",
-      active ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
+      "relative inline-flex min-h-11 items-center rounded-sm px-2.5 py-2 text-sm font-semibold transition-colors after:absolute after:inset-x-2.5 after:bottom-1 after:h-px after:origin-center after:bg-rose after:transition-transform",
+      active
+        ? "text-foreground after:scale-x-100"
+        : "text-muted-foreground after:scale-x-0 hover:text-foreground hover:after:scale-x-100"
     );
 
   return (
@@ -88,19 +90,22 @@ export function Header({ showNav = true }: HeaderProps) {
       <div
         role="region"
         aria-label={t("common.storeUtilities")}
-        className={cn("border-b border-border bg-secondary text-secondary-foreground", localeClass)}
+        className={cn(
+          "border-b border-white/10 bg-storefront-brand text-storefront-brand-foreground",
+          localeClass
+        )}
       >
         <div className="store-container flex min-h-9 flex-wrap items-center justify-center gap-x-4 gap-y-1 py-1.5 text-xs font-medium sm:justify-between">
-          <p className="text-center text-secondary-foreground/90">
+          <p className="text-center text-storefront-brand-foreground/78">
             {t("home.heroQuality")}
-            <span className="mx-2 text-muted-foreground" aria-hidden="true">|</span>
+            <span className="mx-2 text-storefront-brand-foreground/35" aria-hidden="true">•</span>
             {t("home.heroDelivery")}
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 [&_[data-slot=button]]:text-storefront-brand-foreground [&_[data-slot=button]]:hover:bg-white/10 [&_[data-slot=button]]:hover:text-white">
             <a
               href={telHref(phone)}
               dir="ltr"
-              className="hidden items-center gap-1.5 rounded-full px-2.5 py-1.5 font-semibold transition-colors hover:text-primary sm:inline-flex"
+              className="store-focus-invert hidden items-center gap-1.5 rounded-sm px-2.5 py-1.5 font-semibold text-storefront-brand-foreground/82 transition-colors hover:text-white sm:inline-flex"
             >
               <Phone className="size-3.5" aria-hidden="true" />
               <span className="sr-only">{t("common.callStore")}</span>
@@ -112,17 +117,17 @@ export function Header({ showNav = true }: HeaderProps) {
         </div>
       </div>
 
-      <header className={cn("sticky top-0 z-50 border-b border-border/70 bg-background/95 backdrop-blur-xl", localeClass)}>
+      <header className={cn("sticky top-0 z-50 border-b border-border/70 bg-background/92 backdrop-blur-xl", localeClass)}>
         <div className="store-container flex h-16 items-center gap-2 lg:h-[4.5rem] lg:gap-4">
           <Link
             href="/"
-            className="group flex min-w-0 items-center gap-2.5 rounded-lg sm:gap-3"
+            className="group flex min-w-0 items-center gap-2.5 rounded-sm sm:gap-3"
           >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/15 bg-primary text-primary-foreground transition-transform duration-300 group-hover:rotate-6">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-b-lg rounded-t-full border border-primary/15 bg-primary text-primary-foreground transition-transform duration-300 group-hover:-translate-y-0.5">
               <BrandIcon className="size-5" />
             </span>
             <span className="min-w-0">
-              <span className="font-display line-clamp-2 block text-sm leading-tight text-foreground sm:line-clamp-1 sm:text-lg xl:text-xl">{storeName}</span>
+              <span className="font-display line-clamp-2 block text-base leading-tight text-foreground sm:line-clamp-1 sm:text-lg xl:text-xl">{storeName}</span>
               <span className="mt-0.5 hidden truncate text-xs text-muted-foreground md:block">{t("common.storeTagline")}</span>
             </span>
           </Link>
@@ -179,7 +184,7 @@ export function Header({ showNav = true }: HeaderProps) {
                 >
                   <SheetHeader className="border-b border-border px-5 pb-5 pt-6 text-start">
                     <div className="flex items-center gap-3">
-                      <span className="flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground"><BrandIcon className="size-5" /></span>
+                      <span className="flex size-11 items-center justify-center rounded-b-xl rounded-t-full bg-primary text-primary-foreground"><BrandIcon className="size-5" /></span>
                       <div>
                         <SheetTitle className="font-display text-xl">{storeName}</SheetTitle>
                         <p className="mt-1 text-xs text-muted-foreground">{t("common.mobileStoreTagline")}</p>
@@ -189,7 +194,7 @@ export function Header({ showNav = true }: HeaderProps) {
                   </SheetHeader>
 
                   <div className="flex-1 overflow-y-auto px-5 py-5">
-                    <div className="mb-5 rounded-xl bg-secondary/70 p-1"><GlobalSearch full /></div>
+                    <div className="mb-6 border-y border-border py-2"><GlobalSearch full /></div>
                     <nav className="space-y-1" aria-label={t("common.mainNavigation")}>
                       {/* Same order as the desktop bar: Home, Products, then the
                           rest — a drawer that reorders the site is a second
@@ -197,8 +202,10 @@ export function Header({ showNav = true }: HeaderProps) {
                       {[links[0], { href: "/products", label: t("common.products") }, ...links.slice(1)].map((item) => {
                         const active = isPathActive(pathname, item.href);
                         const rowClass = cn(
-                          "flex min-h-12 items-center justify-between rounded-xl px-4 text-base font-semibold transition-colors",
-                          active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-secondary"
+                          "flex min-h-12 items-center justify-between rounded-sm border-s-2 px-4 text-base font-semibold transition-colors",
+                          active
+                            ? "border-rose bg-secondary/65 text-foreground"
+                            : "border-transparent text-foreground hover:border-border hover:bg-secondary/45"
                         );
 
                         if (item.href !== "/products") {
@@ -238,7 +245,7 @@ export function Header({ showNav = true }: HeaderProps) {
                                 aria-controls="mobile-product-categories"
                                 aria-label={t("common.browseByCategory")}
                                 onClick={() => setCategoriesExpanded(!mobileCategoriesOpen)}
-                                className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-border text-foreground transition-colors hover:bg-secondary"
+                                className="flex size-12 shrink-0 items-center justify-center rounded-sm border border-border text-foreground transition-colors hover:bg-secondary"
                               >
                                 <ChevronDown
                                   aria-hidden="true"
@@ -265,7 +272,7 @@ export function Header({ showNav = true }: HeaderProps) {
                                     <SheetClose asChild>
                                       <Link
                                         href={{ pathname: "/products", query: { category: category.slug } }}
-                                        className="store-dynamic-text flex min-h-11 items-center rounded-lg px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                        className="store-dynamic-text flex min-h-11 items-center rounded-sm px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                                       >
                                         <DynamicText>{category.name}</DynamicText>
                                       </Link>
@@ -283,7 +290,7 @@ export function Header({ showNav = true }: HeaderProps) {
                     <a
                       href={telHref(phone)}
                       dir="ltr"
-                      className="mt-7 flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+                      className="mt-7 flex min-h-12 items-center justify-center gap-2 rounded-sm border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
                     >
                       <Phone className="size-4" aria-hidden="true" />
                       <span className="sr-only">{t("common.callStore")}</span>

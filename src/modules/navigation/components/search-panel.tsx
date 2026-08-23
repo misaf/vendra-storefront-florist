@@ -118,6 +118,7 @@ export default function SearchPanel({
     title={t("search.title") || "Search Products"}
     description={t("search.description") || "Search for products by name or description"}
     closeLabel={t("common.close")}
+    className="border-border/80 bg-card shadow-panel sm:max-w-2xl"
   >
     <CommandInput
       placeholder={t("search.placeholder") || "Search products..."}
@@ -157,15 +158,16 @@ export default function SearchPanel({
                 key={product.id}
                 value={`${product.name} ${product.token ?? ""}`}
                 onSelect={() => handleSelect(product)}
-                className="flex items-center gap-2 px-2 py-2"
+                className="group flex items-center gap-4 border-b border-border/60 px-3 py-3"
               >
-                <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border">
+                <div className="relative size-16 flex-shrink-0 overflow-hidden rounded-b-lg rounded-t-[2rem] bg-secondary">
                   <SafeImage
                     src={product.thumbnail || product.image}
-                    alt={product.name}
-                    width={40}
-                    height={40}
-                    className="h-full w-full object-contain"
+                    /* The visible product name is in this same option. */
+                    alt=""
+                    width={64}
+                    height={64}
+                    className="h-full w-full object-contain transition-transform duration-300 group-data-[selected=true]:scale-[1.04]"
                     unoptimized
                   />
                 </div>
@@ -206,7 +208,7 @@ export default function SearchPanel({
           {trimmedQuery && (
             <CommandItem
               onSelect={handleSearchAll}
-              className="justify-center border-t px-2 py-2 text-center text-sm font-medium"
+              className="justify-center border-t px-3 py-4 text-center text-sm font-semibold text-primary"
             >
               {t("search.viewAllResults") || `View all results for "${searchQuery}"`}
             </CommandItem>

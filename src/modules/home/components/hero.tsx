@@ -14,7 +14,7 @@ import { getStorefrontName } from "@/shared/config/storefront";
  * panel rendered empty. Imagery is what makes this image the *florist*
  * storefront — a shop that wants different art wants a different template.
  */
-const HERO_ARTWORK = "/hero-florist-studio-storefront.webp";
+const HERO_ARTWORK = "/hero-florist-studio.webp";
 
 interface HeroProps {
   locale: string;
@@ -60,65 +60,77 @@ export async function Hero({
   ].filter((fact): fact is string => Boolean(fact));
 
   return (
-    <section className="store-section-sm bg-background">
+    <section className="boho-hero-shell bg-background">
       <div className="store-container">
-        <div className="grid overflow-hidden rounded-3xl border border-border/80 bg-card shadow-panel lg:min-h-[min(34rem,calc(100svh-10rem))] lg:grid-cols-2">
-          <div className="flex items-center px-6 py-10 sm:px-10 sm:py-12 lg:px-12 lg:py-14 xl:px-16">
-            <div className="max-w-xl">
-              <p className="store-eyebrow">{t("home.heroBadge")}</p>
-              <h1 className="font-display mt-4 text-[clamp(2.5rem,9vw,4rem)] leading-[1.04] text-foreground [.locale-fa_&]:leading-[1.35] lg:mt-5 lg:text-[clamp(3rem,4vw,3.5rem)]">
+        <div className="boho-hero relative isolate min-h-[36rem] overflow-hidden rounded-[2rem] bg-storefront-brand text-storefront-brand-foreground shadow-panel sm:min-h-[40rem] lg:min-h-[min(45rem,calc(100svh-8rem))]">
+          <Image
+            src={HERO_ARTWORK}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 80rem, calc(100vw - 2rem)"
+            quality={88}
+            preload
+            className="object-cover object-[66%_center] sm:object-[62%_center]"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(21,43,32,.96)_0%,rgba(21,43,32,.88)_34%,rgba(21,43,32,.22)_68%,rgba(21,43,32,.08)_100%)] max-lg:bg-[linear-gradient(180deg,rgba(21,43,32,.94)_0%,rgba(21,43,32,.78)_52%,rgba(21,43,32,.55)_100%)]" />
+          <div className="boho-sun" aria-hidden="true" />
+
+          <div className="relative flex min-h-[36rem] flex-col justify-between px-6 py-8 sm:min-h-[40rem] sm:px-10 sm:py-10 lg:min-h-[min(45rem,calc(100svh-8rem))] lg:px-14 lg:py-12 xl:px-16">
+            <div className="max-w-2xl pt-6 sm:pt-10 lg:pt-14">
+              <p className="store-eyebrow boho-hero-eyebrow">
+                {t("home.heroBadge")}
+              </p>
+              <h1 className="font-display mt-5 max-w-[12ch] text-[clamp(3.15rem,10vw,5.8rem)] leading-[0.93] tracking-[-0.055em] text-white [.locale-fa_&]:leading-[1.35] [.locale-fa_&]:tracking-normal lg:mt-6">
                 {t("home.title")}
               </h1>
-              <p className="store-lede mt-5 max-w-lg text-base sm:text-lg">
+              <p className="store-lede mt-6 max-w-xl text-base text-white/78 sm:text-lg">
                 {t("home.subtitle")}
               </p>
-              <Button
-                asChild
-                size="lg"
-                className="group mt-7 min-w-44 justify-between px-7"
-              >
-                <Link
-                  href="/products"
-                  aria-label={`${t("common.shopNow")} — ${storeName}`}
+              <div className="mt-8 flex flex-wrap items-center gap-5">
+                <Button
+                  asChild
+                  size="lg"
+                  className="group min-w-44 justify-between bg-rose px-7 text-rose-foreground shadow-none hover:bg-rose/90"
                 >
-                  {t("common.shopNow")}
-                  <ArrowIcon
-                    className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none rtl:group-hover:-translate-x-0.5"
-                    aria-hidden="true"
-                  />
-                </Link>
-              </Button>
+                  <Link
+                    href="/products"
+                    aria-label={`${t("common.shopNow")} — ${storeName}`}
+                  >
+                    {t("common.shopNow")}
+                    <ArrowIcon
+                      className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none rtl:group-hover:-translate-x-0.5"
+                      aria-hidden="true"
+                    />
+                  </Link>
+                </Button>
+                <a
+                  href="#collections"
+                  className="store-focus-invert inline-flex min-h-11 items-center rounded-sm text-sm font-bold text-white underline decoration-white/45 underline-offset-8 transition-colors hover:decoration-white"
+                >
+                  {t("home.heroExplore")}
+                </a>
+              </div>
+            </div>
 
-              {/* A list, not three headings: supporting facts under the action.
+            {/* A list, not three headings: supporting facts under the action.
                   The separator is drawn between items so it never dangles at
                   the end of a wrapped row. With an unreachable catalogue there
                   are no facts to state, and the rule above them would be a line
                   under nothing. */}
-              {facts.length > 0 ? (
-                <ul className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/70 pt-5 text-sm text-muted-foreground">
-                  {facts.map((fact, index) => (
-                    <li key={fact} className="flex items-center gap-3">
-                      {index > 0 ? (
-                        <span className="petal-dot" aria-hidden="true" />
-                      ) : null}
-                      <span>{fact}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="relative min-h-72 overflow-hidden bg-secondary sm:min-h-96 lg:min-h-0">
-            <Image
-              src={HERO_ARTWORK}
-              alt=""
-              fill
-              sizes="(min-width: 1024px) 56vw, (min-width: 640px) calc(100vw - 3rem), calc(100vw - 2rem)"
-              quality={85}
-              preload
-              className="object-cover object-center"
-            />
+            {facts.length > 0 ? (
+              <ul className="mt-10 flex w-fit flex-wrap items-center gap-x-4 gap-y-2 rounded-full border border-white/30 bg-black/30 px-5 py-3 text-xs font-semibold text-white/85 backdrop-blur-sm sm:text-sm">
+                {facts.map((fact, index) => (
+                  <li key={fact} className="flex items-center gap-4">
+                    {index > 0 ? (
+                      <span className="size-1 rounded-full bg-white/50" aria-hidden="true" />
+                    ) : null}
+                    <span>{fact}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span aria-hidden="true" />
+            )}
           </div>
         </div>
       </div>

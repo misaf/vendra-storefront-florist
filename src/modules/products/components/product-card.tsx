@@ -30,6 +30,8 @@ interface ProductCardProps {
   /** Shown above the title on the catalogue grid, where cards leave their category. */
   showCategory?: boolean;
   className?: string;
+  /** Gives homepage product photography an organic, arched silhouette. */
+  imageShape?: "default" | "arch";
 }
 
 /**
@@ -47,6 +49,7 @@ export function ProductCard({
   showAddToCart = true,
   showCategory = false,
   className,
+  imageShape = "default",
 }: ProductCardProps) {
   const { addToCart, openCart } = useCart();
   const [hasImageError, setHasImageError] = useState(false);
@@ -77,7 +80,10 @@ export function ProductCard({
     <div className={cn("group relative flex h-full min-w-0 flex-col", className)}>
       <div
         className={cn(
-          "relative aspect-[4/5] overflow-hidden rounded-xl bg-secondary",
+          "relative aspect-[4/5] overflow-hidden bg-secondary",
+          imageShape === "arch"
+            ? "rounded-b-2xl rounded-t-[min(10rem,45%)]"
+            : "rounded-xl",
           !inStock && "opacity-90"
         )}
       >
@@ -94,7 +100,12 @@ export function ProductCard({
           href={detailHref}
           aria-hidden="true"
           tabIndex={-1}
-          className="store-focus-inset block h-full w-full rounded-xl"
+          className={cn(
+            "store-focus-inset block h-full w-full",
+            imageShape === "arch"
+              ? "rounded-b-2xl rounded-t-[min(10rem,45%)]"
+              : "rounded-xl"
+          )}
         >
           {hasImageError ? (
             <ProductImageFallback label={t("products.imageUnavailable")} />

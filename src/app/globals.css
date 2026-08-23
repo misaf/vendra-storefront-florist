@@ -122,7 +122,7 @@
      to be found before it can be filled, while a section rule does not. */
   --input: oklch(0.62 0.03 98);
   --ring: oklch(0.58 0.13 35);
-  --rose: oklch(0.54 0.15 33);
+  --rose: oklch(0.55 0.105 43);
   --rose-foreground: oklch(0.99 0.005 91);
   --marigold: oklch(0.75 0.12 70);
   --iris: oklch(0.52 0.1 305);
@@ -223,6 +223,17 @@
 
 ::selection {
   background: color-mix(in oklch, var(--rose) 24%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Unlayered, like the :root default it overrides — a layered rule would lose
@@ -385,6 +396,45 @@
     letter-spacing: 0;
     line-height: 1.4;
   }
+
+  .boho-hero-shell {
+    padding-block: 1rem 2.5rem;
+  }
+
+  .boho-hero {
+    border-start-start-radius: min(12rem, 16vw);
+  }
+
+  .boho-hero-eyebrow {
+    color: rgb(255 255 255 / 0.76);
+  }
+
+  .boho-hero-eyebrow::before {
+    background: rgb(255 255 255 / 0.55);
+  }
+
+  .boho-sun {
+    position: absolute;
+    inset-inline-end: clamp(1.5rem, 5vw, 5rem);
+    inset-block-start: clamp(1.5rem, 4vw, 4rem);
+    width: clamp(6rem, 12vw, 10rem);
+    aspect-ratio: 1;
+    border: 1px solid rgb(255 255 255 / 0.22);
+    border-radius: 999px;
+    box-shadow: 0 0 0 1.5rem rgb(255 255 255 / 0.035), 0 0 0 3rem rgb(255 255 255 / 0.02);
+  }
+
+  .boho-arrivals {
+    background-image:
+      radial-gradient(circle at 9% 10%, color-mix(in oklch, var(--rose) 10%, transparent) 0 7rem, transparent 7.1rem),
+      radial-gradient(circle at 94% 94%, color-mix(in oklch, var(--leaf) 9%, transparent) 0 9rem, transparent 9.1rem);
+  }
+
+  @media (min-width: 40rem) {
+    .boho-hero-shell {
+      padding-block: 1.5rem 3.5rem;
+    }
+  }
 }
 
 /* ── Structural markers ─────────────────────────────────────────
@@ -400,14 +450,14 @@
     background: var(--muted-foreground);
   }
   /* A neutral hairline seam, used between sections */
-  .golzar-seam {
+  .store-seam {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     color: var(--muted-foreground);
   }
-  .golzar-seam::before,
-  .golzar-seam::after {
+  .store-seam::before,
+  .store-seam::after {
     content: "";
     height: 1px;
     flex: 1;
@@ -686,16 +736,16 @@
    behind motion preference, so reduced-motion users get the full-colour,
    fully legible map immediately. Colour is always one hover/focus away. */
 @media (prefers-reduced-motion: no-preference) {
-  .golzar-map {
+  .store-map {
     filter: grayscale(1) contrast(0.96) brightness(1.02);
     transition: filter 0.5s ease;
   }
-  :root.dark .golzar-map {
+  :root.dark .store-map {
     filter: grayscale(1) contrast(0.92) brightness(0.92);
   }
-  .golzar-map:hover,
-  .golzar-map:focus,
-  .golzar-map:focus-within {
+  .store-map:hover,
+  .store-map:focus,
+  .store-map:focus-within {
     filter: none;
   }
 }
@@ -704,37 +754,37 @@
    "ink wash": tiles desaturated to porcelain + grey so the only solid ink
    on the canvas is the petal-pin fixed at centre. Pan the map, the pin
    stays put, the address resolves underneath. */
-.golzar-pinmap .leaflet-container {
+.store-pinmap .leaflet-container {
   background: var(--muted);
   font: inherit;
   font-size: 0.8125rem;
 }
 /* OSM tiles are colourful, so they're desaturated to porcelain + grey and
    inverted into ink for dark mode. */
-.golzar-pinmap[data-provider="osm"] .leaflet-tile-pane {
+.store-pinmap[data-provider="osm"] .leaflet-tile-pane {
   filter: grayscale(1) contrast(0.95) brightness(1.03);
 }
-:root.dark .golzar-pinmap[data-provider="osm"] .leaflet-tile-pane {
+:root.dark .store-pinmap[data-provider="osm"] .leaflet-tile-pane {
   filter: grayscale(1) invert(0.92) brightness(0.85) contrast(0.95);
 }
 /* Neshan ships its own day/night styles, so only a light desaturation is
-   applied to keep it in the Golzār ink palette — never inverted. */
-.golzar-pinmap[data-provider="neshan"] .leaflet-tile-pane {
+   applied to keep it in the storefront's ink palette — never inverted. */
+.store-pinmap[data-provider="neshan"] .leaflet-tile-pane {
   filter: grayscale(1) contrast(0.98);
 }
-.golzar-pinmap .leaflet-bar {
+.store-pinmap .leaflet-bar {
   border: 1px solid var(--border);
   box-shadow: none;
 }
-.golzar-pinmap .leaflet-bar a {
+.store-pinmap .leaflet-bar a {
   background: var(--card);
   color: var(--foreground);
   border-color: var(--border);
 }
-.golzar-pinmap .leaflet-bar a:hover {
+.store-pinmap .leaflet-bar a:hover {
   background: var(--secondary);
 }
-.golzar-pinmap .leaflet-control-attribution {
+.store-pinmap .leaflet-control-attribution {
   background: var(--card);
   color: var(--muted-foreground);
   font-size: 0.75rem;
@@ -743,7 +793,7 @@
 /* Attribution links are real targets, so they carry the 24px minimum from
    WCAG 2.5.8 rather than leaning on the "inline text" exemption. inline-flex
    keeps them on one line; the bar grows a few pixels and no more. */
-.golzar-pinmap .leaflet-control-attribution a {
+.store-pinmap .leaflet-control-attribution a {
   color: var(--muted-foreground);
   text-decoration: underline;
   display: inline-flex;
@@ -756,20 +806,20 @@
    cannot reach. `makeAttributionAccessible()` in address-map-picker.tsx gives
    those links the same size and target height from JS — the attribution text
    and link are left untouched. */
-.golzar-pinmap .leaflet-container:focus-visible {
+.store-pinmap .leaflet-container:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: -2px;
 }
 
 /* The petal-pin: bottom-centre anchored at the map centre. */
-.golzar-pin {
+.store-pin {
   position: absolute;
   left: 50%;
   top: 50%;
   z-index: 500;
   pointer-events: none;
 }
-.golzar-pin__shadow {
+.store-pin__shadow {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -781,7 +831,7 @@
   border-radius: 999px;
   filter: blur(1px);
 }
-.golzar-pin__drop {
+.store-pin__drop {
   display: block;
   width: 1.35rem;
   height: 1.35rem;
@@ -791,7 +841,7 @@
   transform-origin: bottom center;
   box-shadow: 0 3px 7px -2px color-mix(in oklch, var(--foreground) 40%, transparent);
 }
-.golzar-pin__dot {
+.store-pin__dot {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -804,16 +854,16 @@
 /* One restrained motion: the pin lifts while the map pans, settles on
    release — only for users who haven't asked for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
-  .golzar-pin__drop {
+  .store-pin__drop {
     transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
-  .golzar-pin__shadow {
+  .store-pin__shadow {
     transition: transform 0.28s ease, opacity 0.28s ease;
   }
-  .golzar-pin[data-moving="true"] .golzar-pin__drop {
+  .store-pin[data-moving="true"] .store-pin__drop {
     transform: translate(-50%, calc(-100% - 0.35rem)) rotate(-45deg);
   }
-  .golzar-pin[data-moving="true"] .golzar-pin__shadow {
+  .store-pin[data-moving="true"] .store-pin__shadow {
     transform: translate(-50%, -50%) scale(1.5);
     opacity: 0.16;
   }

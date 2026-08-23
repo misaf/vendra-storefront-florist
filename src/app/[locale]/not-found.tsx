@@ -12,29 +12,36 @@ export default async function NotFound() {
 
   return (
     <PageShell>
-      <section className="bg-background pb-20 pt-10 sm:pb-28 sm:pt-14">
-        <div className="store-container max-w-2xl text-center">
-          <p className="store-eyebrow justify-center">
-            {t("errors.notFoundEyebrow")}
-          </p>
-          <h1 className="store-page-title mt-4 text-foreground">
-            {t("errors.notFoundTitle")}
-          </h1>
-          <p className="mt-4 leading-7 text-muted-foreground">
-            {t("errors.notFoundDescription")}
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button asChild className="gap-2">
-              <Link href="/">
-                <HomeArrow className="h-4 w-4" />
-                {t("errors.backHome")}
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/products">
-                {t("common.viewAllProducts") || "View all products"}
-              </Link>
-            </Button>
+      <section className="store-section-lg bg-background">
+        <div className="store-container grid overflow-hidden border-y border-border bg-secondary/35 md:grid-cols-[0.75fr_1.25fr]">
+          <div className="flex min-h-56 items-center justify-center border-b border-border p-8 md:min-h-[28rem] md:border-b-0 md:border-e">
+            <p className="font-display text-[clamp(7rem,18vw,14rem)] leading-none text-rose/22" aria-hidden="true">
+              404
+            </p>
+          </div>
+          <div className="flex items-center p-7 sm:p-12 lg:p-16">
+            <div className="max-w-xl">
+              <p className="store-eyebrow">{t("errors.notFoundEyebrow")}</p>
+              <h1 className="store-page-title mt-4 text-foreground">
+                {t("errors.notFoundTitle")}
+              </h1>
+              <p className="store-lede mt-4 leading-7 text-muted-foreground">
+                {t("errors.notFoundDescription")}
+              </p>
+              <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row">
+                <Button asChild className="gap-2">
+                  <Link href="/">
+                    <HomeArrow className="h-4 w-4" />
+                    {t("errors.backHome")}
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/products">
+                    {t("common.viewAllProducts") || "View all products"}
+                  </Link>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>

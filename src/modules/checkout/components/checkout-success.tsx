@@ -3,7 +3,6 @@
 import { Link } from "@/shared/i18n/navigation";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/shared/components/ui/card";
 import { useOrders } from "@/modules/account";
 import { useStorefrontConfig } from "@/shared/config/storefront-context";
 import { useTranslations } from "@/shared/hooks/use-translations";
@@ -49,26 +48,38 @@ export default function CheckoutSuccess() {
 
   return (
     <PageShell showFooter={false}>
-      <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-lg border-0 bg-card/70 px-2 py-8 text-center shadow-xl shadow-foreground/5 sm:px-6 sm:py-12">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <CheckCircle2 className="h-8 w-8" />
+      <div className="grid min-h-[calc(100vh-7rem)] lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="flex bg-storefront-brand px-6 py-14 text-storefront-brand-foreground sm:px-10 sm:py-20 lg:items-center lg:px-[max(3rem,8vw)]">
+          <div className="max-w-xl">
+            <div className="flex size-16 items-center justify-center rounded-t-full bg-storefront-brand-foreground text-storefront-brand">
+              <CheckCircle2 className="size-8" aria-hidden="true" />
             </div>
-            <h1 className="store-page-title">
+            <p className="mt-8 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-storefront-brand-foreground/65">
+              {t("checkout.successEyebrow")}
+            </p>
+            <h1 className="font-display mt-4 text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
               {t("checkout.successTitle")}
             </h1>
-            <CardDescription className="text-base">
+            <p className="mt-5 text-sm leading-7 text-storefront-brand-foreground/75 sm:text-base">
               {t("checkout.successDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* The reference, the date and what was paid. Without them the
-                screen said an order existed but gave the customer nothing to
-                quote back to the shop if anything went wrong. */}
-            {latestOrder ? (
-              <dl className="rounded-lg border border-border bg-card p-4 text-start text-sm">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
+            </p>
+          </div>
+        </section>
+
+        <section className="flex items-center bg-background px-5 py-12 sm:px-10 sm:py-16 lg:px-[max(3rem,8vw)]">
+          <div className="w-full max-w-xl">
+            <p className="store-eyebrow">{t("checkout.stepConfirm")}</p>
+            <h2 className="font-display mt-4 text-3xl leading-tight tracking-tight sm:text-4xl">
+              {t("checkout.successNextTitle")}
+            </h2>
+
+            <div className="mt-8 space-y-6">
+              {/* The reference, the date and what was paid. Without them the
+                  screen said an order existed but gave the customer nothing to
+                  quote back to the shop if anything went wrong. */}
+              {latestOrder ? (
+              <dl className="border-y border-border text-start text-sm">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 py-3.5">
                   <dt className="text-muted-foreground">
                     {t("common.orderReference")}
                   </dt>
@@ -76,30 +87,30 @@ export default function CheckoutSuccess() {
                     {latestOrder.id}
                   </dd>
                 </div>
-                <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2 border-t border-border pt-2">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-border py-3.5">
                   <dt className="text-muted-foreground">{t("common.orderDate")}</dt>
                   <dd className="text-foreground">
                     {formatLocaleDate(latestOrder.date, locale)}
                   </dd>
                 </div>
-                <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2 border-t border-border pt-2">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-border py-3.5">
                   <dt className="text-muted-foreground">{t("common.orderTotal")}</dt>
                   <dd className="font-semibold text-foreground" dir="ltr">
                     {formatPrice(latestOrder.total)}
                   </dd>
                 </div>
               </dl>
-            ) : null}
-            <div className="rounded-lg bg-muted p-4">
-              <p className="text-sm text-muted-foreground">
+              ) : null}
+              <div className="border-s-2 border-primary bg-secondary/45 px-5 py-4">
+              <p className="text-sm leading-7 text-muted-foreground">
                 {t("checkout.successDetails")}
               </p>
-            </div>
+              </div>
 
             {/* No order endpoint exists. The primary next step therefore sends
                 the complete request (items, total and delivery details), not a
                 browser-only reference that the shop could never look up. */}
-            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
               <Button asChild className="w-full gap-2">
                 <a
                   href={whatsappUrl(
@@ -120,18 +131,19 @@ export default function CheckoutSuccess() {
                   {storefront.contact.mobilePhone}
                 </a>
               </Button>
-            </div>
+              </div>
 
-            <div className="flex flex-col gap-2">
-              <Button asChild variant="outline" className="w-full">
+              <div className="flex flex-col gap-2 border-t border-border pt-5 sm:flex-row">
+              <Button asChild variant="outline" className="w-full sm:w-auto">
                 <Link href="/products">{t("checkout.continueShopping")}</Link>
               </Button>
-              <Button asChild variant="ghost" className="w-full">
+              <Button asChild variant="ghost" className="w-full sm:w-auto">
                 <Link href="/">{t("checkout.backToHome")}</Link>
               </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       </div>
     </PageShell>
   );

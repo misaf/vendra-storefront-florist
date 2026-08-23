@@ -11,7 +11,7 @@ const NewsletterForm = dynamic(() => import("./newsletter-form"), {
   // out of every page's critical path for a below-the-fold field. The skeleton
   // reserves the control's height so the swap-in shifts nothing.
   ssr: false,
-  loading: () => <Skeleton className="h-11 w-full rounded-full" />,
+  loading: () => <Skeleton className="h-11 w-full rounded-sm" />,
 });
 
 interface NewsletterProps {
@@ -67,4 +67,3 @@ export function Newsletter({ variant = "default", className = "" }: NewsletterPr
     </section>
   );
 }
-

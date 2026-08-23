@@ -25,13 +25,13 @@ interface CategoryMenuProps {
  * and one with thirty still scans in three columns of ten.
  */
 function getPanelLayout(count: number) {
-  if (count >= 9) return { width: "w-[40rem]", columns: "grid-cols-3" };
-  if (count >= 5) return { width: "w-[27rem]", columns: "grid-cols-2" };
-  return { width: "w-[16rem]", columns: "grid-cols-1" };
+  if (count >= 9) return { columns: "grid-cols-3" };
+  if (count >= 5) return { columns: "grid-cols-2" };
+  return { columns: "grid-cols-1" };
 }
 
 const CATEGORY_LINK_CLASS =
-  "store-dynamic-text flex min-h-10 items-center rounded-lg px-3 py-2 text-sm text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground";
+  "group/category store-dynamic-text flex min-h-11 items-start gap-3 rounded-sm border-b border-border/65 px-2 py-3 text-sm text-foreground/82 transition-colors hover:bg-secondary/55 hover:text-foreground";
 
 /**
  * The catalogue entry in the main navigation: a disclosure button and the panel
@@ -160,58 +160,76 @@ export function CategoryMenu({ className, active = false }: CategoryMenuProps) {
              by whichever viewport edge it collided with. */
           className={cn(
             "absolute end-0 top-[calc(50%+var(--store-header-h)/2)] z-10",
-            "max-w-[calc(100vw-2rem)] overflow-y-auto rounded-b-2xl border border-t-0 border-border bg-card p-3 text-card-foreground shadow-panel",
+            "w-[min(56rem,calc(100vw-5rem))] max-w-[calc(100vw-2rem)] overflow-hidden rounded-b-2xl border border-t-0 border-border bg-card text-card-foreground shadow-panel",
             /* The header is not the only chrome above the panel — the utility
                bar sits above it until the page is scrolled — so the allowance
                covers both. Without it a short viewport clips the last category
                off a panel that is a few pixels under its own scroll threshold,
                leaving it unreachable. */
             "max-h-[calc(100dvh-var(--store-header-h)-5rem)]",
-            "animate-in fade-in-0 slide-in-from-top-1 duration-150",
-            layout.width
+            "animate-in fade-in-0 slide-in-from-top-1 duration-150"
           )}
         >
-          <Link
-            href="/products"
-            onClick={close}
-            className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-secondary/60 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-          >
-            {t("common.allProducts")}
-            <ArrowRight className="size-4 shrink-0 text-muted-foreground rtl:rotate-180" aria-hidden="true" />
-          </Link>
+          <div className="grid max-h-[calc(100dvh-var(--store-header-h)-5rem)] overflow-y-auto md:grid-cols-[15rem_minmax(0,1fr)]">
+            <div className="flex flex-col justify-between bg-storefront-brand p-6 text-storefront-brand-foreground">
+              <div>
+                <p className="store-eyebrow boho-hero-eyebrow">
+                  {t("home.collectionsEyebrow")}
+                </p>
+                <p className="font-display mt-4 text-[1.85rem] leading-[1.08] text-storefront-brand-foreground [.locale-fa_&]:leading-[1.55]">
+                  {t("home.collectionsTitle")}
+                </p>
+                <p className="store-lede mt-4 text-sm text-storefront-brand-foreground/68">
+                  {t("home.collectionsSubtitle")}
+                </p>
+              </div>
+              <Link
+                href="/products"
+                onClick={close}
+                className="store-focus-invert group mt-8 flex min-h-11 items-center justify-between gap-3 border-t border-white/18 pt-4 text-sm font-semibold text-storefront-brand-foreground"
+              >
+                {t("common.allProducts")}
+                <ArrowRight className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" aria-hidden="true" />
+              </Link>
+            </div>
 
-          {/* Named, not just captioned: tabbing into the panel otherwise
-              announces "list, 13 items" with no clue what the list is of, since
-              a visual label above a list is a label to no one. */}
-          <p id={listLabelId} className="mb-1 mt-4 px-3 text-xs font-bold uppercase text-muted-foreground">
-            {t("common.browseByCategory")}
-          </p>
+            <div className="p-5 sm:p-6">
+              {/* Named, not just captioned: tabbing into the panel otherwise
+                  announces "list, 13 items" with no clue what the list is of. */}
+              <p id={listLabelId} className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground [.locale-fa_&]:tracking-normal">
+                {t("common.browseByCategory")}
+              </p>
 
-          {isLoading ? (
-            <ul className={cn("grid gap-x-2 gap-y-0.5", layout.columns)} aria-hidden="true">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <li key={index} className="flex min-h-10 items-center px-3 py-2">
-                  <span className="h-3.5 w-full animate-pulse rounded-full bg-muted" />
-                </li>
-              ))}
-            </ul>
-          ) : categories.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-muted-foreground">{t("common.noCategories")}</p>
-          ) : (
-            <ul aria-labelledby={listLabelId} className={cn("grid gap-x-2 gap-y-0.5", layout.columns)}>
-              {categories.map((category) => (
-                <li key={category.id}>
-                  <Link
-                    href={{ pathname: "/products", query: { category: category.slug } }}
-                    onClick={close}
-                    className={CATEGORY_LINK_CLASS}
-                  >
-                    <DynamicText>{category.name}</DynamicText>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+              {isLoading ? (
+                <ul className={cn("grid gap-x-5", layout.columns)} aria-hidden="true">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <li key={index} className="flex min-h-11 items-center border-b border-border/65 px-2 py-3">
+                      <span className="h-3.5 w-full animate-pulse rounded-full bg-muted" />
+                    </li>
+                  ))}
+                </ul>
+              ) : categories.length === 0 ? (
+                <p className="px-2 py-3 text-sm text-muted-foreground">{t("common.noCategories")}</p>
+              ) : (
+                <ul aria-labelledby={listLabelId} className={cn("grid gap-x-5", layout.columns)}>
+                  {categories.map((category, index) => (
+                    <li key={category.id}>
+                      <Link
+                        href={{ pathname: "/products", query: { category: category.slug } }}
+                        onClick={close}
+                        className={CATEGORY_LINK_CLASS}
+                      >
+                        <span className="mt-0.5 w-5 shrink-0 font-mono text-[0.65rem] tabular-nums text-muted-foreground" aria-hidden="true">
+                          {new Intl.NumberFormat(locale, { minimumIntegerDigits: 2 }).format(index + 1)}
+                        </span>
+                        <DynamicText>{category.name}</DynamicText>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         </div>
       ) : null}
     </>

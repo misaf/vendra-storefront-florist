@@ -77,7 +77,7 @@ export async function CategoryDiscovery({
 
   return (
     <section id="collections" className="store-scroll-anchor bg-background">
-      <div className="store-container store-section">
+      <div className="store-container store-section-lg">
         <SectionHeader
           eyebrow={t("home.collectionsEyebrow")}
           title={t("home.collectionsTitle")}
@@ -112,6 +112,7 @@ export async function CategoryDiscovery({
                   /* The API has written a sentence for every category and
                      nothing in the storefront was reading it. */
                   showDescription
+                  shape="arch"
                 />
               </li>
             ))}
@@ -129,6 +130,7 @@ export async function CategoryDiscovery({
                   category={category}
                   locale={locale}
                   tone={index + LEAD_COUNT}
+                  shape="arch"
                   sizes="(min-width: 1024px) 13rem, (min-width: 640px) 30vw, 52vw"
                 />
               </li>

@@ -51,8 +51,8 @@ export function ProductsPageSkeleton() {
               <div className="flex items-center justify-between gap-3">
                 <Skeleton className="h-5 w-24" />
                 <div className="flex gap-2">
-                  <Skeleton className="h-11 w-24 rounded-full lg:hidden" />
-                  <Skeleton className="h-11 w-28 rounded-full" />
+                  <Skeleton className="h-11 w-24 rounded-sm lg:hidden" />
+                  <Skeleton className="h-11 w-28 rounded-sm" />
                 </div>
               </div>
               <div className="mb-7 mt-5 border-t border-border" />

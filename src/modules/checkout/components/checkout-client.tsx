@@ -19,7 +19,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/shared/components/ui/form";
-import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from "@/shared/components/ui/empty";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/shared/components/ui/empty";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 import { useCart } from "@/modules/cart";
 import { useOrders } from "@/modules/account";
 import { useTranslations } from "@/shared/hooks/use-translations";
@@ -187,12 +194,24 @@ export default function CheckoutClient() {
         <div
           role="status"
           aria-label={t("common.loading")}
-          className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4"
+          className="store-container py-12 sm:py-16"
         >
-          <Loader2
-            className="size-6 animate-spin text-muted-foreground"
-            aria-hidden="true"
-          />
+          <h1 className="sr-only">{t("checkout.title")}</h1>
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="mt-5 h-14 w-56" />
+          <Skeleton className="mt-4 h-5 w-full max-w-xl" />
+          <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.75fr)] lg:gap-12">
+            <div className="border-y border-border px-5 py-8 sm:px-9">
+              <Skeleton className="h-8 w-52" />
+              <div className="mt-8 grid gap-5 sm:grid-cols-2">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <Skeleton key={index} className="h-12 w-full" />
+                ))}
+              </div>
+              <Skeleton className="mt-6 h-64 w-full" />
+            </div>
+            <Skeleton className="h-96 w-full" />
+          </div>
         </div>
       </PageShell>
     );
@@ -201,13 +220,22 @@ export default function CheckoutClient() {
   if (items.length === 0) {
     return (
       <PageShell showFooter={false}>
-        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-          <Empty className="max-w-md">
+        <div className="store-container grid min-h-[calc(100vh-7rem)] items-center gap-10 py-12 lg:grid-cols-[0.7fr_1.3fr] lg:py-20">
+          <h1 className="sr-only">{t("checkout.title")}</h1>
+          <div
+            aria-hidden="true"
+            className="font-display text-[clamp(8rem,22vw,18rem)] leading-none text-primary/8"
+          >
+            {numberFormat.format(0)}
+          </div>
+          <Empty className="max-w-xl justify-self-stretch lg:justify-self-start">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <ShoppingBag className="h-6 w-6" />
               </EmptyMedia>
-              <EmptyTitle>{t("common.emptyCart")}</EmptyTitle>
+              <EmptyTitle role="heading" aria-level={2}>
+                {t("common.emptyCart")}
+              </EmptyTitle>
               <EmptyDescription>
                 {t("checkout.emptyCartDescription")}
               </EmptyDescription>
@@ -244,15 +272,43 @@ export default function CheckoutClient() {
             {t("common.backToCart")}
           </button>
         </div>
-        <h1 className="store-page-title mb-8 text-foreground sm:mb-10">
-          {t("checkout.title")}
-        </h1>
+        <div className="grid gap-8 border-b border-border pb-8 sm:pb-10 lg:grid-cols-[1fr_1.05fr] lg:items-end lg:gap-16">
+          <div>
+            <p className="store-eyebrow">{t("checkout.eyebrow")}</p>
+            <h1 className="store-page-title mt-4 text-foreground">
+              {t("checkout.title")}
+            </h1>
+            <p className="store-lede mt-4 max-w-xl text-sm text-muted-foreground sm:text-base">
+              {t("checkout.pageDescription")}
+            </p>
+          </div>
+          <ol
+            className="grid grid-cols-3 border-y border-border"
+            aria-label={t("checkout.title")}
+          >
+            {["stepDetails", "stepReview", "stepConfirm"].map((key, index) => (
+              <li
+                key={key}
+                className="border-e border-border px-3 py-4 last:border-e-0 sm:px-4"
+              >
+                <span className="font-mono text-[0.65rem] text-muted-foreground">
+                  {numberFormat
+                    .format(index + 1)
+                    .padStart(2, numberFormat.format(0))}
+                </span>
+                <span className="mt-1 block text-xs font-medium leading-5 text-foreground sm:text-sm">
+                  {t(`checkout.${key}`)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
 
         <button
           type="button"
           onClick={openCart}
           aria-label={`${t("common.viewCart")}: ${formatPrice(total)}`}
-          className="mb-7 flex min-h-16 w-full items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3 text-start transition-colors hover:bg-secondary lg:hidden"
+          className="mb-7 mt-7 flex min-h-16 w-full items-center justify-between gap-4 border-y border-border bg-card px-4 py-3 text-start transition-colors hover:bg-secondary lg:hidden"
         >
           <span className="min-w-0">
             <span className="block text-sm font-semibold text-foreground">
@@ -273,23 +329,27 @@ export default function CheckoutClient() {
         </button>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} aria-busy={isSubmitting} className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.75fr)] lg:gap-12">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            aria-busy={isSubmitting}
+            className="mt-8 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.75fr)] lg:gap-12"
+          >
             {/* Left Column - Forms */}
             <div className="min-w-0 space-y-6">
               {/* Shipping Information */}
-              <Card className="min-w-0 overflow-hidden border-0 bg-card/65 shadow-none">
-                <CardHeader>
-                  <h2 className="font-display flex items-center gap-3 text-xl font-semibold leading-none">
-                    <span className="flex size-9 items-center justify-center rounded-full bg-secondary text-primary">
+              <section className="min-w-0 border-y border-border bg-card/45">
+                <header className="border-b border-border px-5 py-6 sm:px-8 sm:py-7">
+                  <h2 className="font-display flex items-center gap-3 text-2xl leading-none sm:text-3xl">
+                    <span className="flex size-9 items-center justify-center rounded-t-full bg-secondary text-primary">
                       <MapPin className="h-5 w-5" />
                     </span>
                     {t("checkout.shippingInformation")}
                   </h2>
-                  <p className="text-xs leading-5 text-muted-foreground">
+                  <p className="mt-3 text-xs leading-5 text-muted-foreground">
                     {t("checkout.requiredFieldsHint")}
                   </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                </header>
+                <div className="space-y-5 px-5 py-7 sm:px-8 sm:py-8">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       control={form.control}
@@ -455,8 +515,8 @@ export default function CheckoutClient() {
                       </FormItem>
                     )}
                   />
-                </CardContent>
-              </Card>
+                </div>
+              </section>
             </div>
 
             {/* Right Column - Order Summary */}

@@ -10,7 +10,6 @@ import { ProductImageFallback } from "./product-image-fallback";
 import { Breadcrumbs } from "@/shared/components/layout/breadcrumbs";
 import { Button } from "@/shared/components/ui/button";
 import { ErrorState } from "@/shared/components/ui/error-state";
-import { Card } from "@/shared/components/ui/card";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { isRtlLocale } from "@/shared/lib/locale";
 import { useStorefrontConfig } from "@/shared/config/storefront-context";
@@ -241,7 +240,7 @@ export default function ProductDetailClient({
 	            <div className="store-container">
                 <Breadcrumbs
                   label={t("products.breadcrumb")}
-                  className="relative z-10 mb-5"
+                  className="relative z-10 mb-7"
                   items={[
                     { label: t("common.home"), href: "/" },
                     { label: t("common.products"), href: "/products" },
@@ -262,16 +261,16 @@ export default function ProductDetailClient({
                   ]}
                 />
 
-	              <Card className="grid gap-0 overflow-hidden rounded-3xl border-0 bg-card p-0 shadow-panel sm:grid-cols-[1.08fr_0.92fr]">
-	                <div className="p-2.5 sm:p-4 lg:p-5">
-	                  <div className="relative aspect-square overflow-hidden rounded-xl bg-secondary sm:aspect-[5/6]">
+	              <div className="grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.78fr)] lg:items-start lg:gap-14 xl:gap-20">
+	                <div className="min-w-0">
+	                  <div className="relative aspect-square overflow-hidden rounded-b-[2rem] rounded-t-[min(12rem,34%)] bg-secondary shadow-card sm:aspect-[5/6]">
 	                    {hasImageError ? (
                         <ProductImageFallback
                           size="lg"
                           label={t("products.imageUnavailable") || "Image unavailable"}
                         />
 	                    ) : (
-                        <button
+	                        <button
                           type="button"
                           aria-label={t("products.openImagePreview", { name: product.name })}
                           className="store-focus-inset relative block h-full w-full cursor-zoom-in"
@@ -285,7 +284,7 @@ export default function ProductDetailClient({
 	                        alt={product.name}
 	                        fill
 	                        sizes="(min-width: 1024px) 52vw, (min-width: 640px) 48vw, 100vw"
-	                        className="object-contain p-3 sm:p-5"
+	                        className="object-contain p-3 sm:p-6 lg:p-8"
 	                        preload
 	                        unoptimized
 	                        onError={() => setHasImageError(true)}
@@ -295,7 +294,7 @@ export default function ProductDetailClient({
 	                  </div>
 
 	                  {galleryImages.length > 1 ? (
-	                    <div className="mt-3 flex flex-wrap items-center gap-2">
+	                    <div className="store-scroll-row mt-4 flex snap-x gap-2 overflow-x-auto pb-2">
 	                      {galleryImages.map((image, index) => {
 	                        const isActive = image === detailImage;
 	                        return (
@@ -306,7 +305,7 @@ export default function ProductDetailClient({
 	                              setSelectedImage(image);
 	                              setHasImageError(false);
 	                            }}
-	                            className={`relative aspect-square size-16 overflow-hidden rounded-xl border-2 bg-storefront-brand-soft shadow-sm transition-colors dark:bg-storefront-brand-soft ${
+	                            className={`relative aspect-square size-16 shrink-0 snap-start overflow-hidden rounded-b-lg rounded-t-[2rem] border-2 bg-storefront-brand-soft transition-colors dark:bg-storefront-brand-soft ${
 	                              isActive
 	                                ? "border-primary"
 	                                : "border-transparent hover:border-primary/40"
@@ -332,7 +331,7 @@ export default function ProductDetailClient({
 	                  ) : null}
 	                </div>
 
-	                <div className="relative grid gap-4 border-t border-border p-5 sm:border-s sm:border-t-0 sm:p-7 lg:p-10">
+	                <div className="store-sticky-lg relative grid min-w-0 gap-4 border-t border-border pt-7 lg:border-t-0 lg:pt-3">
 	                  <div className="flex min-w-0 flex-col justify-center gap-5">
                     <div>
                       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -412,7 +411,7 @@ export default function ProductDetailClient({
                     {/* Buy block. On phones it pins to the bottom of the viewport
                         so the action stays reachable while the description is
                         read; from sm up it sits in the normal flow. */}
-                    <div className="sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 -mx-2 flex flex-col gap-3 rounded-2xl border border-border bg-background/95 p-3 shadow-xl shadow-foreground/10 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+                    <div className="sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 -mx-2 flex flex-col gap-3 rounded-xl border border-border bg-background/95 p-3 shadow-panel backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
                       {isPurchasable ? (
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                           <div className="flex items-center gap-1 self-start rounded-full border border-border bg-card p-1">
@@ -590,7 +589,7 @@ export default function ProductDetailClient({
 	                    </div>
 	                  </div>
                 </div>
-              </Card>
+	              </div>
             </div>
           </section>
 
