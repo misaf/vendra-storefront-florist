@@ -7,6 +7,11 @@ import { useStorefrontName } from "@/shared/config/storefront-context";
 import { Newsletter } from "@/modules/newsletter";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 import { useBrandIcon } from "@/shared/config/storefront-context";
+import {
+  instagramProfileUrl,
+  telegramProfileUrl,
+  whatsappUrl,
+} from "@/shared/lib/social-url";
 
 const footerLink =
   "store-focus-invert -my-2 inline-flex min-h-11 items-center gap-1.5 rounded-sm py-2 text-sm text-white/80 transition-colors hover:text-white";
@@ -17,9 +22,9 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
   const storefront = useStorefrontConfig();
   const storeName = useStorefrontName();
   const socialLinks = [
-    ["Instagram", `https://www.instagram.com/${storefront.social.instagramUsername}`],
-    ["Telegram", `https://t.me/${storefront.social.telegramUsername}`],
-    ["WhatsApp", `https://wa.me/${storefront.social.whatsappPhone}`],
+    ["Instagram", instagramProfileUrl(storefront.social.instagramUsername)],
+    ["Telegram", telegramProfileUrl(storefront.social.telegramUsername)],
+    ["WhatsApp", whatsappUrl(storefront.social.whatsappPhone)],
   ] as const;
 
   return (

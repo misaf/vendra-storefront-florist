@@ -1,6 +1,9 @@
-import { cache } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { ApiClientError, apiClient } from "@/shared/api/client";
+import {
+  ApiClientError,
+  apiClient,
+  type ApiClient,
+} from "@/shared/api/client";
 import { getLocalizedValue } from "@/shared/api/localized";
 import { createApiQueryOptions, type ApiQueryOptions } from "@/shared/api/query-client";
 import {
@@ -407,9 +410,10 @@ function emptyProductsResult(page: number, perPage: number): FetchProductsResult
 
 async function resolveProductCategoryId(
   slug: string,
-  locale?: string
+  locale: string | undefined,
+  client: ApiClient
 ): Promise<string | null> {
-  const categories = await fetchProductCategories(locale);
+  const categories = await fetchProductCategories(locale, client);
   const category = categories.find((item) => item.slug === slug);
 
   return category ? String(category.id) : null;
@@ -423,10 +427,11 @@ type ProductCategoryLookup = Map<number, ProductCategory>;
  * a card, so it must not fail the product list itself.
  */
 async function loadProductCategoryLookup(
-  locale?: string
+  locale: string | undefined,
+  client: ApiClient
 ): Promise<ProductCategoryLookup> {
   try {
-    const categories = await fetchProductCategories(locale);
+    const categories = await fetchProductCategories(locale, client);
     return new Map(categories.map((category) => [category.id, category]));
   } catch {
     return new Map();
@@ -437,10 +442,11 @@ async function fetchProductCollection(
   path: string,
   queryParams: URLSearchParams,
   fallback: { page: number; perPage: number },
-  locale?: string
+  locale: string | undefined,
+  client: ApiClient
 ): Promise<FetchProductsResult> {
   const [response, categories] = await Promise.all([
-    apiClient.get<ProductDto[]>(path, {
+    client.get<ProductDto[]>(path, {
       query: queryParams,
       locale,
       next:
@@ -450,7 +456,7 @@ async function fetchProductCollection(
       mode: "cors",
       credentials: "omit",
     }),
-    loadProductCategoryLookup(locale),
+    loadProductCategoryLookup(locale, client),
   ]);
 
   return {
@@ -571,7 +577,8 @@ async function fetchBrowserCatalogSearch(
 }
 
 export async function fetchProducts(
-  params: FetchProductsParams = {}
+  params: FetchProductsParams = {},
+  client: ApiClient = apiClient
 ): Promise<FetchProductsResult> {
   const {
     page = 1,
@@ -589,7 +596,7 @@ export async function fetchProducts(
   // already resolves the whole catalogue on the search path below, which
   // applies the same ordering to what it matched — so it is left to do that.
   if (isPriceSort(sort) && !slug && !search?.trim()) {
-    return fetchProductsSortedByPrice({ ...params, sort });
+    return fetchProductsSortedByPrice({ ...params, sort }, client);
   }
 
   const queryParams = createProductQueryParams(page, perPage, sort);
@@ -603,7 +610,7 @@ export async function fetchProducts(
   }
 
   if (category) {
-    const categoryId = await resolveProductCategoryId(category, locale);
+    const categoryId = await resolveProductCategoryId(category, locale, client);
 
     if (!categoryId) {
       return emptyProductsResult(page, perPage);
@@ -643,7 +650,8 @@ export async function fetchProducts(
     path,
     queryParams,
     { page, perPage },
-    locale
+    locale,
+    client
   );
 
   // Vendra's catalog search currently resolves product tokens reliably, but
@@ -665,15 +673,18 @@ export async function fetchProducts(
       );
     }
 
-    return searchCatalogProducts({
-      page,
-      perPage,
-      category,
-      inStock,
-      locale,
-      search: normalizedSearch,
-      sort,
-    });
+    return searchCatalogProducts(
+      {
+        page,
+        perPage,
+        category,
+        inStock,
+        locale,
+        search: normalizedSearch,
+        sort,
+      },
+      client
+    );
   }
 
   // The API answered the text query itself, in its own order. It cannot sort on
@@ -758,7 +769,7 @@ async function loadFullCatalog({
 }: Pick<
   FetchProductsParams,
   "category" | "inStock" | "locale"
->): Promise<Product[]> {
+>, client: ApiClient): Promise<Product[]> {
   const availability =
     typeof inStock === "boolean"
       ? inStock
@@ -773,13 +784,10 @@ async function loadFullCatalog({
   }
 
   const perPage = CATALOG_PAGE_SIZE;
-  const firstPage = await fetchProducts({
-    page: 1,
-    perPage,
-    category,
-    inStock,
-    locale,
-  });
+  const firstPage = await fetchProducts(
+    { page: 1, perPage, category, inStock, locale },
+    client
+  );
   const lastPage = Math.min(
     firstPage.pagination.lastPage,
     CATALOG_SWEEP_MAX_PAGES
@@ -790,7 +798,7 @@ async function loadFullCatalog({
   );
   const remainingPages = await Promise.all(
     remainingPageNumbers.map((page) =>
-      fetchProducts({ page, perPage, category, inStock, locale })
+      fetchProducts({ page, perPage, category, inStock, locale }, client)
     )
   );
   const products = [
@@ -816,15 +824,16 @@ async function loadFullCatalog({
  * request degrades to the API's own paging so the page still renders.
  */
 async function fetchProductsSortedByPrice(
-  params: FetchProductsParams & { sort: "price-asc" | "price-desc" }
+  params: FetchProductsParams & { sort: "price-asc" | "price-desc" },
+  client: ApiClient
 ): Promise<FetchProductsResult> {
   const { page = 1, perPage = 15, category, inStock, locale, sort } = params;
 
   let catalog: Product[];
   try {
-    catalog = await loadFullCatalog({ category, inStock, locale });
+    catalog = await loadFullCatalog({ category, inStock, locale }, client);
   } catch {
-    return fetchProducts({ ...params, sort: undefined });
+    return fetchProducts({ ...params, sort: undefined }, client);
   }
 
   const ordered = sortProductsByPrice(catalog, sort, locale);
@@ -846,7 +855,8 @@ async function fetchProductsSortedByPrice(
 }
 
 export async function searchCatalogProducts(
-  params: FetchProductsParams = {}
+  params: FetchProductsParams = {},
+  client: ApiClient = apiClient
 ): Promise<FetchProductsResult> {
   const {
     page = 1,
@@ -863,7 +873,7 @@ export async function searchCatalogProducts(
     return emptyProductsResult(page, perPage);
   }
 
-  const catalog = await loadFullCatalog({ category, inStock, locale });
+  const catalog = await loadFullCatalog({ category, inStock, locale }, client);
   const matches = catalog
     .map((product) => ({
       product,
@@ -902,9 +912,10 @@ export async function searchCatalogProducts(
 }
 
 export async function fetchProductsWithDetails(
-  params: FetchProductsParams = {}
+  params: FetchProductsParams = {},
+  client: ApiClient = apiClient
 ): Promise<FetchProductsResult> {
-  const result = await fetchProducts(params);
+  const result = await fetchProducts(params, client);
 
   return {
     ...result,
@@ -914,11 +925,12 @@ export async function fetchProductsWithDetails(
 
 export async function fetchProduct(
   id: string | number,
-  locale?: string
+  locale?: string,
+  client: ApiClient = apiClient
 ): Promise<Product | null> {
   try {
     const [response, categories] = await Promise.all([
-      apiClient.get<ProductDto | ProductDto[]>(`catalog/products/${id}`, {
+      client.get<ProductDto | ProductDto[]>(`catalog/products/${id}`, {
         query: {
           include: "multimedia,latestProductPrice",
         },
@@ -927,7 +939,7 @@ export async function fetchProduct(
         mode: "cors",
         credentials: "omit",
       }),
-      loadProductCategoryLookup(locale),
+      loadProductCategoryLookup(locale, client),
     ]);
     const product = getFirstResource(response.data);
     return product ? transformProduct(product, locale, categories) : null;
@@ -939,7 +951,8 @@ export async function fetchProduct(
 
 export async function fetchProductBySlug(
   slug: string,
-  locale?: string
+  locale?: string,
+  client: ApiClient = apiClient
 ): Promise<Product | null> {
   const normalizedSlug = decodeURIComponent(slug).trim();
   const resourceId = getLeadingResourceId(normalizedSlug);
@@ -949,7 +962,7 @@ export async function fetchProductBySlug(
   }
 
   if (resourceId) {
-    return fetchProduct(resourceId, locale);
+    return fetchProduct(resourceId, locale, client);
   }
 
   const perPage = 100;
@@ -957,17 +970,16 @@ export async function fetchProductBySlug(
   let lastPage = 1;
 
   do {
-    const result = await fetchProductsWithDetails({
-      page,
-      perPage,
-      locale,
-    });
+    const result = await fetchProductsWithDetails(
+      { page, perPage, locale },
+      client
+    );
     const product = result.products.find(
       (candidate) => candidate.slug === normalizedSlug
     );
 
     if (product) {
-      return (await fetchProduct(product.id, locale)) ?? product;
+      return (await fetchProduct(product.id, locale, client)) ?? product;
     }
 
     lastPage = result.pagination.lastPage;
@@ -977,29 +989,26 @@ export async function fetchProductBySlug(
   return null;
 }
 
-// Cached per request: the home page resolves the category list several times in
-// one render (loadInitialHomeProductCategories plus each resolveProductCategoryId),
-// so without cache() the fetch + transform would run repeatedly. Mirrors the blog
-// side's fetchPostCategories.
-export const fetchProductCategories = cache(
-  async (locale?: string): Promise<ProductCategory[]> => {
-    const response = await apiClient.get<ProductCategoryDto[]>(
-      "catalog/product-categories",
-      {
-        query: {
-          itemsPerPage: "100",
-          include: "multimedia",
-        },
-        locale,
-        next: { revalidate: 10 },
-        mode: "cors",
-        credentials: "omit",
-      }
-    );
+export async function fetchProductCategories(
+  locale?: string,
+  client: ApiClient = apiClient
+): Promise<ProductCategory[]> {
+  const response = await client.get<ProductCategoryDto[]>(
+    "catalog/product-categories",
+    {
+      query: {
+        itemsPerPage: "100",
+        include: "multimedia",
+      },
+      locale,
+      next: { revalidate: 10 },
+      mode: "cors",
+      credentials: "omit",
+    }
+  );
 
-    return transformCategories(response.data, locale);
-  }
-);
+  return transformCategories(response.data, locale);
+}
 
 /** Rows per catalogue request, for the first page and every appended one. */
 export const PRODUCTS_PAGE_SIZE = 12;

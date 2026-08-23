@@ -4,12 +4,14 @@ import { Suspense } from "react";
 import {
   ProductsClient,
   ProductsPageSkeleton,
+} from "@/modules/products";
+import {
   fetchProductCategories,
   loadProductsPage,
   normalizeAvailability,
   normalizeCategory,
   normalizeSort,
-} from "@/modules/products";
+} from "@/modules/products/server";
 import { buildMetadata } from "@/shared/seo";
 import { readFirst, normalizeSearch } from "@/shared/lib/search-params";
 

@@ -1,14 +1,13 @@
-"use client";
-
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/shared/i18n/navigation";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { Button } from "@/shared/components/ui/button";
-import { useTranslations } from "@/shared/hooks/use-translations";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { isRtlLocale } from "@/shared/lib/locale";
 
-export default function NotFound() {
-  const { t, locale } = useTranslations();
+export default async function NotFound() {
+  const locale = await getLocale();
+  const t = await getTranslations();
   const HomeArrow = isRtlLocale(locale) ? ArrowRight : ArrowLeft;
 
   return (

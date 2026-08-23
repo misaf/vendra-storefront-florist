@@ -57,6 +57,10 @@ import { formatRemainingQuantity, isLowStock } from "../lib/format";
 import { Price, getDiscountPercent } from "./price";
 import { cn, normalizeImageUrl } from "@/shared/lib/utils";
 import { PLACEHOLDER_IMAGE } from "@/shared/lib/image";
+import {
+  telegramProfileUrl,
+  whatsappUrl,
+} from "@/shared/lib/social-url";
 import dynamic from "next/dynamic";
 import { hasRichTextContent } from "@/shared/lib/rich-text";
 
@@ -187,9 +191,7 @@ export default function ProductDetailClient({
 
       if (platform === "whatsapp") {
         window.open(
-          `https://wa.me/${storefront.social.whatsappPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
-            message
-          )}`,
+          whatsappUrl(storefront.social.whatsappPhone, message),
           "_blank",
           "noopener,noreferrer"
         );
@@ -202,12 +204,12 @@ export default function ProductDetailClient({
       }
 
       window.open(
-        `https://t.me/${storefront.social.telegramUsername}`,
+        telegramProfileUrl(storefront.social.telegramUsername),
         "_blank",
         "noopener,noreferrer"
       );
     },
-    [detailImage, product, t]
+    [detailImage, product, storefront.social, t]
   );
 
   return (

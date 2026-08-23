@@ -1,9 +1,9 @@
 import { cache } from "react";
+import { PRODUCTS_PAGE_SIZE } from "./queries";
 import {
-  PRODUCTS_PAGE_SIZE,
   fetchProductBySlug,
   fetchProductsWithDetails,
-} from "./queries";
+} from "./server-queries";
 import {
   buildProductsQueryKey,
   getProductsApiSort,

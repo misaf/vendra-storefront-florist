@@ -1,11 +1,15 @@
-import { fetchBlogPostCategories, fetchBlogPostsWithDetails } from "@/modules/blog";
-import type { Post as BlogPost, PostCategory } from "@/modules/blog";
+import {
+  fetchBlogPostCategories,
+  fetchBlogPostsWithDetails,
+  type Post as BlogPost,
+  type PostCategory,
+} from "@/modules/blog/server";
 import {
   fetchProductCategories,
   fetchProductsWithDetails,
   type Product,
   type ProductCategory,
-} from "@/modules/products";
+} from "@/modules/products/server";
 
 const BLOG_PAGE_SIZE = 3;
 /**

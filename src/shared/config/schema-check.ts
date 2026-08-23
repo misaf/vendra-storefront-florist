@@ -27,8 +27,8 @@ export type SchemaNode = {
 const FORMATS: Record<string, (value: string) => boolean> = {
   uri: (value) => {
     try {
-      new URL(value);
-      return true;
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
     } catch {
       return false;
     }
@@ -67,6 +67,22 @@ function checkObject(
   if (node.additionalProperties === false) {
     for (const key of Object.keys(record)) {
       if (!properties[key]) errors.push(`${join(path, key)} is not allowed`);
+    }
+  }
+
+  if (
+    node.additionalProperties &&
+    typeof node.additionalProperties === "object"
+  ) {
+    for (const [key, child] of Object.entries(record)) {
+      if (!properties[key]) {
+        checkValue(
+          child,
+          node.additionalProperties as SchemaNode,
+          join(path, key),
+          errors
+        );
+      }
     }
   }
 

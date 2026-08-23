@@ -1,3 +1,5 @@
+import "server-only";
+
 import developmentConfig from "../../../config/storefront.development.json";
 import schema from "../../../config/storefront.schema.json";
 import { routing } from "@/shared/i18n/routing";
@@ -111,18 +113,13 @@ let resolved: StorefrontConfig | null = null;
 /**
  * The active store configuration.
  *
- * Resolved on first call rather than at module scope. Evaluating it eagerly made
- * merely *importing* this module throw, and it is reachable from the browser
- * bundle through ordinary shared helpers — `@/shared/api/client` pulls it in via
- * `@/shared/config`. The client never reads it (api/client calls the
- * config-dependent getters only when `typeof window === "undefined"`), but the
- * import alone was enough: the page died at module evaluation with
- * "STOREFRONT_CONFIG_BASE64 is not set", which no runtime configuration fixed.
+ * Resolve lazily so build-time module discovery can import server modules
+ * without selecting the development fixture or requiring a store identity.
+ * Runtime requests still fail closed in production when Vendra has not
+ * provisioned the container.
  *
- * Client components must not call this — the variable does not exist in the
- * browser, so it would throw there however the container is configured. Read the
- * store from `useStorefrontConfig()`, which serves the same config through
- * context.
+ * This module is guarded by `server-only`. Client components read the serialized
+ * store from `useStorefrontConfig()` instead.
  */
 export function getStorefrontConfig(): StorefrontConfig {
   resolved ??= runtime ?? fallbackConfig();

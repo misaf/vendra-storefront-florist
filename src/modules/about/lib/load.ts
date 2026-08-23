@@ -1,4 +1,7 @@
-import { fetchProductCategories, type ProductCategory } from "@/modules/products";
+import {
+  fetchProductCategories,
+  type ProductCategory,
+} from "@/modules/products/server";
 
 /** Four tiles: one row on desktop, two on a phone. */
 const ABOUT_CATEGORY_LIMIT = 4;

@@ -142,10 +142,6 @@ storefront domains:
 Vendra remains the source of truth for catalogue, content and business data.
 None of it is duplicated in this repository.
 
-**The backend does not read the tenant headers yet.** Tenant scoping for
-storefront API calls is still an open gap; the transport is in place waiting
-for it.
-
 ## Available scripts
 
 - `npm run dev` — start the local development server

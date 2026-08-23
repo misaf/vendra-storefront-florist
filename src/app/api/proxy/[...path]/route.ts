@@ -12,11 +12,9 @@ function createProxyHeaders(request: NextRequest): Headers {
   // substitution is the whole reason browser reads go through this hop rather
   // than straight to the API. Accept-Language is forwarded verbatim.
   const acceptLanguage = request.headers.get("Accept-Language");
-  const authorization = request.headers.get("Authorization");
   const headers = new Headers();
 
   if (acceptLanguage) headers.set("Accept-Language", acceptLanguage);
-  if (authorization) headers.set("Authorization", authorization);
 
   return createApiRequestHeaders({
     origin: getSiteUrl(),
@@ -49,9 +47,8 @@ export async function GET(
     // upstream *body* is not: it is written for an internal audience and can
     // carry stack traces, SQL or tenant details, so it is logged and dropped.
     if (!response.ok) {
-      const details = await response.text().catch(() => "<unreadable>");
       console.error(
-        `[Proxy] ${response.status} ${response.statusText} for ${path}: ${details}`
+        `[Proxy] ${response.status} ${response.statusText} for ${path}`
       );
       return NextResponse.json(
         { error: `Upstream request failed with status ${response.status}` },

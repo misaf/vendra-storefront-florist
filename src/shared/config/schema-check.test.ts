@@ -95,6 +95,28 @@ test("validates uri format on siteUrl", () => {
   ]);
 });
 
+test("siteUrl only accepts public HTTP origins", () => {
+  for (const value of ["javascript:alert(1)", "file:///tmp/storefront"]) {
+    const config = validConfig();
+    config.siteUrl = value;
+
+    assert.deepEqual(checkAgainstSchema(config, schema), [
+      "siteUrl is not a valid uri",
+    ]);
+  }
+});
+
+test("validates localized store names and nested unknown fields", () => {
+  const config = validConfig();
+  (config.name as Record<string, unknown>).en = 42;
+  (config.contact as Record<string, unknown>).legacyPhone = "123";
+
+  assert.deepEqual(checkAgainstSchema(config, schema), [
+    "name.en must be a string",
+    "contact.legacyPhone is not allowed",
+  ]);
+});
+
 test("rejects a non-object config", () => {
   for (const value of [null, "a string", 42, ["an", "array"]]) {
     assert.deepEqual(checkAgainstSchema(value, schema), [

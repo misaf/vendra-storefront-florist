@@ -31,7 +31,7 @@ function withApiSegment(value: string): string {
 
 /** Canonical API origin (with `/api` suffix), or null when unset. */
 export function resolveApiUrl(): string | null {
-  const value = process.env.API_BASE_URL || process.env.VENDRA_API_URL;
+  const value = process.env.VENDRA_API_URL;
 
   return value ? withApiSegment(value) : null;
 }
@@ -44,12 +44,6 @@ export function resolveStorageUrl(): string | null {
 
   const apiUrl = resolveApiUrl();
   return apiUrl ? apiUrl.replace(/\/api$/, "") : null;
-}
-
-/** Public, canonical origin of the storefront (no trailing slash), or null. */
-export function resolveSiteUrl(): string | null {
-  const value = process.env.SITE_URL;
-  return value ? normalizeBaseUrl(value) : null;
 }
 
 /** Hostname from an origin URL, or the fallback when unparsable. */

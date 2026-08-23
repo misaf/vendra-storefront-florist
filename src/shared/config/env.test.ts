@@ -3,15 +3,12 @@ import assert from "node:assert/strict";
 import {
   hostnameOf,
   resolveApiUrl,
-  resolveSiteUrl,
   resolveStorageUrl,
 } from "./env.ts";
 
 const MANAGED = [
-  "API_BASE_URL",
   "VENDRA_API_URL",
   "STORAGE_BASE_URL",
-  "SITE_URL",
   "NEXT_PUBLIC_API_BASE_URL",
   "NEXT_PUBLIC_VENDRA_API_URL",
   "NEXT_PUBLIC_STORAGE_BASE_URL",
@@ -38,12 +35,6 @@ test("accepts the API as a bare origin or with the /api suffix", () => {
   assert.equal(resolveApiUrl(), "https://api.example.com/api");
 });
 
-test("API_BASE_URL takes precedence over VENDRA_API_URL", () => {
-  process.env.API_BASE_URL = "https://explicit.example.com";
-  process.env.VENDRA_API_URL = "https://fallback.example.com";
-  assert.equal(resolveApiUrl(), "https://explicit.example.com/api");
-});
-
 test("no NEXT_PUBLIC_ alias can supply a store-specific origin", () => {
   // A NEXT_PUBLIC_ value is inlined at build time, so honouring one here would
   // freeze a single store's hosts into the image the whole fleet shares.
@@ -54,7 +45,6 @@ test("no NEXT_PUBLIC_ alias can supply a store-specific origin", () => {
 
   assert.equal(resolveApiUrl(), null);
   assert.equal(resolveStorageUrl(), null);
-  assert.equal(resolveSiteUrl(), null);
 });
 
 test("storage falls back to the API origin, which serves /storage", () => {
@@ -68,13 +58,6 @@ test("storage falls back to the API origin, which serves /storage", () => {
 test("unset origins resolve to null rather than a guess", () => {
   assert.equal(resolveApiUrl(), null);
   assert.equal(resolveStorageUrl(), null);
-  assert.equal(resolveSiteUrl(), null);
-});
-
-test("site URL loses any trailing slash", () => {
-  // It is concatenated into canonical URLs and sent as an Origin header.
-  process.env.SITE_URL = "https://store.example.com///";
-  assert.equal(resolveSiteUrl(), "https://store.example.com");
 });
 
 test("hostnameOf falls back rather than throwing on junk", () => {

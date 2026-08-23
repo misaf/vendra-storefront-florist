@@ -4,9 +4,11 @@ import { Suspense } from "react";
 import {
   BlogPageSkeleton,
   BlogPostsClient,
+} from "@/modules/blog";
+import {
   loadPostsPage,
   normalizeCategory,
-} from "@/modules/blog";
+} from "@/modules/blog/server";
 import { buildMetadata } from "@/shared/seo";
 import { readFirst, normalizeSearch } from "@/shared/lib/search-params";
 

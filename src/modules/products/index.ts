@@ -27,14 +27,6 @@ export {
   useProductCategories,
 } from "./lib/queries";
 export {
-  getProduct,
-  loadProductsPage,
-  loadRelatedProducts,
-  normalizeCategory,
-  normalizeSort,
-} from "./lib/load";
-export type { LoadProductsPageResult } from "./lib/load";
-export {
   availabilityToInStock,
   normalizeAvailability,
   type ProductAvailability,

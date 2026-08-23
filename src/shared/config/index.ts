@@ -1,7 +1,6 @@
 import { getStorefrontConfig } from "@/shared/config/storefront";
 import {
   resolveApiUrl,
-  resolveSiteUrl,
   resolveStorageUrl,
 } from "@/shared/config/env";
 
@@ -23,11 +22,22 @@ import {
  * Defaults to the runtime store configuration's `siteUrl`.
  */
 export function getSiteUrl(): string {
-  return resolveSiteUrl() ?? getStorefrontConfig().siteUrl;
+  return getStorefrontConfig().siteUrl.replace(/\/+$/, "");
 }
 
 export function getApiBaseUrl(): string {
-  return resolveApiUrl() ?? "http://localhost/api";
+  const apiUrl = resolveApiUrl();
+  if (apiUrl) return apiUrl;
+
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+  if (process.env.NODE_ENV === "production" && !isBuild) {
+    throw new Error(
+      "VENDRA_API_URL is not set. A production storefront requires the " +
+        "canonical Vendra API origin; see README.md."
+    );
+  }
+
+  return "http://localhost/api";
 }
 
 /** Media host. Defaults to the API origin, which serves `/storage`. */

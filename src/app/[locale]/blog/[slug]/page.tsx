@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/shared/i18n/navigation";
 import { PageShell } from "@/shared/components/layout/page-shell";
@@ -12,7 +12,7 @@ import { ShareButton } from "@/shared/components/ui/share-button";
 import { RichText } from "@/shared/components/rich-text";
 import { Calendar, ArrowLeft, ArrowRight, BookOpen, Clock } from "lucide-react";
 import { isRtlLocale } from "@/shared/lib/locale";
-import { getPost, loadRelatedPosts } from "@/modules/blog";
+import { getPost, loadRelatedPosts } from "@/modules/blog/server";
 import type { Post as BlogPost } from "@/modules/blog";
 import { RelatedEntries } from "@/modules/blog";
 import { PLACEHOLDER_IMAGE } from "@/shared/lib/image";
@@ -25,6 +25,7 @@ import {
   breadcrumbSchema,
   buildMetadata,
   plainText,
+  localizedPath,
 } from "@/shared/seo";
 
 /**
@@ -111,6 +112,10 @@ export default async function BlogPostDetail({
   // it may well exist — so that still renders the message below.
   if (!post && !error) {
     notFound();
+  }
+
+  if (post && `/blog/${slug}` !== canonicalPath(post)) {
+    permanentRedirect(localizedPath(locale, canonicalPath(post)));
   }
 
   const hasLeadImage = Boolean(post?.image && post.image !== PLACEHOLDER_IMAGE);

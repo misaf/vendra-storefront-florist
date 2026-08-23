@@ -4,6 +4,14 @@ import { getNetworkErrorStatus } from "@/shared/lib/network";
 
 const STORAGE_BASE_URL = getStorageBaseUrl();
 
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/avif",
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
 function normalizeStoragePath(pathSegments: string[] | undefined): string | null {
   if (!pathSegments || pathSegments.length === 0) {
     return null;
@@ -56,6 +64,7 @@ function buildResponseHeaders(upstream: Response): Headers {
     "Cache-Control": "public, max-age=31536000, immutable",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET",
+    "X-Content-Type-Options": "nosniff",
   });
 
   for (const name of ["etag", "last-modified", "content-length"] as const) {
@@ -107,6 +116,23 @@ export async function GET(
       return NextResponse.json(
         { error: `Storage error: ${response.status} ${response.statusText}` },
         { status: response.status }
+      );
+    }
+
+    const contentType = response.headers
+      .get("content-type")
+      ?.split(";", 1)[0]
+      .trim()
+      .toLowerCase();
+    if (!contentType || !ALLOWED_IMAGE_TYPES.has(contentType)) {
+      console.error(
+        `[Storage Proxy] Refused non-raster content type: ${
+          contentType ?? "missing"
+        }`
+      );
+      return NextResponse.json(
+        { error: "Unsupported asset type" },
+        { status: 415 }
       );
     }
 

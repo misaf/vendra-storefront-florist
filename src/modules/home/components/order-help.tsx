@@ -5,6 +5,7 @@ import { Link } from "@/shared/i18n/navigation";
 import { getStorefrontConfig } from "@/shared/config/storefront";
 import { formatBusinessHours, toLocaleDigits } from "@/shared/lib/hours";
 import { telHref } from "@/shared/lib/utils";
+import { whatsappUrl } from "@/shared/lib/social-url";
 
 /**
  * The page's closing band, and its second conversion path.
@@ -64,7 +65,7 @@ export async function OrderHelp({ locale }: { locale: string }) {
           {whatsappNumber ? (
             <Button asChild size="lg" variant="outline" className="bg-transparent">
               <a
-                href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}`}
+                href={whatsappUrl(whatsappNumber)}
                 target="_blank"
                 rel="noreferrer"
               >

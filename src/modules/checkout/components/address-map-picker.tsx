@@ -139,6 +139,11 @@ export default function AddressMapPicker({
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attributionObserver = useRef<MutationObserver | null>(null);
   const requestId = useRef(0);
+  // The map owns its opening viewport after mount. Prop changes update form
+  // state, not the already-interactive map instance, so capture only the
+  // initial values explicitly rather than hiding effect dependencies.
+  const initialValue = useRef(value);
+  const initialCenter = useRef(defaultCenter);
 
   // Tiles and geocoding are chosen independently: Neshan tiles need a browser
   // map key, while Neshan geocoding only needs the (server-side) service key.
@@ -230,7 +235,7 @@ export default function AddressMapPicker({
       // value may be restored; a fresh checkout waits for an actual map move or
       // the explicit "use my location" action.
       map.whenReady(() => {
-        if (value) {
+        if (initialValue.current) {
           const c = map.getCenter();
           resolve(c.lat, c.lng);
         }
@@ -249,10 +254,10 @@ export default function AddressMapPicker({
 
     (async () => {
       if (!containerRef.current || mapRef.current) return;
-      const start: [number, number] = value
-        ? [value.latitude, value.longitude]
-        : defaultCenter;
-      const zoom = value ? RESOLVED_ZOOM : DEFAULT_ZOOM;
+      const start: [number, number] = initialValue.current
+        ? [initialValue.current.latitude, initialValue.current.longitude]
+        : initialCenter.current;
+      const zoom = initialValue.current ? RESOLVED_ZOOM : DEFAULT_ZOOM;
 
       try {
         if (tileProvider === "neshan") {
@@ -303,8 +308,6 @@ export default function AddressMapPicker({
       mapRef.current?.remove();
       mapRef.current = null;
     };
-    // `value` seeds the opening view only; it is intentionally read once here
-    // rather than tracked as a dependency.
   }, [resolve, tileProvider]);
 
   const handleLocate = useCallback(() => {

@@ -1,10 +1,10 @@
 import { cache } from "react";
 import {
-  POSTS_PAGE_SIZE,
   fetchBlogPost,
   fetchBlogPostCategories,
   fetchBlogPostsWithDetails,
-} from "./queries";
+} from "./server-queries";
+import { POSTS_PAGE_SIZE } from "./queries";
 import { buildBlogQueryKey } from "./keys";
 import type { FetchBlogPostsResult, Post as BlogPost, PostCategory } from "../types";
 

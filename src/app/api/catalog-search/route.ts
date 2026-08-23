@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchCatalogProducts } from "@/modules/products";
+import { searchCatalogProducts } from "@/modules/products/server";
 import { routing } from "@/shared/i18n/routing";
 
 function positiveInteger(value: string | null, fallback: number, maximum: number) {

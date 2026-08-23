@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
-import { fetchProductsWithDetails } from "@/modules/products";
-import { fetchBlogPostsWithDetails } from "@/modules/blog";
+import { fetchProductsWithDetails } from "@/modules/products/server";
+import { fetchBlogPostsWithDetails } from "@/modules/blog/server";
 import { routing, type Locale } from "@/shared/i18n/routing";
 import { absoluteUrl, localizedPath } from "@/shared/seo";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
@@ -157,12 +157,10 @@ function localizedResourcePaths(
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
-
   const staticEntries: MetadataRoute.Sitemap = [
-    entry("", { changeFrequency: "daily", priority: 1, lastModified: now }),
-    entry("/products", { changeFrequency: "daily", priority: 0.9, lastModified: now }),
-    entry("/blog", { changeFrequency: "weekly", priority: 0.7, lastModified: now }),
+    entry("", { changeFrequency: "daily", priority: 1 }),
+    entry("/products", { changeFrequency: "daily", priority: 0.9 }),
+    entry("/blog", { changeFrequency: "weekly", priority: 0.7 }),
     entry("/about", { changeFrequency: "monthly", priority: 0.5 }),
     entry("/contact", { changeFrequency: "monthly", priority: 0.5 }),
     entry("/faq", { changeFrequency: "monthly", priority: 0.5 }),

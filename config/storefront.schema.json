@@ -52,6 +52,7 @@
     },
     "address": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "locality",
         "country"
@@ -69,6 +70,7 @@
     },
     "contact": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "mobilePhone",
         "officePhone",
@@ -107,6 +109,7 @@
     },
     "social": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "whatsappPhone",
         "telegramUsername",

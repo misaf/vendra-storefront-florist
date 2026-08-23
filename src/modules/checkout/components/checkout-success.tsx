@@ -12,6 +12,7 @@ import { useFormatPrice } from "@/shared/config/storefront-context";
 import { formatLocaleDate } from "@/shared/lib/date";
 import { CheckCircle2, MessageCircle, Phone } from "lucide-react";
 import { telHref } from "@/shared/lib/utils";
+import { whatsappUrl } from "@/shared/lib/social-url";
 
 export default function CheckoutSuccess() {
   const { t, locale } = useTranslations();
@@ -101,11 +102,10 @@ export default function CheckoutSuccess() {
             <div className="grid gap-2 sm:grid-cols-2">
               <Button asChild className="w-full gap-2">
                 <a
-                  href={`https://wa.me/${storefront.social.whatsappPhone.replace(/\D/g, "")}${
+                  href={whatsappUrl(
+                    storefront.social.whatsappPhone,
                     whatsappMessage
-                      ? `?text=${encodeURIComponent(whatsappMessage)}`
-                      : ""
-                  }`}
+                  )}
                   target="_blank"
                   rel="noreferrer"
                 >

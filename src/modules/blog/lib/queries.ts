@@ -1,6 +1,9 @@
-import { cache } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ApiClientError, apiClient } from "@/shared/api/client";
+import {
+  ApiClientError,
+  apiClient,
+  type ApiClient,
+} from "@/shared/api/client";
 import { getLocalizedValue } from "@/shared/api/localized";
 import {
   MEDIA_SIZE_CARD,
@@ -191,9 +194,10 @@ function emptyPostsResult(page: number, perPage: number): FetchPostsResult {
 
 async function resolvePostCategoryId(
   slug: string,
-  locale?: string
+  locale: string | undefined,
+  client: ApiClient
 ): Promise<string | null> {
-  const categories = await fetchPostCategories(locale);
+  const categories = await fetchPostCategories(locale, client);
   const category = categories.find((item) => item.slug === slug);
 
   return category ? String(category.id) : null;
@@ -207,10 +211,11 @@ type PostCategoryLookup = Map<number, PostCategory>;
  * must not fail the post list itself.
  */
 async function loadPostCategoryLookup(
-  locale?: string
+  locale: string | undefined,
+  client: ApiClient
 ): Promise<PostCategoryLookup> {
   try {
-    const categories = await fetchPostCategories(locale);
+    const categories = await fetchPostCategories(locale, client);
     return new Map(categories.map((category) => [category.id, category]));
   } catch {
     return new Map();
@@ -221,17 +226,18 @@ async function fetchPostCollection(
   path: string,
   queryParams: URLSearchParams,
   fallback: { page: number; perPage: number },
-  locale?: string
+  locale: string | undefined,
+  client: ApiClient
 ): Promise<FetchPostsResult> {
   const [response, categories] = await Promise.all([
-    apiClient.get<PostDto[]>(path, {
+    client.get<PostDto[]>(path, {
       query: queryParams,
       locale,
       next: { revalidate: 10 },
       mode: "cors",
       credentials: "omit",
     }),
-    loadPostCategoryLookup(locale),
+    loadPostCategoryLookup(locale, client),
   ]);
 
   return {
@@ -252,7 +258,8 @@ function createPostQueryParams(page: number, perPage: number): URLSearchParams {
 }
 
 export async function fetchPosts(
-  params: FetchPostsParams = {}
+  params: FetchPostsParams = {},
+  client: ApiClient = apiClient
 ): Promise<FetchPostsResult> {
   const { page = 1, perPage = 15, category, locale, search, slug } = params;
   const queryParams = createPostQueryParams(page, perPage);
@@ -262,7 +269,7 @@ export async function fetchPosts(
   appendOptionalQueryParam(queryParams, "slug", slug);
 
   if (category) {
-    const categoryId = await resolvePostCategoryId(category, locale);
+    const categoryId = await resolvePostCategoryId(category, locale, client);
 
     if (!categoryId) {
       return emptyPostsResult(page, perPage);
@@ -275,16 +282,23 @@ export async function fetchPosts(
     queryParams.append("search", normalizedSearch);
   }
 
-  return fetchPostCollection(path, queryParams, { page, perPage }, locale);
+  return fetchPostCollection(
+    path,
+    queryParams,
+    { page, perPage },
+    locale,
+    client
+  );
 }
 
 async function fetchPostById(
   id: string | number,
-  locale?: string
+  locale: string | undefined,
+  client: ApiClient
 ): Promise<Post | null> {
   try {
     const [response, categories] = await Promise.all([
-      apiClient.get<PostDto | PostDto[]>(`content/blog-posts/${id}`, {
+      client.get<PostDto | PostDto[]>(`content/blog-posts/${id}`, {
         query: {
           include: "multimedia",
         },
@@ -293,7 +307,7 @@ async function fetchPostById(
         mode: "cors",
         credentials: "omit",
       }),
-      loadPostCategoryLookup(locale),
+      loadPostCategoryLookup(locale, client),
     ]);
     const post = getFirstResource(response.data);
 
@@ -315,7 +329,8 @@ async function fetchPostById(
 
 export async function fetchPost(
   slug: string,
-  locale?: string
+  locale?: string,
+  client: ApiClient = apiClient
 ): Promise<Post | null> {
   const normalizedSlug = decodeURIComponent(slug).trim();
   const resourceId = getLeadingResourceId(normalizedSlug);
@@ -325,7 +340,7 @@ export async function fetchPost(
   }
 
   if (resourceId) {
-    return fetchPostById(resourceId, locale);
+    return fetchPostById(resourceId, locale, client);
   }
 
   // Every link the storefront writes puts the id ahead of the slug, so this
@@ -341,17 +356,16 @@ export async function fetchPost(
   let lastPage = 1;
 
   do {
-    const result = await fetchPostsWithDetails({
-      page,
-      perPage,
-      locale,
-    });
+    const result = await fetchPostsWithDetails(
+      { page, perPage, locale },
+      client
+    );
     const post = result.posts.find(
       (candidate) => candidate.slug === normalizedSlug
     );
 
     if (post) {
-      return (await fetchPostById(post.id, locale)) ?? post;
+      return (await fetchPostById(post.id, locale, client)) ?? post;
     }
 
     lastPage = Math.min(result.pagination.lastPage, maxPages);
@@ -362,38 +376,37 @@ export async function fetchPost(
 }
 
 export async function fetchPostsWithDetails(
-  params: FetchPostsParams = {}
+  params: FetchPostsParams = {},
+  client: ApiClient = apiClient
 ): Promise<FetchPostsResult> {
-  const result = await fetchPosts(params);
+  const result = await fetchPosts(params, client);
   return {
     ...result,
     posts: withPlaceholderImage(result.posts),
   };
 }
 
-// Cached per request: fetchPosts() resolves category names through this and
-// the blog page also fetches the category list, so without cache() the fetch +
-// transform would run twice for a single render.
-export const fetchPostCategories = cache(
-  async (locale?: string): Promise<PostCategory[]> => {
-    const response = await apiClient.get<PostCategoryDto[]>(
-      "content/blog-post-categories",
-      {
-        query: {
-          itemsPerPage: "50",
-        },
-        locale,
-        next: { revalidate: 10 },
-        mode: "cors",
-        credentials: "omit",
-      }
-    );
+export async function fetchPostCategories(
+  locale?: string,
+  client: ApiClient = apiClient
+): Promise<PostCategory[]> {
+  const response = await client.get<PostCategoryDto[]>(
+    "content/blog-post-categories",
+    {
+      query: {
+        itemsPerPage: "50",
+      },
+      locale,
+      next: { revalidate: 10 },
+      mode: "cors",
+      credentials: "omit",
+    }
+  );
 
-    return transformPostCategories(response.data, locale).filter(
-      (category) => category.status !== false
-    );
-  }
-);
+  return transformPostCategories(response.data, locale).filter(
+    (category) => category.status !== false
+  );
+}
 
 export const fetchBlogPostCategories = fetchPostCategories;
 
@@ -430,4 +443,3 @@ export function usePostFeed(
       : undefined,
   });
 }
-

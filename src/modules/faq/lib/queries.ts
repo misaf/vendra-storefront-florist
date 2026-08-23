@@ -1,6 +1,5 @@
-import { cache } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/shared/api/client";
+import { apiClient, type ApiClient } from "@/shared/api/client";
 import { getLocalizedValue } from "@/shared/api/localized";
 import {
   createApiQueryOptions,
@@ -65,9 +64,10 @@ function transformFaqCategory(
 
 async function resolveFaqCategoryId(
   slug: string,
-  locale?: string
+  locale: string | undefined,
+  client: ApiClient
 ): Promise<string | null> {
-  const categories = await fetchFaqCategories(locale);
+  const categories = await fetchFaqCategories(locale, client);
   const category = categories.find((item) => item.slug === slug);
 
   return category ? String(category.id) : null;
@@ -81,10 +81,11 @@ type FaqCategoryLookup = Map<number, FaqCategory>;
  * list itself.
  */
 async function loadFaqCategoryLookup(
-  locale?: string
+  locale: string | undefined,
+  client: ApiClient
 ): Promise<FaqCategoryLookup> {
   try {
-    const categories = await fetchFaqCategories(locale);
+    const categories = await fetchFaqCategories(locale, client);
     return new Map(categories.map((category) => [category.id, category]));
   } catch {
     return new Map();
@@ -94,17 +95,18 @@ async function loadFaqCategoryLookup(
 async function fetchFaqCollection(
   path: string,
   queryParams: URLSearchParams,
-  locale?: string
+  locale: string | undefined,
+  client: ApiClient
 ): Promise<Faq[]> {
   const [response, categories] = await Promise.all([
-    apiClient.get<FaqDto[]>(path, {
+    client.get<FaqDto[]>(path, {
       query: queryParams,
       locale,
       next: { revalidate: 10 },
       mode: "cors",
       credentials: "omit",
     }),
-    loadFaqCategoryLookup(locale),
+    loadFaqCategoryLookup(locale, client),
   ]);
 
   return response.data
@@ -130,7 +132,10 @@ function createFaqQueryParams(page: number, perPage: number): URLSearchParams {
   return queryParams;
 }
 
-export async function fetchFaqs(params: FetchFaqsParams = {}): Promise<Faq[]> {
+export async function fetchFaqs(
+  params: FetchFaqsParams = {},
+  client: ApiClient = apiClient
+): Promise<Faq[]> {
   const { page = 1, perPage = 20, locale, search, category } = params;
   const queryParams = createFaqQueryParams(page, perPage);
   const normalizedSearch = search?.trim();
@@ -138,7 +143,7 @@ export async function fetchFaqs(params: FetchFaqsParams = {}): Promise<Faq[]> {
   const path = "content/faqs";
 
   if (category) {
-    const categoryId = await resolveFaqCategoryId(category, locale);
+    const categoryId = await resolveFaqCategoryId(category, locale, client);
 
     if (!categoryId) {
       return [];
@@ -151,29 +156,29 @@ export async function fetchFaqs(params: FetchFaqsParams = {}): Promise<Faq[]> {
     queryParams.append("search", normalizedSearch);
   }
 
-  return sortFaqs(await fetchFaqCollection(path, queryParams, locale));
+  return sortFaqs(
+    await fetchFaqCollection(path, queryParams, locale, client)
+  );
 }
 
-// Cached per request: the FAQ page resolves the category list, and every FAQ
-// fetch resolves category slugs through it, so without cache() the fetch +
-// transform would run repeatedly for a single render.
-export const fetchFaqCategories = cache(
-  async (locale?: string): Promise<FaqCategory[]> => {
-    const response = await apiClient.get<FaqCategoryDto[]>("content/faq-categories", {
-      query: {
-        itemsPerPage: "50",
-      },
-      locale,
-      next: { revalidate: 10 },
-      mode: "cors",
-      credentials: "omit",
-    });
+export async function fetchFaqCategories(
+  locale?: string,
+  client: ApiClient = apiClient
+): Promise<FaqCategory[]> {
+  const response = await client.get<FaqCategoryDto[]>("content/faq-categories", {
+    query: {
+      itemsPerPage: "50",
+    },
+    locale,
+    next: { revalidate: 10 },
+    mode: "cors",
+    credentials: "omit",
+  });
 
-    return response.data
-      .map((category) => transformFaqCategory(category, locale))
-      .filter((category) => category.status !== false && category.name);
-  }
-);
+  return response.data
+    .map((category) => transformFaqCategory(category, locale))
+    .filter((category) => category.status !== false && category.name);
+}
 
 export function useFaqs(
   locale: string,
@@ -190,4 +195,3 @@ export function useFaqs(
     )
   );
 }
-

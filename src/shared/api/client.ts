@@ -1,10 +1,8 @@
 import Jsona from "jsona";
-import { getApiBaseUrl, getSiteUrl } from "@/shared/config";
 import type { JsonApiLinks, JsonApiMeta } from "@/shared/api/types";
 import { createApiRequestHeaders } from "@/shared/lib/network";
 import { routing } from "@/shared/i18n/routing";
 
-const API_BASE_URL = getApiBaseUrl();
 const dataFormatter = new Jsona();
 
 export interface ApiClientErrorDetails {
@@ -61,6 +59,20 @@ export interface ApiRequestOptions
   timeout?: number;
 }
 
+export interface ApiClient {
+  get<TData>(
+    path: string,
+    options?: ApiRequestOptions
+  ): Promise<ApiResponse<TData>>;
+}
+
+interface ApiClientConfig {
+  /** Absolute for server clients; same-origin (`/api/proxy`) in the browser. */
+  baseUrl: string;
+  /** Store origin used by Vendra to resolve the tenant. Server clients only. */
+  origin?: string;
+}
+
 function appendQueryParam(params: URLSearchParams, key: string, value: unknown) {
   if (value === null || value === undefined || value === "") {
     return;
@@ -90,16 +102,14 @@ export function createQueryString(query?: QueryParams): string {
 export function getApiUrl(
   path: string,
   query?: QueryParams,
-  useSameOriginProxy = false
+  baseUrl = "/api/proxy"
 ): string {
   const normalizedPath = path.replace(/^\/+/, "");
   const queryString = createQueryString(query);
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
+  const url = `${normalizedBaseUrl}/${normalizedPath}`;
 
-  const baseUrl = useSameOriginProxy
-    ? `/api/proxy/${normalizedPath}`
-    : `${API_BASE_URL}/${normalizedPath}`;
-
-  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+  return queryString ? `${url}?${queryString}` : url;
 }
 
 async function readResponseBody(response: Response): Promise<unknown> {
@@ -150,9 +160,11 @@ function getBrowserLocale(): string | undefined {
 function createRequestHeaders({
   headers,
   locale,
+  origin,
 }: {
   headers?: HeadersInit;
   locale?: string;
+  origin?: string;
 }): Headers {
   // The canonical API serves every store from one host, so the request Host no
   // longer identifies the tenant — Vendra resolves it from Origin. A browser
@@ -161,12 +173,10 @@ function createRequestHeaders({
   // So server-side calls state the store's public origin explicitly, and
   // browser GETs go through the same-origin proxy, which does the same on
   // their behalf.
-  const isServer = typeof window === "undefined";
-
   return createApiRequestHeaders({
     headers,
     locale: locale ?? getBrowserLocale(),
-    origin: isServer ? getSiteUrl() : undefined,
+    origin,
   });
 }
 
@@ -180,20 +190,20 @@ function createRequestHeaders({
  */
 async function apiGet<TData>(
   path: string,
-  options: ApiRequestOptions = {}
+  options: ApiRequestOptions,
+  config: ApiClientConfig
 ): Promise<ApiResponse<TData>> {
   const { headers, locale, query, timeout = 30000, ...init } = options;
   const controller = new AbortController();
   const timeoutId =
     timeout > 0 ? setTimeout(() => controller.abort(), timeout) : null;
-  const useSameOriginProxy = typeof window !== "undefined";
-  const url = getApiUrl(path, query, useSameOriginProxy);
+  const url = getApiUrl(path, query, config.baseUrl);
 
   try {
     const response = await fetch(url, {
       ...init,
       method: "GET",
-      headers: createRequestHeaders({ headers, locale }),
+      headers: createRequestHeaders({ headers, locale, origin: config.origin }),
       signal: controller.signal,
     });
 
@@ -224,6 +234,20 @@ async function apiGet<TData>(
   }
 }
 
-export const apiClient = {
-  get: apiGet,
-};
+/**
+ * Create a read-only Vendra API client for one transport boundary.
+ *
+ * Runtime store configuration deliberately does not live in this universal
+ * module. Client query code imports it, so importing server configuration here
+ * put the development store fixture and environment parsing into the browser
+ * bundle. The server factory lives in `server-client.ts`; this module's default
+ * stays on the allowlisted same-origin proxy.
+ */
+export function createApiClient(config: ApiClientConfig): ApiClient {
+  return {
+    get: <TData>(path: string, options: ApiRequestOptions = {}) =>
+      apiGet<TData>(path, options, config),
+  };
+}
+
+export const apiClient = createApiClient({ baseUrl: "/api/proxy" });

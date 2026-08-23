@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { notFound } from "next/navigation";
-import { ProductDetailClient, getProduct, loadRelatedProducts } from "@/modules/products";
+import { notFound, permanentRedirect } from "next/navigation";
+import { ProductDetailClient } from "@/modules/products";
+import { getProduct, loadRelatedProducts } from "@/modules/products/server";
 import type { Product } from "@/modules/products";
 import { JsonLd } from "@/shared/components/seo/json-ld";
 import {
@@ -11,6 +12,8 @@ import {
   productSchema,
 } from "@/shared/seo";
 import { stringifyRichText } from "@/shared/lib/rich-text";
+import { createReadableResourcePath } from "@/shared/lib/slug-url";
+import { localizedPath } from "@/shared/seo";
 
 export async function generateMetadata({
   params,
@@ -29,6 +32,10 @@ export async function generateMetadata({
   }
 
   if (product) {
+    const canonicalProductPath = `/products/${createReadableResourcePath(
+      product.id,
+      product.slug
+    )}`;
     const description =
       plainText(
         stringifyRichText(product.richDescription ?? product.description)
@@ -42,7 +49,7 @@ export async function generateMetadata({
 
     return buildMetadata({
       locale,
-      path,
+      path: canonicalProductPath,
       title: product.name,
       description,
       images,
@@ -84,6 +91,17 @@ export default async function ProductDetailPage({
     notFound();
   }
 
+  const canonicalProductPath = initialProduct
+    ? `/products/${createReadableResourcePath(
+        initialProduct.id,
+        initialProduct.slug
+      )}`
+    : null;
+
+  if (canonicalProductPath && `/products/${slug}` !== canonicalProductPath) {
+    permanentRedirect(localizedPath(locale, canonicalProductPath));
+  }
+
   // Kick off the related fetch without awaiting — streamed on the client.
   const relatedProductsPromise = initialProduct
     ? loadRelatedProducts(initialProduct, locale)
@@ -105,7 +123,7 @@ export default async function ProductDetailPage({
           price: initialProduct.price,
           sku: initialProduct.token,
           inStock: initialProduct.inStock,
-          path: `/products/${slug}`,
+          path: canonicalProductPath ?? `/products/${slug}`,
         }),
         // Mirrors the trail the page actually draws — localized labels, and the
         // category step the visible breadcrumb includes. Hardcoded English
@@ -122,7 +140,10 @@ export default async function ProductDetailPage({
                 },
               ]
             : []),
-          { name: initialProduct.name, path: `/products/${slug}` },
+          {
+            name: initialProduct.name,
+            path: canonicalProductPath ?? `/products/${slug}`,
+          },
         ]),
       ]
     : null;
