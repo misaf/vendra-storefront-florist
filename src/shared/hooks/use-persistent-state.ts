@@ -10,15 +10,20 @@ import { getStorageItem, setStorageItem } from "@/shared/lib/storage";
  * after mount, then written back on every subsequent change. (Reading storage in
  * the `useState` initializer instead would diverge the hydration render from the
  * server and throw a hydration mismatch.)
+ *
+ * The adopt-then-write decision is tracked per key rather than once per mount:
+ * with a single `hydrated` flag, changing `key` wrote the *outgoing* key's value
+ * under the incoming one instead of loading what was stored there.
  */
 export function usePersistentState<T>(key: string, defaultValue: T) {
   const [value, setValue] = useState<T>(defaultValue);
 
   const defaultRef = useRef(defaultValue);
-  const hydrated = useRef(false);
+  const loadedKey = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!hydrated.current) {
-      hydrated.current = true;
+    if (loadedKey.current !== key) {
+      loadedKey.current = key;
       setValue(getStorageItem<T>(key, defaultRef.current));
       return;
     }

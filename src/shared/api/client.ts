@@ -6,9 +6,6 @@ import { routing } from "@/shared/i18n/routing";
 
 const API_BASE_URL = getApiBaseUrl();
 const dataFormatter = new Jsona();
-type AuthTokenProvider = () => string | null | undefined;
-let authTokenProvider: AuthTokenProvider | null = null;
-let staticAuthToken: string | null = null;
 
 export interface ApiClientErrorDetails {
   status: number;
@@ -54,8 +51,6 @@ export type QueryParams =
 
 export interface ApiRequestOptions
   extends Omit<RequestInit, "body" | "headers" | "method"> {
-  authToken?: string | null;
-  body?: unknown;
   headers?: HeadersInit;
   locale?: string;
   next?: {
@@ -64,19 +59,6 @@ export interface ApiRequestOptions
   };
   query?: QueryParams;
   timeout?: number;
-}
-
-export function setApiAuthToken(token: string | null) {
-  staticAuthToken = token;
-}
-
-export function setApiAuthTokenProvider(provider: AuthTokenProvider | null) {
-  authTokenProvider = provider;
-}
-
-export function clearApiAuthToken() {
-  staticAuthToken = null;
-  authTokenProvider = null;
 }
 
 function appendQueryParam(params: URLSearchParams, key: string, value: unknown) {
@@ -168,11 +150,9 @@ function getBrowserLocale(): string | undefined {
 function createRequestHeaders({
   headers,
   locale,
-  token,
 }: {
   headers?: HeadersInit;
   locale?: string;
-  token?: string | null;
 }): Headers {
   // The canonical API serves every store from one host, so the request Host no
   // longer identifies the tenant — Vendra resolves it from Origin. A browser
@@ -187,37 +167,33 @@ function createRequestHeaders({
     headers,
     locale: locale ?? getBrowserLocale(),
     origin: isServer ? getSiteUrl() : undefined,
-    token,
   });
 }
 
-async function apiRequest<TData>(
-  method: string,
+/**
+ * Read one resource from the canonical API.
+ *
+ * GET-only, deliberately. The storefront never writes: Vendra owns every
+ * mutation, and `/api/proxy` — the hop the browser's reads take — forwards
+ * nothing but GETs against a fixed allowlist. A write verb here would be a
+ * capability with no caller and no route to travel.
+ */
+async function apiGet<TData>(
   path: string,
   options: ApiRequestOptions = {}
 ): Promise<ApiResponse<TData>> {
-  const {
-    authToken,
-    body,
-    headers,
-    locale,
-    query,
-    timeout = 30000,
-    ...init
-  } = options;
+  const { headers, locale, query, timeout = 30000, ...init } = options;
   const controller = new AbortController();
   const timeoutId =
     timeout > 0 ? setTimeout(() => controller.abort(), timeout) : null;
-  const useSameOriginProxy = typeof window !== "undefined" && method === "GET";
+  const useSameOriginProxy = typeof window !== "undefined";
   const url = getApiUrl(path, query, useSameOriginProxy);
-  const token = authToken ?? authTokenProvider?.() ?? staticAuthToken;
 
   try {
     const response = await fetch(url, {
       ...init,
-      method,
-      headers: createRequestHeaders({ headers, locale, token }),
-      body: body === undefined ? undefined : JSON.stringify(body),
+      method: "GET",
+      headers: createRequestHeaders({ headers, locale }),
       signal: controller.signal,
     });
 
@@ -249,16 +225,5 @@ async function apiRequest<TData>(
 }
 
 export const apiClient = {
-  get<TData>(path: string, options?: ApiRequestOptions) {
-    return apiRequest<TData>("GET", path, options);
-  },
-  post<TData>(path: string, body?: unknown, options?: ApiRequestOptions) {
-    return apiRequest<TData>("POST", path, { ...options, body });
-  },
-  patch<TData>(path: string, body?: unknown, options?: ApiRequestOptions) {
-    return apiRequest<TData>("PATCH", path, { ...options, body });
-  },
-  delete<TData>(path: string, options?: ApiRequestOptions) {
-    return apiRequest<TData>("DELETE", path, options);
-  },
+  get: apiGet,
 };

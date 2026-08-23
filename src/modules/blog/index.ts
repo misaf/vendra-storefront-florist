@@ -19,8 +19,6 @@ export {
   fetchPosts,
   fetchPostsWithDetails,
   transformPost,
-  usePost,
-  usePosts,
 } from "./lib/queries";
 export {
   getPost,

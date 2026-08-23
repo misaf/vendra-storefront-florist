@@ -24,9 +24,7 @@ export {
   fetchProductsWithDetails,
   searchCatalogProducts,
   transformProduct,
-  useProduct,
   useProductCategories,
-  useProducts,
 } from "./lib/queries";
 export {
   getProduct,

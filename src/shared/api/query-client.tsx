@@ -1,17 +1,24 @@
 "use client";
 
-import { createElement, useState } from "react";
+import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type {
-  MutationFunction,
   QueryFunction,
   QueryKey,
-  UseMutationOptions,
   UseQueryOptions,
 } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-export function createQueryClient() {
+/**
+ * One QueryClient per browser session, created inside the provider.
+ *
+ * Deliberately *not* a module-level singleton. A `"use client"` module is still
+ * evaluated on the server during SSR, so a client shared at module scope is
+ * created once per Node process and shared by every concurrent render — one
+ * visitor's catalogue results would seed the next visitor's cache. Creating it
+ * in `useState` gives each render tree its own, and the browser keeps a single
+ * one across navigations because the provider is mounted in the root layout.
+ */
+function createQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
@@ -27,25 +34,10 @@ export function createQueryClient() {
   });
 }
 
-export const queryClient = createQueryClient();
-
-export function clearApiQueryCache() {
-  queryClient.clear();
-}
-
 export function ApiQueryProvider({ children }: { children: React.ReactNode }) {
-  const [client] = useState(() => queryClient);
-  const devtools =
-    process.env.NODE_ENV === "development"
-      ? createElement(ReactQueryDevtools, { initialIsOpen: false })
-      : null;
+  const [client] = useState(createQueryClient);
 
-  return createElement(
-    QueryClientProvider,
-    { client },
-    children,
-    devtools
-  );
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
 export type ApiQueryOptions<
@@ -56,16 +48,6 @@ export type ApiQueryOptions<
 > = Omit<
   UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
   "queryKey" | "queryFn"
->;
-
-export type ApiMutationOptions<
-  TData,
-  TVariables = void,
-  TError = Error,
-  TContext = unknown,
-> = Omit<
-  UseMutationOptions<TData, TError, TVariables, TContext>,
-  "mutationFn"
 >;
 
 export function createApiQueryOptions<
@@ -81,21 +63,6 @@ export function createApiQueryOptions<
   return {
     queryKey,
     queryFn,
-    ...options,
-  };
-}
-
-export function createApiMutationOptions<
-  TData,
-  TVariables = void,
-  TError = Error,
-  TContext = unknown,
->(
-  mutationFn: MutationFunction<TData, TVariables>,
-  options?: ApiMutationOptions<TData, TVariables, TError, TContext>
-): UseMutationOptions<TData, TError, TVariables, TContext> {
-  return {
-    mutationFn,
     ...options,
   };
 }

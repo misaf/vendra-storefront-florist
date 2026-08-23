@@ -1,5 +1,10 @@
 import { cache } from "react";
-import { fetchBlogPost, fetchBlogPostCategories, fetchBlogPostsWithDetails } from "./queries";
+import {
+  POSTS_PAGE_SIZE,
+  fetchBlogPost,
+  fetchBlogPostCategories,
+  fetchBlogPostsWithDetails,
+} from "./queries";
 import { buildBlogQueryKey } from "./keys";
 import type { FetchBlogPostsResult, Post as BlogPost, PostCategory } from "../types";
 
@@ -65,9 +70,13 @@ export function normalizeCategory(value: string | undefined): string {
 }
 
 export interface LoadPostsPageResult {
-  initialPosts: BlogPost[];
-  initialPagination: FetchBlogPostsResult["pagination"] | null;
-  initialError: string | null;
+  /**
+   * Page one exactly as the journal returned it, or null when the call failed.
+   * The client seeds React Query with it and, on null, fetches for itself — so
+   * a transient server-side failure recovers rather than stranding the reader.
+   */
+  initialPage: FetchBlogPostsResult | null;
+  /** The filters `initialPage` answers, so a stale page is not seeded. */
   initialQueryKey: string;
   categories: PostCategory[];
 }
@@ -89,15 +98,10 @@ export async function loadPostsPage({
     searchQuery
   );
 
-  let initialPosts: BlogPost[] = [];
-  let initialPagination: FetchBlogPostsResult["pagination"] | null = null;
-  let initialError: string | null = null;
-  let categories: PostCategory[] = [];
-
   const [postsResult, categoriesResult] = await Promise.allSettled([
     fetchBlogPostsWithDetails({
       page: 1,
-      perPage: 12,
+      perPage: POSTS_PAGE_SIZE,
       category: selectedCategory !== "all" ? selectedCategory : undefined,
       locale,
       search: searchQuery || undefined,
@@ -105,25 +109,14 @@ export async function loadPostsPage({
     fetchBlogPostCategories(locale),
   ]);
 
-  if (postsResult.status === "fulfilled") {
-    initialPosts = postsResult.value.posts;
-    initialPagination = postsResult.value.pagination;
-  } else {
-    initialError =
-      postsResult.reason instanceof Error
-        ? postsResult.reason.message
-        : "Failed to load blog posts";
-  }
-
-  if (categoriesResult.status === "fulfilled") {
-    categories = categoriesResult.value;
+  if (postsResult.status === "rejected") {
+    console.error("Error loading the journal page:", postsResult.reason);
   }
 
   return {
-    initialPosts,
-    initialPagination,
-    initialError,
+    initialPage: postsResult.status === "fulfilled" ? postsResult.value : null,
     initialQueryKey,
-    categories,
+    categories:
+      categoriesResult.status === "fulfilled" ? categoriesResult.value : [],
   };
 }

@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ApiClientError, apiClient } from "@/shared/api/client";
 import { getLocalizedValue } from "@/shared/api/localized";
 import { createApiQueryOptions, type ApiQueryOptions } from "@/shared/api/query-client";
@@ -61,7 +61,6 @@ function getFirstResource<T>(data: T | T[]): T | null {
 function getFirstRelationship<T>(data: T | T[] | undefined): T | undefined {
   return Array.isArray(data) ? data[0] : data;
 }
-
 
 interface ResolvedProductPrice {
   value: number;
@@ -1002,35 +1001,44 @@ export const fetchProductCategories = cache(
   }
 );
 
-export function useProducts(
-  locale: string,
-  params: FetchProductsParams = {},
-  options?: ApiQueryOptions<FetchProductsResult>
-) {
-  const localizedParams = { ...params, locale };
+/** Rows per catalogue request, for the first page and every appended one. */
+export const PRODUCTS_PAGE_SIZE = 12;
 
-  return useQuery(
-    createApiQueryOptions(productKeys.list(localizedParams), () =>
-      fetchProductsWithDetails(localizedParams),
-    options)
-  );
-}
-
-export function useProduct(
-  id: string | number,
-  locale: string,
-  options?: ApiQueryOptions<Product | null>
+/**
+ * The catalogue list, paged.
+ *
+ * The page-at-a-time bookkeeping this replaces was hand-written twice over —
+ * in-flight request de-duplication, discarding a response whose filters are no
+ * longer active, appending without re-ordering, and a separate guard so one
+ * intersection could not queue the same page twice. All of it is what
+ * `useInfiniteQuery` already is, keyed on the filters themselves: changing a
+ * filter changes the key, which retires the old request rather than racing it.
+ *
+ * `initialPage` is the server's own page one. Seeded as cached data (not as a
+ * placeholder), it counts against `staleTime`, so hydration does not re-fetch
+ * a list the server just rendered.
+ */
+export function useProductCatalogue(
+  params: FetchProductsParams,
+  { initialPage }: { initialPage?: FetchProductsResult } = {}
 ) {
-  return useQuery(
-    createApiQueryOptions(
-      productKeys.detail(locale, id),
-      () => fetchProduct(id, locale),
-      {
-        enabled: Boolean(id),
-        ...options,
-      }
-    )
-  );
+  return useInfiniteQuery({
+    queryKey: productKeys.list(params),
+    queryFn: ({ pageParam }) =>
+      fetchProductsWithDetails({
+        ...params,
+        page: pageParam,
+        perPage: PRODUCTS_PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { currentPage, lastPage: totalPages } = lastPage.pagination;
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
+    initialData: initialPage
+      ? { pages: [initialPage], pageParams: [1] }
+      : undefined,
+  });
 }
 
 export function useProductCategories(

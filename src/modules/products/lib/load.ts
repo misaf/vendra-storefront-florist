@@ -1,5 +1,9 @@
 import { cache } from "react";
-import { fetchProductBySlug, fetchProductsWithDetails } from "./queries";
+import {
+  PRODUCTS_PAGE_SIZE,
+  fetchProductBySlug,
+  fetchProductsWithDetails,
+} from "./queries";
 import {
   buildProductsQueryKey,
   getProductsApiSort,
@@ -82,9 +86,15 @@ export function normalizeSort(value: string | undefined): ProductSortValue | und
 }
 
 export interface LoadProductsPageResult {
-  initialProducts: Product[];
-  initialPagination: FetchProductsResult["pagination"] | null;
-  initialError: string | null;
+  /**
+   * Page one exactly as the catalogue returned it, or null when the call
+   * failed. The client seeds React Query with it and, on null, fetches for
+   * itself — so a transient server-side failure recovers instead of stranding
+   * the shopper on an error with a manual retry.
+   */
+  initialPage: FetchProductsResult | null;
+  /** The filters this page answers, so the client can tell whether its own
+   *  (possibly newer) filters still match before seeding the cache with it. */
   initialQueryKey: string;
 }
 
@@ -111,25 +121,20 @@ export async function loadProductsPage({
     apiSort
   );
 
-  let initialProducts: Product[] = [];
-  let initialPagination: FetchProductsResult["pagination"] | null = null;
-  let initialError: string | null = null;
-
   try {
-    const result = await fetchProductsWithDetails({
+    const initialPage = await fetchProductsWithDetails({
       page: 1,
-      perPage: 12,
+      perPage: PRODUCTS_PAGE_SIZE,
       category,
       inStock,
       locale,
       search: search || undefined,
       sort: apiSort,
     });
-    initialProducts = result.products;
-    initialPagination = result.pagination;
-  } catch (error) {
-    initialError = error instanceof Error ? error.message : "Failed to load products";
-  }
 
-  return { initialProducts, initialPagination, initialError, initialQueryKey };
+    return { initialPage, initialQueryKey };
+  } catch (error) {
+    console.error("Error loading the catalogue page:", error);
+    return { initialPage: null, initialQueryKey };
+  }
 }

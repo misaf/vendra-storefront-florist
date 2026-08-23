@@ -171,21 +171,3 @@ export interface FetchProductsResult {
   links: CollectionLinks;
 }
 
-export interface ProductPayload {
-  name?: string;
-  description?: unknown;
-  price?: number | string | null;
-  sale_price?: number | string | null;
-  final_price?: number | string | null;
-  slug?: string;
-  token?: string;
-  quantity?: number | null;
-  in_stock?: boolean;
-}
-
-export type CreateProductPayload = ProductPayload;
-
-export interface UpdateProductVariables {
-  id: string | number;
-  data: ProductPayload;
-}

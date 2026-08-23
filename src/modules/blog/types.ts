@@ -102,19 +102,6 @@ export interface FetchPostsResult {
   links: CollectionLinks;
 }
 
-export interface PostPayload {
-  name?: string;
-  description?: unknown;
-  slug?: string;
-  status?: boolean;
-}
-
-export type CreatePostPayload = PostPayload;
-
-export interface UpdatePostVariables {
-  id: string | number;
-  data: PostPayload;
-}
 
 export type FetchBlogPostsParams = FetchPostsParams;
 export type FetchBlogPostsResult = FetchPostsResult;

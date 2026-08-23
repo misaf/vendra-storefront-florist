@@ -15,7 +15,7 @@ import { useTranslations } from "@/shared/hooks/use-translations";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/shared/i18n/navigation";
 import { Loader2, BookOpen, Calendar, Search, ArrowLeft, ArrowRight, ImageOff } from "lucide-react";
-import { fetchBlogPostsWithDetails } from "../lib/queries";
+import { usePostFeed } from "../lib/queries";
 import type {
   FetchBlogPostsResult,
   Post as BlogPost,
@@ -30,9 +30,9 @@ import { buildBlogQueryKey } from "../lib/keys";
 import { DynamicText } from "@/shared/components/dynamic-text";
 
 interface BlogPostsClientProps {
-  initialPosts: BlogPost[];
-  initialPagination: FetchBlogPostsResult["pagination"] | null;
-  initialError: string | null;
+  /** Page one as the server fetched it, or null when that call failed. */
+  initialPage: FetchBlogPostsResult | null;
+  /** The filters `initialPage` answers, so a stale page is not seeded. */
   initialQueryKey: string;
   categories: PostCategory[];
 }
@@ -120,9 +120,7 @@ function FeaturedPost({
 }
 
 export default function BlogPostsClient({
-  initialPosts,
-  initialPagination,
-  initialError,
+  initialPage,
   initialQueryKey,
   categories,
 }: BlogPostsClientProps) {
@@ -133,21 +131,51 @@ export default function BlogPostsClient({
   const selectedCategory = searchParams.get("category") || "all";
   const searchQuery = searchParams.get("search") || "";
   const queryKey = buildBlogQueryKey(locale, selectedCategory, searchQuery);
-  const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(initialError);
   const [searchInput, setSearchInput] = useState(searchQuery);
-  const [pagination, setPagination] = useState<FetchBlogPostsResult["pagination"] | null>(
-    initialPagination
-  );
   const observerTarget = useRef<HTMLDivElement>(null);
-  const hasLoadedInitialQuery = useRef(false);
-  const activeRequestRef = useRef(0);
 
-  const hasMore = pagination
-    ? pagination.currentPage < pagination.lastPage
-    : false;
+  // Keep the search field in sync with the URL (e.g. the global header search)
+  // by adjusting state during render rather than in an effect: an effect would
+  // paint one frame carrying the previous query before correcting itself.
+  const [syncedSearchQuery, setSyncedSearchQuery] = useState(searchQuery);
+  if (syncedSearchQuery !== searchQuery) {
+    setSyncedSearchQuery(searchQuery);
+    setSearchInput(searchQuery);
+  }
+
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    refetch,
+  } = usePostFeed(
+    {
+      locale,
+      category: selectedCategory !== "all" ? selectedCategory : undefined,
+      search: searchQuery || undefined,
+    },
+    {
+      // Only when the server's page still answers the filters in the URL — see
+      // the catalogue's twin for why an unconditional seed shows stale entries.
+      initialPage:
+        queryKey === initialQueryKey ? (initialPage ?? undefined) : undefined,
+    }
+  );
+
+  const posts = useMemo(() => {
+    const seen = new Set<number>();
+    return (data?.pages ?? [])
+      .flatMap((page) => page.posts)
+      .filter((post) => !seen.has(post.id) && seen.add(post.id));
+  }, [data]);
+
+  const pagination = data?.pages.at(-1)?.pagination ?? null;
+  const loading = isFetching && !isFetchingNextPage;
+  const loadingMore = isFetchingNextPage;
+  const hasMore = hasNextPage;
 
   const ledgerItems = useMemo(
     () => [
@@ -160,91 +188,20 @@ export default function BlogPostsClient({
     [categories, t]
   );
 
-  // Fetch blog posts from API
-  const loadPosts = useCallback(async (page: number, reset: boolean = false) => {
-    const requestId = activeRequestRef.current + 1;
-    activeRequestRef.current = requestId;
-    if (reset) {
-      setLoading(true);
-      setPosts([]);
-    } else {
-      setLoadingMore(true);
-    }
-    setError(null);
-
-    try {
-      const result = await fetchBlogPostsWithDetails({
-        page,
-        perPage: 12,
-        category: selectedCategory !== "all" ? selectedCategory : undefined,
-        locale,
-        search: searchQuery || undefined,
-      });
-
-      if (activeRequestRef.current !== requestId) return;
-
-      if (reset) {
-        setPosts(result.posts);
-      } else {
-        setPosts(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          return [...prev, ...result.posts.filter(p => !existingIds.has(p.id))];
-        });
-      }
-
-      setPagination(result.pagination);
-    } catch (err) {
-      if (activeRequestRef.current !== requestId) return;
-      console.error("Error loading blog posts:", err);
-      setError(err instanceof Error ? err.message : "Failed to load blog posts");
-      if (reset) setPosts([]);
-    } finally {
-      if (activeRequestRef.current === requestId) {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-    }
-  }, [locale, selectedCategory, searchQuery]);
-
   useEffect(() => {
-    if (!hasLoadedInitialQuery.current) {
-      hasLoadedInitialQuery.current = true;
-      if (queryKey === initialQueryKey) {
-        return;
-      }
-    }
+    const target = observerTarget.current;
+    if (!hasNextPage || isFetching || !target) return;
 
-    loadPosts(1, true);
-  }, [initialQueryKey, loadPosts, queryKey]);
-
-  // Keep the search field in sync with the URL (e.g. global header search)
-  useEffect(() => {
-    setSearchInput(searchQuery);
-  }, [searchQuery]);
-
-  // Intersection Observer for infinite scroll
-  useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
-          const nextPage = (pagination?.currentPage ?? 1) + 1;
-          loadPosts(nextPage, false);
-        }
+        if (entries[0].isIntersecting) fetchNextPage();
       },
       { threshold: 0.1 }
     );
 
-    const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
-
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
-    };
-  }, [hasMore, loadingMore, loading, loadPosts, pagination]);
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetching]);
 
   const formatDate = useCallback(
     (dateString: string) => formatLocaleDate(dateString, locale),
@@ -413,10 +370,7 @@ export default function BlogPostsClient({
                   t("blog.loadError") ||
                   "We couldn't load the journal just now. Please check your connection and try again."
                 }
-                onRetry={() => {
-                  setError(null);
-                  loadPosts(1, true);
-                }}
+                onRetry={() => refetch()}
                 retryLabel={t("products.tryAgain") || "Try Again"}
                 retryingLabel={t("products.retrying")}
                 isRetrying={loading}
@@ -506,7 +460,7 @@ export default function BlogPostsClient({
                     <Button
                       variant="outline"
                       onClick={() =>
-                        loadPosts((pagination?.currentPage ?? 1) + 1, false)
+                        fetchNextPage()
                       }
                     >
                       {t("blog.loadMore") || "Load more posts"}

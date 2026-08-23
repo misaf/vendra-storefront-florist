@@ -62,9 +62,7 @@ async function BlogPostsContent({
   return (
     <BlogPostsClient
       key={locale}
-      initialPosts={initial.initialPosts}
-      initialPagination={initial.initialPagination}
-      initialError={initial.initialError}
+      initialPage={initial.initialPage}
       initialQueryKey={initial.initialQueryKey}
       categories={initial.categories}
     />

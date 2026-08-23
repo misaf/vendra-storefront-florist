@@ -1,8 +1,7 @@
 import { cache } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { ApiClientError, apiClient } from "@/shared/api/client";
 import { getLocalizedValue } from "@/shared/api/localized";
-import { createApiQueryOptions, type ApiQueryOptions } from "@/shared/api/query-client";
 import {
   MEDIA_SIZE_CARD,
   PLACEHOLDER_IMAGE,
@@ -402,33 +401,33 @@ export const fetchBlogPosts = fetchPosts;
 export const fetchBlogPost = fetchPost;
 export const fetchBlogPostsWithDetails = fetchPostsWithDetails;
 
-export function usePosts(
-  locale: string,
-  params: FetchPostsParams = {},
-  options?: ApiQueryOptions<FetchPostsResult>
-) {
-  const localizedParams = { ...params, locale };
+/** Entries per journal request, for the first page and every appended one. */
+export const POSTS_PAGE_SIZE = 12;
 
-  return useQuery(
-    createApiQueryOptions(postKeys.list(localizedParams), () =>
-      fetchPostsWithDetails(localizedParams),
-    options)
-  );
+/**
+ * The journal feed, paged. The catalogue's `useProductCatalogue` twin — see it
+ * for why the page-at-a-time bookkeeping this replaces is the query key's job.
+ */
+export function usePostFeed(
+  params: FetchPostsParams,
+  { initialPage }: { initialPage?: FetchPostsResult } = {}
+) {
+  return useInfiniteQuery({
+    queryKey: postKeys.list(params),
+    queryFn: ({ pageParam }) =>
+      fetchPostsWithDetails({
+        ...params,
+        page: pageParam,
+        perPage: POSTS_PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { currentPage, lastPage: totalPages } = lastPage.pagination;
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
+    initialData: initialPage
+      ? { pages: [initialPage], pageParams: [1] }
+      : undefined,
+  });
 }
 
-export function usePost(
-  slug: string,
-  locale: string,
-  options?: ApiQueryOptions<Post | null>
-) {
-  return useQuery(
-    createApiQueryOptions(
-      postKeys.detail(locale, slug),
-      () => fetchPost(slug, locale),
-      {
-        enabled: Boolean(slug),
-        ...options,
-      }
-    )
-  );
-}

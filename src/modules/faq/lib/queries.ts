@@ -191,15 +191,3 @@ export function useFaqs(
   );
 }
 
-export function useFaqCategories(
-  locale: string,
-  options?: ApiQueryOptions<FaqCategory[]>
-) {
-  return useQuery(
-    createApiQueryOptions(
-      faqKeys.categories(locale),
-      () => fetchFaqCategories(locale),
-      options
-    )
-  );
-}

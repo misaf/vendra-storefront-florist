@@ -38,8 +38,8 @@ import {
   useState,
 } from "react";
 import { Loader2, Package, SlidersHorizontal, X } from "lucide-react";
-import { fetchProductsWithDetails, useProductCategories } from "../lib/queries";
-import type { FetchProductsResult, Product, ProductCategory } from "../types";
+import { useProductCatalogue, useProductCategories } from "../lib/queries";
+import type { FetchProductsResult, ProductCategory } from "../types";
 import { buildProductsQueryKey, getProductsApiSort } from "../lib/keys";
 import { cn } from "@/shared/lib/utils";
 import dynamic from "next/dynamic";
@@ -84,18 +84,16 @@ function isValidSort(value: string | null): value is SortValue {
 }
 
 interface ProductsClientProps {
-  initialProducts: Product[];
-  initialPagination: FetchProductsResult["pagination"] | null;
-  initialError: string | null;
+  /** Page one as the server fetched it, or null when that call failed. */
+  initialPage: FetchProductsResult | null;
+  /** The filters `initialPage` answers, so a stale page is not seeded. */
   initialQueryKey: string;
   /** Resolved server-side so the heading and filters render named, not blank. */
   initialCategories: ProductCategory[];
 }
 
 export default function ProductsClient({
-  initialProducts,
-  initialPagination,
-  initialError,
+  initialPage,
   initialQueryKey,
   initialCategories,
 }: ProductsClientProps) {
@@ -132,35 +130,71 @@ export default function ProductsClient({
     search,
     apiSort
   );
-  const currentQueryKeyRef = useRef(queryKey);
-  currentQueryKeyRef.current = queryKey;
-
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(initialError);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [draftCategory, setDraftCategory] = useState(category);
   const [draftAvailability, setDraftAvailability] =
     useState<ProductAvailability | undefined>(availability);
-  const [pagination, setPagination] = useState<FetchProductsResult["pagination"] | null>(
-    initialPagination
-  );
-  const hasLoadedInitialQuery = useRef(false);
-  const loadingRequestRef = useRef<{
-    queryKey: string;
-    page: number;
-    reset: boolean;
-  } | null>(null);
-  const lastAppendRequestRef = useRef<{
-    queryKey: string;
-    page: number;
-  } | null>(null);
-
   const observerTarget = useRef<HTMLDivElement>(null);
-  const hasMore = pagination
-    ? pagination.currentPage < pagination.lastPage
-    : false;
+
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    refetch,
+  } = useProductCatalogue(
+    {
+      locale,
+      category: activeCategoryFilter,
+      inStock,
+      search: search || undefined,
+      sort: apiSort,
+    },
+    {
+      // Only when the server's page still answers the filters in the URL. A
+      // client-side filter change updates the address before the new server
+      // render lands, and seeding page one from the outgoing render would show
+      // the previous filter's products under the new heading.
+      initialPage:
+        queryKey === initialQueryKey ? (initialPage ?? undefined) : undefined,
+    }
+  );
+
+  const products = useMemo(() => {
+    const seen = new Set<number>();
+    // Appended in arrival order: the fetch layer already returns each page in
+    // the active sort, so re-ordering the merged list here would only shuffle
+    // rows the shopper has already read past. Ids are de-duplicated because a
+    // product inserted upstream between two requests can straddle a page edge.
+    return (data?.pages ?? [])
+      .flatMap((page) => page.products)
+      .filter((product) => !seen.has(product.id) && seen.add(product.id));
+  }, [data]);
+
+  const pagination = data?.pages.at(-1)?.pagination ?? null;
+  /** A reload of the whole list, as opposed to appending the next page. */
+  const loading = isFetching && !isFetchingNextPage;
+  const loadingMore = isFetchingNextPage;
+  const hasMore = hasNextPage;
+
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!hasNextPage || isFetching || !target) return;
+
+    // `fetchNextPage` is a no-op while a page is already in flight, so the
+    // observer needs no in-flight bookkeeping of its own.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) fetchNextPage();
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetching]);
 
   const activeCategoryDescription = useMemo(() => {
     if (!activeCategoryFilter) {
@@ -203,127 +237,6 @@ export default function ProductsClient({
     },
     []
   );
-
-  const loadProducts = useCallback(
-    async (page: number, reset: boolean = false) => {
-      const request = loadingRequestRef.current;
-
-      if (
-        request &&
-        request.queryKey === queryKey &&
-        request.page === page &&
-        request.reset === reset
-      ) {
-        return;
-      }
-
-      loadingRequestRef.current = { queryKey, page, reset };
-
-      if (reset) {
-        lastAppendRequestRef.current = null;
-        setLoading(true);
-        setLoadingMore(false);
-      } else {
-        setLoadingMore(true);
-      }
-
-      setError(null);
-
-      try {
-        const result = await fetchProductsWithDetails({
-          page,
-          perPage: 12,
-          category: activeCategoryFilter,
-          inStock,
-          locale,
-          search: search || undefined,
-          sort: apiSort,
-        });
-
-        // Ignore a response from a filter that is no longer active.
-        if (currentQueryKeyRef.current !== queryKey) return;
-
-        setProducts((previousProducts) => {
-          if (reset) return result.products;
-
-          // Appended in arrival order: the fetch layer already returns each
-          // page in the active sort, so re-ordering the merged list here would
-          // only shuffle rows the shopper has already read past.
-          const existingIds = new Set(previousProducts.map((p) => p.id));
-          return [
-            ...previousProducts,
-            ...result.products.filter((incoming) => !existingIds.has(incoming.id)),
-          ];
-        });
-
-        setPagination(result.pagination);
-      } catch (err) {
-        if (currentQueryKeyRef.current !== queryKey) return;
-        console.error("Error loading products:", err);
-        setError(err instanceof Error ? err.message : "Failed to load products");
-        if (reset) {
-          setProducts([]);
-        }
-      } finally {
-        const isCurrentRequest =
-          loadingRequestRef.current?.queryKey === queryKey &&
-          loadingRequestRef.current.page === page &&
-          loadingRequestRef.current.reset === reset;
-
-        if (isCurrentRequest) {
-          loadingRequestRef.current = null;
-          if (reset) {
-            setLoading(false);
-          } else {
-            setLoadingMore(false);
-          }
-        }
-      }
-    },
-    [activeCategoryFilter, apiSort, inStock, locale, queryKey, search]
-  );
-
-  useEffect(() => {
-    if (!hasLoadedInitialQuery.current) {
-      hasLoadedInitialQuery.current = true;
-      if (queryKey === initialQueryKey) {
-        return;
-      }
-    }
-
-    loadProducts(1, true);
-  }, [initialQueryKey, loadProducts, queryKey]);
-
-  useEffect(() => {
-    if (!hasMore || loadingMore || loading) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          const nextPage = (pagination?.currentPage ?? 1) + 1;
-          const lastAppendRequest = lastAppendRequestRef.current;
-
-          if (
-            lastAppendRequest?.queryKey === queryKey &&
-            lastAppendRequest.page === nextPage
-          ) {
-            return;
-          }
-
-          lastAppendRequestRef.current = { queryKey, page: nextPage };
-          loadProducts(nextPage, false);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    const target = observerTarget.current;
-    if (target) observer.observe(target);
-
-    return () => {
-      if (target) observer.unobserve(target);
-    };
-  }, [hasMore, loadingMore, loading, loadProducts, pagination, queryKey]);
 
   const handleClearSearch = () => {
     router.push(
@@ -652,7 +565,7 @@ export default function ProductsClient({
                     t("products.loadError") ||
                     "We couldn't load the products just now. Please check your connection and try again."
                   }
-                  onRetry={() => loadProducts(1, true)}
+                  onRetry={() => refetch()}
                   retryLabel={t("products.tryAgain") || "Try Again"}
                   retryingLabel={t("products.retrying")}
                   isRetrying={loading}
@@ -761,7 +674,7 @@ export default function ProductsClient({
                     className={cn(loadingMore && "opacity-70")}
                     onClick={() => {
                       if (loadingMore) return;
-                      loadProducts((pagination?.currentPage ?? 1) + 1, false);
+                      fetchNextPage();
                     }}
                   >
                     {loadingMore ? (

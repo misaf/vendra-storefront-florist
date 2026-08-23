@@ -77,9 +77,7 @@ async function ProductsPageContent({
   return (
     <ProductsClient
       key={locale}
-      initialProducts={initial.initialProducts}
-      initialPagination={initial.initialPagination}
-      initialError={initial.initialError}
+      initialPage={initial.initialPage}
       initialQueryKey={initial.initialQueryKey}
       initialCategories={categories}
     />
