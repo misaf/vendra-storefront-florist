@@ -19,8 +19,12 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     display: "standalone",
     lang: routing.defaultLocale,
     dir: getDirection(routing.defaultLocale),
-    background_color: "#f8f3e8",
-    theme_color: "#123326",
+    // The Organic palette's page ground and brand band. Neither can read a
+    // CSS variable — the OS paints the splash and the browser tints its chrome
+    // before any stylesheet loads — so both are restated from `globals.css`
+    // (`--background`, `--storefront-brand`) and must be changed with it.
+    background_color: "#f5ead8",
+    theme_color: "#2e2b25",
     icons: [
       {
         src: "/favicon.ico",

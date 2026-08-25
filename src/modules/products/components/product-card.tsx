@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { Link } from "@/shared/i18n/navigation";
-import { Plus } from "lucide-react";
+import { Heart, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { ThemedProductImage } from "./themed-product-image";
 import { ProductImageFallback } from "./product-image-fallback";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { useCart } from "@/modules/cart";
+import { useFavorites } from "@/modules/account";
 import { cn, normalizeImageUrl } from "@/shared/lib/utils";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 import { formatRemainingQuantity, isLowStock } from "../lib/format";
@@ -30,8 +32,6 @@ interface ProductCardProps {
   /** Shown above the title on the catalogue grid, where cards leave their category. */
   showCategory?: boolean;
   className?: string;
-  /** Gives homepage product photography an organic, arched silhouette. */
-  imageShape?: "default" | "arch";
 }
 
 /**
@@ -49,10 +49,11 @@ export function ProductCard({
   showAddToCart = true,
   showCategory = false,
   className,
-  imageShape = "default",
 }: ProductCardProps) {
   const { addToCart, openCart } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const [hasImageError, setHasImageError] = useState(false);
+  const saved = isFavorite(product.id);
 
   const detailHref = `/products/${createReadableResourcePath(product.id, product.slug)}`;
   const inStock = product.inStock !== false;
@@ -79,11 +80,13 @@ export function ProductCard({
   return (
     <div className={cn("group relative flex h-full min-w-0 flex-col", className)}>
       <div
+        /* A plain rounded plate, never the arch. The card pins a collection
+           tag, a reduction badge and the save control to its own corners, and
+           an arch's ~10rem head radius cuts straight through all three. The
+           arch belongs to the plates that carry nothing but a picture — the
+           hero and the collection tiles. */
         className={cn(
-          "relative aspect-[4/5] overflow-hidden bg-secondary",
-          imageShape === "arch"
-            ? "rounded-b-2xl rounded-t-[min(10rem,45%)]"
-            : "rounded-xl",
+          "relative aspect-[4/5] overflow-hidden rounded-3xl bg-secondary",
           !inStock && "opacity-90"
         )}
       >
@@ -100,12 +103,7 @@ export function ProductCard({
           href={detailHref}
           aria-hidden="true"
           tabIndex={-1}
-          className={cn(
-            "store-focus-inset block h-full w-full",
-            imageShape === "arch"
-              ? "rounded-b-2xl rounded-t-[min(10rem,45%)]"
-              : "rounded-xl"
-          )}
+          className="store-focus-inset block h-full w-full rounded-3xl"
         >
           {hasImageError ? (
             <ProductImageFallback label={t("products.imageUnavailable")} />
@@ -137,36 +135,56 @@ export function ProductCard({
           )}
         </Link>
 
-        {/* Availability and discount are stated on the image, not left to the
-            price slot alone — both carry a word as well as a colour. */}
-        {!inStock ? (
-          <span className="pointer-events-none absolute start-3 top-3 rounded-full bg-foreground/90 px-2.5 py-1 text-xs font-bold text-background">
-            {outOfStockLabel}
-          </span>
-        ) : hasDiscount ? (
-          <span className="pointer-events-none absolute start-3 top-3 rounded-full bg-rose px-2.5 py-1 text-xs font-bold text-rose-foreground">
+        {/* The card's two corners, as the Organic system lays them out: what
+            this is (the collection) at the head, what is true of it right now
+            (sold out, reduced) at the foot. They used to share the top-start
+            corner, so a discounted product in a named collection drew one on
+            top of the other.
+            `max-w` with a truncating label because a collection name comes from
+            the catalogue and can be any length; the heart's corner is reserved
+            out of the width so the two never collide. */}
+        {showCategory && product.category ? (
+          <Badge
+            variant="clay"
+            className="pointer-events-none absolute start-3 top-3 max-w-[calc(100%-4rem)] px-2.5 text-[0.6875rem]"
+          >
+            <span className="store-dynamic-text truncate">
+              <DynamicText>{product.category}</DynamicText>
+            </span>
+          </Badge>
+        ) : null}
+
+        {/* Only the reduction is drawn here. Availability is the dot line's
+            job below, and stating it in the corner as well printed "Back in
+            stock soon" three times on one card — badge, price slot and line. */}
+        {hasDiscount ? (
+          <span className="pointer-events-none absolute bottom-3 start-3 rounded-full bg-rose px-2.5 py-1 text-xs font-bold text-rose-foreground">
             {t("products.discountBadge", { percent: new Intl.NumberFormat(locale).format(discountPercent) })}
           </span>
         ) : null}
+
+        {/* Save, on the card rather than only on the detail page. The list is
+            already persisted and already has a panel to read it back from; the
+            grid was the one surface that could not write to it, which made
+            comparing a shelf of bouquets a matter of opening each one. */}
+        <button
+          type="button"
+          onClick={() => toggleFavorite(product)}
+          aria-pressed={saved}
+          aria-label={saved ? t("common.removeFromFavorites") : t("common.favorites")}
+          className="absolute end-3 top-3 flex size-9 items-center justify-center rounded-full bg-background text-foreground shadow-card transition-colors hover:text-rose"
+        >
+          <Heart
+            className={cn("size-4", saved && "fill-current text-rose")}
+            aria-hidden="true"
+          />
+        </button>
       </div>
 
       <div className="flex flex-1 flex-col gap-1 pt-3">
         {/* <bdi> isolates a name written in the other script so it orders
             correctly, while the card keeps the page's own alignment — dir="auto"
             on the block pushed Persian titles to the far edge of an LTR grid. */}
-        {/* Muted, not rose. The category is context for the name above the
-            price; rose is the card's one accent and the stock warning below
-            needs it more. Two rose lines stacked made neither one read.
-            Set in the catalogue's own casing rather than uppercased: at 320px
-            a two-up tile is ~135px wide and "FLORAL ARRANGEMENTS" clipped to
-            "FLORAL…", which reads as a fault. The same words in sentence case
-            fit, and the muted weight still separates the line from the title
-            below it. */}
-        {showCategory && product.category ? (
-          <p className="store-dynamic-text line-clamp-1 text-xs font-semibold tracking-wide text-muted-foreground">
-            <DynamicText>{product.category}</DynamicText>
-          </p>
-        ) : null}
         <h3 className="store-dynamic-text text-sm font-semibold leading-6 sm:text-base">
           <Link
             href={detailHref}
@@ -175,26 +193,43 @@ export function ProductCard({
             <DynamicText>{product.name}</DynamicText>
           </Link>
         </h3>
-        {/* Inside the growth block on purpose: this line exists on a minority
-            of cards, and hanging it between the price and the button pushed
-            those cards' prices off the baseline the rest of the row sits on —
-            which is the one alignment a grid built for comparison needs. */}
-        {isLowQuantity ? (
-          <p className="truncate text-xs font-semibold leading-4 text-rose">
-            {formatRemainingQuantity(t, locale, product.quantity as number)}
-          </p>
-        ) : null}
       </div>
 
+      {/* A sold-out product keeps its price. What it costs is what a shopper
+          came to find out, and it is still true while the shop is restocking —
+          the availability line below says the rest. Only a product the
+          catalogue has given no price at all falls back to words. */}
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-        {inStock && hasPrice ? (
+        {hasPrice ? (
           <Price product={product} showDiscount={hasDiscount} />
         ) : (
           <span className="text-sm font-semibold leading-6 text-muted-foreground">
-            {inStock ? t("products.priceOnRequest") : outOfStockLabel}
+            {t("products.priceOnRequest")}
           </span>
         )}
       </div>
+
+      {/* One availability line under the price, always — a coloured dot and the
+          word for it. The card used to state availability only when stock ran
+          low, so "in stock" was communicated by the *absence* of a line, which
+          is not something a shopper can read. Colour never carries the meaning
+          on its own (WCAG 1.4.1): the dot and the words say the same thing. */}
+      <p className="mt-1.5 flex items-center gap-2 text-xs leading-5 text-muted-foreground">
+        <span
+          className={cn(
+            "size-[0.4375rem] shrink-0 rounded-full",
+            !inStock ? "bg-sand-400" : isLowQuantity ? "bg-rose" : "bg-leaf"
+          )}
+          aria-hidden="true"
+        />
+        <span className="truncate">
+          {!inStock
+            ? outOfStockLabel
+            : isLowQuantity
+              ? formatRemainingQuantity(t, locale, product.quantity as number)
+              : t("common.inStock")}
+        </span>
+      </p>
 
 
       {showAddToCart ? (

@@ -41,14 +41,24 @@ export async function AboutApproach({ locale }: { locale: string }) {
           </p>
         </div>
 
-        <dl className="grid gap-x-10 sm:grid-cols-2">
+        {/* The system's petal medallion above each commitment, rather than a
+            hairline above it and a small icon inline with its title. The rules
+            drew a four-cell table across a band that is a set of statements,
+            and the inline icons sat at caption size beside 1.125rem titles —
+            too small to read as anything but decoration. */}
+        <dl className="grid gap-x-10 gap-y-10 sm:grid-cols-2">
           {commitments.map(({ key, Icon }) => (
-            <div key={key} className="border-t border-border py-6">
-              <dt className="flex items-center gap-3 text-lg font-semibold text-foreground">
-                <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
+            <div key={key}>
+              <span
+                className="organic-blob flex size-14 items-center justify-center bg-gradient-to-br from-sage-200 to-clay-300 text-clay-900"
+                aria-hidden="true"
+              >
+                <Icon className="size-6" />
+              </span>
+              <dt className="font-display mt-5 text-lg text-foreground">
                 {t(`about.${key}Title`)}
               </dt>
-              <dd className="store-lede mt-3 text-sm text-muted-foreground">
+              <dd className="store-lede mt-2.5 text-sm text-muted-foreground">
                 {t(`about.${key}Desc`)}
               </dd>
             </div>

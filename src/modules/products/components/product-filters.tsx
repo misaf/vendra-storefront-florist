@@ -12,6 +12,34 @@ type Translate = (key: string, values?: Record<string, string | number>) => stri
 
 const CATEGORY_PAGE_SIZE = 10;
 
+/**
+ * A rail heading. The design system sets these as small tracked capitals in the
+ * *body* face at the muted step — deliberately quieter than the section titles
+ * on the page, because a filter group's name is a label for the controls under
+ * it, not a heading in the page's outline.
+ */
+const legendClass =
+  "flex w-full items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.09em] text-muted-foreground [.locale-fa_&]:tracking-normal";
+
+/**
+ * One option in a rail group, drawn as the system's pill.
+ *
+ * The radio itself is visually hidden rather than removed: the design draws
+ * selection as a filled pill and nothing else, but a group of eleven
+ * collections still has to arrow-key and announce as one radio group. So the
+ * native input stays, the fill carries the state visually, and `focus-within`
+ * puts the page's own ring on the pill the hidden input is inside.
+ */
+function optionClass(checked: boolean) {
+  return cn(
+    "flex min-h-11 cursor-pointer items-center rounded-full px-4 py-2 text-sm leading-6 transition-colors",
+    "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring",
+    checked
+      ? "bg-primary font-semibold text-primary-foreground"
+      : "text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+  );
+}
+
 interface ProductFiltersProps {
   categories: ProductCategory[];
   category: string;
@@ -81,9 +109,9 @@ export function ProductFilters({
   ];
 
   return (
-    <div className={cn("space-y-7", className)}>
+    <div className={cn("flex flex-col gap-8", className)}>
       <fieldset>
-        <legend className="flex w-full items-center justify-between gap-3 text-sm font-bold text-foreground">
+        <legend className={legendClass}>
           <span>{t("products.categoryFilter")}</span>
           {categoriesLoading ? (
             <Loader2
@@ -105,7 +133,7 @@ export function ProductFilters({
               onChange={(event) => setCategorySearch(event.target.value)}
               aria-label={t("products.categorySearch")}
               placeholder={t("products.categorySearch")}
-              className="h-11 rounded-xl bg-background px-9 text-sm"
+              className="h-11 bg-background px-9 text-sm"
             />
           </div>
         ) : null}
@@ -116,22 +144,14 @@ export function ProductFilters({
               const checked = category === option.value;
 
               return (
-                <label
-                  key={option.value}
-                  className={cn(
-                    "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm leading-6 transition-colors",
-                    checked
-                      ? "bg-secondary font-semibold text-primary"
-                      : "text-foreground/80 hover:bg-secondary/60 hover:text-foreground"
-                  )}
-                >
+                <label key={option.value} className={optionClass(checked)}>
                   <input
                     type="radio"
                     name={categoryGroupName}
                     value={option.value}
                     checked={checked}
                     onChange={() => onCategoryChange(option.value)}
-                    className="size-4 shrink-0 accent-primary"
+                    className="sr-only"
                   />
                   <span className="min-w-0 break-words">{option.label}</span>
                 </label>
@@ -149,7 +169,7 @@ export function ProductFilters({
             type="button"
             variant="ghost"
             size="sm"
-            className="mt-2 w-full justify-center gap-2 rounded-lg text-xs font-semibold text-primary"
+            className="mt-2 w-full justify-center gap-2 text-xs font-semibold text-primary"
             onClick={() =>
               setVisibleCategoryCount((count) => count + CATEGORY_PAGE_SIZE)
             }
@@ -160,10 +180,8 @@ export function ProductFilters({
         ) : null}
       </fieldset>
 
-      <div className="h-px bg-border" />
-
       <fieldset>
-        <legend className="text-sm font-bold text-foreground">
+        <legend className={legendClass}>
           {t("products.availabilityFilter")}
         </legend>
         <div className="mt-3 space-y-0.5">
@@ -172,22 +190,14 @@ export function ProductFilters({
             const checked = availability === option.value;
 
             return (
-              <label
-                key={value}
-                className={cn(
-                  "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors",
-                  checked
-                    ? "bg-secondary font-semibold text-primary"
-                    : "text-foreground/80 hover:bg-secondary/60 hover:text-foreground"
-                )}
-              >
+              <label key={value} className={optionClass(checked)}>
                 <input
                   type="radio"
                   name={availabilityGroupName}
                   value={value}
                   checked={checked}
                   onChange={() => onAvailabilityChange(option.value)}
-                  className="size-4 shrink-0 accent-primary"
+                  className="sr-only"
                 />
                 <span>{option.label}</span>
               </label>

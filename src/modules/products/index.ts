@@ -1,8 +1,5 @@
 export { CategoryMenu } from "./components/category-menu";
-export {
-  CategoryTile,
-  getCategoryTileImage,
-} from "./components/category-tile";
+export { CategoryTile } from "./components/category-tile";
 export { ProductCard } from "./components/product-card";
 export { default as ProductDetailClient } from "./components/product-detail-client";
 export {

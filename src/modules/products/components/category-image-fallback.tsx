@@ -12,14 +12,16 @@ import { cn } from "@/shared/lib/utils";
  * picture of anything. It is inline SVG, so it costs no request, cannot shift
  * layout, and follows the theme into dark mode.
  *
- * `tone` varies the wash across three brand-safe steps so a run of fallbacks
- * has rhythm. It is presentation only — the caller passes the tile's position,
- * never anything about the category itself.
+ * `tone` varies the wash across the system's five collection gradients so a run
+ * of fallbacks has rhythm. It is presentation only — the caller passes the
+ * tile's position, never anything about the category itself.
  */
 const TONES = [
-  "bg-secondary",
-  "bg-storefront-brand-soft",
-  "bg-accent/70",
+  "organic-wash-a",
+  "organic-wash-c",
+  "organic-wash-b",
+  "organic-wash-d",
+  "organic-wash-e",
 ] as const;
 
 export function CategoryImageFallback({
@@ -42,9 +44,9 @@ export function CategoryImageFallback({
       /* Decorative: the category's name is drawn beneath it, in the same link. */
       aria-hidden="true"
     >
-      {/* A light falling from the top, so the tile has the same soft depth as
-          the photographs it sits between rather than reading as a flat swatch. */}
-      <span className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,color-mix(in_oklch,var(--card)_78%,transparent),transparent_65%)]" />
+      {/* No second light laid over the wash: the gradient already carries the
+          off-centre bloom that gives the tile its depth, and stacking a third
+          one on top flattened the two apart again. */}
       <svg
         viewBox="0 0 96 120"
         fill="none"

@@ -47,24 +47,25 @@ export async function ContactIntro({
               </p>
             </div>
 
-            <div className="relative min-h-72 overflow-hidden rounded-3xl bg-primary sm:min-h-[26rem]">
-              <Image
-                src="/contact-consultation.webp"
-                alt=""
-                fill
-                preload
-                sizes="(min-width: 1024px) 44vw, 100vw"
-                className="object-cover"
-              />
-              <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-storefront-brand/70 via-transparent to-transparent" />
-              {/* The caption sits on its own plate rather than trusting the
-                  photograph: a bright patch behind it dropped the text below
-                  4.5:1, and which patch is bright depends on the image. */}
-              <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-                <p className="store-lede max-w-xl rounded-xl bg-storefront-brand/90 px-4 py-3 text-sm font-medium text-storefront-brand-foreground backdrop-blur-sm">
-                  {t("contact.occasionOrderTip")}
-                </p>
+            {/* Picture, then caption underneath — not a caption laid over a
+                scrimmed photograph. The scrim was costing the top two thirds
+                of the image its contrast in order to make one sentence legible
+                at the foot, and the sentence reads perfectly well on the page's
+                own ground directly below. */}
+            <div>
+              <div className="organic-washed relative min-h-72 overflow-hidden rounded-3xl bg-secondary sm:min-h-[26rem]">
+                <Image
+                  src="/contact-consultation.webp"
+                  alt=""
+                  fill
+                  preload
+                  sizes="(min-width: 1024px) 44vw, 100vw"
+                  className="object-cover"
+                />
               </div>
+              <p className="store-lede mt-4 max-w-xl text-sm text-muted-foreground">
+                {t("contact.occasionOrderTip")}
+              </p>
             </div>
           </div>
         </section>
@@ -124,7 +125,10 @@ function ContactItem({
   const content = (
     <div className="flex h-full flex-col gap-3.5 p-4 sm:p-5">
       <div className="flex items-center justify-between">
-        <span className="flex size-9 items-center justify-center rounded-full bg-storefront-brand-soft text-primary">
+        {/* The system's accent medallion: the clay ramp's 100 under its 800. It
+            was sand-800 under clay-700 — an ink disc carrying an ink glyph, at
+            1.9:1, below the 3:1 that WCAG 1.4.11 asks of a meaningful icon. */}
+        <span className="flex size-9 items-center justify-center rounded-full bg-clay-100 text-clay-800">
           <Icon className="size-4" />
         </span>
         {href && (

@@ -47,33 +47,30 @@ export default function CheckoutSuccess() {
     : "";
 
   return (
-    <PageShell showFooter={false}>
-      <div className="grid min-h-[calc(100vh-7rem)] lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="flex bg-storefront-brand px-6 py-14 text-storefront-brand-foreground sm:px-10 sm:py-20 lg:items-center lg:px-[max(3rem,8vw)]">
-          <div className="max-w-xl">
-            <div className="flex size-16 items-center justify-center rounded-t-full bg-storefront-brand-foreground text-storefront-brand">
-              <CheckCircle2 className="size-8" aria-hidden="true" />
-            </div>
-            <p className="mt-8 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-storefront-brand-foreground/65">
-              {t("checkout.successEyebrow")}
-            </p>
-            <h1 className="font-display mt-4 text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              {t("checkout.successTitle")}
-            </h1>
-            <p className="mt-5 text-sm leading-7 text-storefront-brand-foreground/75 sm:text-base">
-              {t("checkout.successDescription")}
-            </p>
-          </div>
-        </section>
+    <PageShell>
+      {/* One centred column on the page's own ground. It was a full-height
+          split with the confirmation reversed out of an ink panel beside the
+          details — the storefront's last full-bleed dark slab outside the
+          header and footer, and a composition that put the good news and what
+          to do about it in two separate columns a reader had to cross between.
+          Sage on the medallion, because sage is this system's colour for a
+          thing that went right. */}
+      <div className="store-container store-section-lg max-w-2xl text-center">
+        <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-leaf text-background">
+          <CheckCircle2 className="size-9" aria-hidden="true" />
+        </span>
+        <p className="store-label mt-7">{t("checkout.successEyebrow")}</p>
+        <h1 className="store-page-title mt-4">{t("checkout.successTitle")}</h1>
+        <p className="store-lede mx-auto mt-5 max-w-[52ch] text-base text-muted-foreground">
+          {t("checkout.successDescription")}
+        </p>
 
-        <section className="flex items-center bg-background px-5 py-12 sm:px-10 sm:py-16 lg:px-[max(3rem,8vw)]">
-          <div className="w-full max-w-xl">
-            <p className="store-eyebrow">{t("checkout.stepConfirm")}</p>
-            <h2 className="font-display mt-4 text-3xl leading-tight tracking-tight sm:text-4xl">
-              {t("checkout.successNextTitle")}
-            </h2>
+        <section className="mt-12 text-start">
+          <h2 className="store-section-title text-center text-foreground">
+            {t("checkout.successNextTitle")}
+          </h2>
 
-            <div className="mt-8 space-y-6">
+          <div className="mt-8 space-y-6">
               {/* The reference, the date and what was paid. Without them the
                   screen said an order existed but gave the customer nothing to
                   quote back to the shop if anything went wrong. */}
@@ -83,7 +80,7 @@ export default function CheckoutSuccess() {
                   <dt className="text-muted-foreground">
                     {t("common.orderReference")}
                   </dt>
-                  <dd className="font-mono text-base font-bold tracking-wide text-foreground" dir="ltr">
+                  <dd className="text-base font-bold tabular-nums tracking-wide text-foreground" dir="ltr">
                     {latestOrder.id}
                   </dd>
                 </div>
@@ -141,7 +138,6 @@ export default function CheckoutSuccess() {
                 <Link href="/">{t("checkout.backToHome")}</Link>
               </Button>
               </div>
-            </div>
           </div>
         </section>
       </div>

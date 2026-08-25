@@ -1,10 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import {
-  CategoryTile,
-  getCategoryTileImage,
-  type ProductCategory,
-} from "@/modules/products";
+import { CategoryTile, type ProductCategory } from "@/modules/products";
 import { SectionHeader } from "@/shared/components/layout/section-header";
 import { Link } from "@/shared/i18n/navigation";
 import { isRtlLocale } from "@/shared/lib/locale";
@@ -12,40 +8,6 @@ import { isRtlLocale } from "@/shared/lib/locale";
 interface CategoryDiscoveryProps {
   categories: ProductCategory[];
   locale: string;
-}
-
-/** How many categories open the band at feature size. */
-const LEAD_COUNT = 2;
-
-/**
- * Which categories open the band.
- *
- * A feature tile is mostly photograph, so it goes to categories the catalogue
- * has actually given a photograph — in the shop's own order, never reordered by
- * size or by any ranking this storefront invents. Six of this shop's thirteen
- * categories carry media and the two it lists first are not among them, so
- * taking "the first two" outright opened the page on two drawn placeholder
- * tiles at the largest size on the band.
- *
- * With no media anywhere the split degrades to the plain order and every tile
- * is the drawn mark, which is the right uniform result rather than an accident.
- */
-function splitLeadCategories(categories: ProductCategory[]): {
-  lead: ProductCategory[];
-  rest: ProductCategory[];
-} {
-  const illustrated = categories.filter((category) =>
-    getCategoryTileImage(category)
-  );
-  const lead = (
-    illustrated.length >= LEAD_COUNT ? illustrated : categories
-  ).slice(0, LEAD_COUNT);
-  const leadIds = new Set(lead.map((category) => category.id));
-
-  return {
-    lead,
-    rest: categories.filter((category) => !leadIds.has(category.id)),
-  };
 }
 
 /**
@@ -58,9 +20,13 @@ function splitLeadCategories(categories: ProductCategory[]): {
  * florist storefront the occasion *is* the entry intent, so the band that
  * answers "what are you shopping for" has to be complete rather than a sample.
  *
- * Two tiers rather than thirteen equal tiles, because thirteen equal tiles is a
- * directory: the feature pair sets the scale and carries the catalogue's own
- * description, and the rest read as the range behind it.
+ * One grid, every tile the same size. The band previously opened on two
+ * feature-sized tiles above a rail of small ones, which put ~700px-wide plates
+ * on the page and made the pair read as the shop's two *recommended* ways in —
+ * a ranking the catalogue never expressed and the shopkeeper cannot influence.
+ * The source design lays collections out as one even wall at ~15rem, on both
+ * this page and the catalogue, and an even wall is also the honest shape: these
+ * are alternatives, not a podium.
  */
 export async function CategoryDiscovery({
   categories,
@@ -73,7 +39,6 @@ export async function CategoryDiscovery({
   }
 
   const ArrowIcon = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
-  const { lead, rest } = splitLeadCategories(categories);
 
   return (
     <section id="collections" className="store-scroll-anchor bg-background">
@@ -99,44 +64,29 @@ export async function CategoryDiscovery({
           }
         />
 
-        {lead.length > 0 ? (
-          <ul className="mt-8 grid gap-4 min-[43.75rem]:grid-cols-2 lg:gap-5">
-            {lead.map((category, index) => (
-              <li key={category.id}>
-                <CategoryTile
-                  category={category}
-                  locale={locale}
-                  tone={index}
-                  aspect="aspect-[16/10]"
-                  sizes="(min-width: 43.75rem) 44vw, calc(100vw - 2rem)"
-                  /* The API has written a sentence for every category and
-                     nothing in the storefront was reading it. */
-                  showDescription
-                  shape="arch"
-                />
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        {rest.length > 0 ? (
-          <ul className="store-scroll-row -mx-4 mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0 lg:mt-5 lg:grid-cols-6 lg:gap-5">
-            {rest.map((category, index) => (
-              <li
-                key={category.id}
-                className="w-[52vw] max-w-[15rem] shrink-0 snap-start sm:w-auto sm:max-w-none"
-              >
-                <CategoryTile
-                  category={category}
-                  locale={locale}
-                  tone={index + LEAD_COUNT}
-                  shape="arch"
-                  sizes="(min-width: 1024px) 13rem, (min-width: 640px) 30vw, 52vw"
-                />
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        {/* Two up on a phone, then `auto-fit` at a 15rem floor so the wall
+            reflows to three and four without a breakpoint per step — and a shop
+            with three collections fills its row instead of leaving two gaps.
+            The phone case is stated separately because `auto-fit` would give it
+            a single column: thirteen full-width plates is most of a minute's
+            scrolling to reach the products underneath. */}
+        <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] sm:gap-5 lg:mt-10 lg:gap-6">
+          {categories.map((category, index) => (
+            <li key={category.id}>
+              <CategoryTile
+                category={category}
+                locale={locale}
+                tone={index}
+                aspect="aspect-square"
+                shape="arch"
+                /* The API has written a sentence for every category and
+                   nothing in the storefront was reading it. */
+                showDescription
+                sizes="(min-width: 1024px) 18rem, (min-width: 640px) 44vw, calc(100vw - 2rem)"
+              />
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

@@ -354,7 +354,7 @@ export default function AddressMapPicker({
     <div className="min-w-0 space-y-2.5">
       <div className="flex min-w-0 flex-col items-start gap-2 min-[420px]:flex-row min-[420px]:items-end min-[420px]:justify-between">
         <div className="min-w-0">
-          <span className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="store-label">
             {t("checkout.dropPinEyebrow")}
           </span>
           <p className="text-sm font-medium text-foreground">
@@ -378,7 +378,7 @@ export default function AddressMapPicker({
 
       <div
         data-provider={tileProvider}
-        className="store-pinmap relative w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-muted"
+        className="store-pinmap relative w-full min-w-0 max-w-full overflow-hidden rounded-3xl border border-border bg-muted"
       >
         <div
           ref={containerRef}
@@ -402,7 +402,7 @@ export default function AddressMapPicker({
 
         {/* Live coordinate read-out — data set in mono, design-system style. */}
         {coords && (
-          <div className="pointer-events-none absolute bottom-2 left-2 z-[1000] rounded-md bg-card/85 px-2 py-1 font-mono text-xs tracking-wider text-muted-foreground backdrop-blur-sm">
+          <div className="pointer-events-none absolute bottom-2 left-2 z-[1000] rounded-full bg-card/85 px-2 py-1 text-xs tabular-nums text-muted-foreground backdrop-blur-sm">
             {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
           </div>
         )}

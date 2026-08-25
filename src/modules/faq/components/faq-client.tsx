@@ -171,7 +171,7 @@ export default function FaqClient({
   const hasResults = visible.length > 0;
 
   return (
-    <PageShell showFooterNewsletter={false}>
+    <PageShell>
       {/* Masthead — quiet porcelain, search promoted as the real task */}
       <section className="border-b border-border">
         <PageHeader
@@ -209,10 +209,10 @@ export default function FaqClient({
         ) : (
           <div className="grid gap-10 lg:grid-cols-[15rem_1fr] lg:gap-16">
             {/* Rail */}
-            <aside className="store-sticky-lg lg:rounded-xl lg:bg-card/55 lg:p-5">
+            <aside className="store-sticky-lg lg:rounded-3xl lg:bg-card/55 lg:p-5">
               <p
                 id="faq-index-label"
-                className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground"
+                className="store-label"
               >
                 {t("faq.indexLabel")}
               </p>
@@ -255,7 +255,7 @@ export default function FaqClient({
                             {item.name}
                           </span>
                         </span>
-                        <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                        <span className="text-xs tabular-nums text-muted-foreground">
                           {numberFormat.format(item.count)}
                         </span>
                       </button>
@@ -306,14 +306,19 @@ export default function FaqClient({
                       {showGroupHeadings ? (
                         <div className="mb-1 flex items-center gap-2.5">
                           <span className="petal-dot" aria-hidden="true" />
-                          <h2 className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                          <h2 className="store-label">
                             {group.name}
                           </h2>
                         </div>
                       ) : (
                         <h2 className="sr-only">{group.name}</h2>
                       )}
-                      <ul>
+                      {/* Separated blocks, not a hairline-ruled list: the
+                          Organic system gives each answer its own resting
+                          surface, which is also what makes an opened panel
+                          read as belonging to the question above it rather
+                          than to the rule between them. */}
+                      <ul className="flex flex-col gap-3">
                         {group.items.map((faq) => {
                           const open = openIds.has(faq.id);
                           const hasAnswer = faq.answer.trim().length > 0;
@@ -321,7 +326,7 @@ export default function FaqClient({
                           return (
                             <li
                               key={faq.id}
-                              className="border-t border-border first:border-t-0"
+                              className="overflow-hidden rounded-3xl bg-card"
                             >
                               <div>
                                 {hasAnswer ? (
@@ -331,27 +336,32 @@ export default function FaqClient({
                                       aria-expanded={open}
                                       aria-controls={panelId}
                                       onClick={() => toggle(faq.id)}
-                                      className="group flex min-h-14 w-full items-start justify-between gap-5 py-5 text-start"
+                                      className="group flex min-h-14 w-full items-start justify-between gap-5 px-6 py-5 text-start"
                                     >
                                       <span
                                         className="font-display text-xl leading-snug text-foreground [.locale-fa_&]:leading-[1.75] sm:text-2xl"
                                       >
                                         {faq.question}
                                       </span>
+                                      {/* The system's round sign chip: the
+                                          plus loses its vertical stroke to
+                                          become a minus, so open and closed
+                                          are one shape rather than two icons
+                                          swapping places. */}
                                       <span
-                                        className="relative mt-1.5 size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
+                                        className="relative mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-background text-primary transition-colors group-hover:bg-accent"
                                         aria-hidden="true"
                                       >
-                                        <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-current" />
+                                        <span className="absolute inset-x-0 mx-auto h-px w-3.5 bg-current" />
                                         <span
                                           data-open={open ? "" : undefined}
-                                          className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-current motion-safe:transition-transform data-[open]:scale-y-0"
+                                          className="absolute inset-y-0 my-auto h-3.5 w-px bg-current motion-safe:transition-transform data-[open]:scale-y-0"
                                         />
                                       </span>
                                     </button>
                                   </h3>
                                 ) : (
-                                  <div className="py-5">
+                                  <div className="px-6 py-5">
                                     <h3 className="font-display text-xl leading-snug text-foreground [.locale-fa_&]:leading-[1.75] sm:text-2xl">
                                       {faq.question}
                                     </h3>
@@ -378,7 +388,7 @@ export default function FaqClient({
                                   className="grid grid-rows-[0fr] motion-safe:transition-[grid-template-rows] motion-safe:duration-300 data-[open]:grid-rows-[1fr]"
                                 >
                                   <div className="overflow-hidden">
-                                    <p className="max-w-2xl pb-6 text-sm leading-7 text-muted-foreground">
+                                    <p className="max-w-2xl px-6 pb-6 text-sm leading-7 text-muted-foreground">
                                       {faq.answer}
                                     </p>
                                   </div>
@@ -397,29 +407,33 @@ export default function FaqClient({
         )}
       </section>
 
-      <section className="border-t border-storefront-brand-foreground/15 bg-storefront-brand text-storefront-brand-foreground">
-        <div className="store-container grid gap-8 py-12 sm:py-16 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-16">
-          <div className="max-w-3xl">
-            <p className="font-mono text-xs font-semibold uppercase tracking-[0.22em] text-storefront-brand-foreground/65">
-              {t("faq.closingEyebrow")}
-            </p>
-            <h2 className="font-display mt-4 text-3xl leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-              {t("faq.closingTitle")}
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-storefront-brand-foreground/75 sm:text-base">
-              {t("faq.closingDescription")}
-            </p>
+      {/* The closing offer, as a tinted panel inside the page rather than a
+          full-bleed ink band across it. The band was the page's darkest object
+          and sat directly above the ink footer, so the two merged into one
+          slab and the page's last word lost its edges. The sage tint is the
+          system's quiet call-to-action surface — the same one the newsletter
+          panel uses — so the two read as the same kind of invitation. */}
+      <section className="bg-background">
+        <div className="store-container store-section">
+          <div className="grid gap-8 rounded-[2.5rem] bg-sage-100 px-6 py-10 text-sage-900 sm:px-10 sm:py-12 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-16 lg:px-14">
+            <div className="max-w-2xl">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-sage-800 [.locale-fa_&]:tracking-normal">
+                {t("faq.closingEyebrow")}
+              </p>
+              <h2 className="store-section-title mt-4 text-sage-900">
+                {t("faq.closingTitle")}
+              </h2>
+              <p className="store-lede mt-4 max-w-[52ch] text-sm text-sage-800 sm:text-base">
+                {t("faq.closingDescription")}
+              </p>
+            </div>
+            <Button asChild size="lg" className="w-full gap-2 sm:w-auto">
+              <Link href="/contact">
+                {t("faq.contactForAnswer")}
+                <ArrowRight className="size-4 rtl:rotate-180" aria-hidden="true" />
+              </Link>
+            </Button>
           </div>
-          <Button
-            asChild
-            size="lg"
-            className="w-full gap-2 bg-storefront-brand-foreground text-storefront-brand hover:bg-storefront-brand-foreground/90 sm:w-auto"
-          >
-            <Link href="/contact">
-              {t("faq.contactForAnswer")}
-              <ArrowRight className="size-4 rtl:rotate-180" aria-hidden="true" />
-            </Link>
-          </Button>
         </div>
       </section>
     </PageShell>

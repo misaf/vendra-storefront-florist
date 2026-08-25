@@ -20,9 +20,12 @@ import { whatsappUrl } from "@/shared/lib/social-url";
  * number, its messaging account and its opening hours. Nothing is promised
  * about response times, because nothing in the store configuration says so.
  *
- * Set on the warm brand surface rather than the ink one. Ink is what the footer
- * is made of, and an ink band directly above it merged into a single dark block
- * three screens tall — the page's last word lost its edges and read as chrome.
+ * Set on the system's warm card surface — the same one the assurances band
+ * uses — so the two supporting bands on this page are made of the same
+ * material. It was previously `--storefront-brand-soft`, which is sand-800:
+ * an ink fill carrying `text-foreground`, so the heading measured 1.55:1
+ * against its own background and the hours line below it worse. Nothing on the
+ * page needs a third surface, and the one it was reaching for was unreadable.
  */
 export async function OrderHelp({ locale }: { locale: string }) {
   const t = await getTranslations({ locale });
@@ -32,16 +35,16 @@ export async function OrderHelp({ locale }: { locale: string }) {
   const whatsappNumber = social.whatsappPhone?.trim();
 
   return (
-    <section className="bg-storefront-brand-soft text-foreground">
+    <section className="bg-card text-card-foreground">
       <div className="store-container store-section grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
         <div className="max-w-2xl">
-          <h2 className="store-section-title text-foreground">
+          <h2 className="store-section-title text-card-foreground">
             {t("home.helpTitle")}
           </h2>
-          <p className="store-lede mt-4 text-base text-foreground/80">
+          <p className="store-lede mt-4 text-base text-muted-foreground">
             {t("home.helpBody")}
           </p>
-          <p className="mt-4 text-sm text-foreground/70">
+          <p className="mt-4 text-sm text-muted-foreground">
             {t("home.helpHours", {
               hours: formatBusinessHours(
                 contact.hoursOpen,
@@ -77,7 +80,7 @@ export async function OrderHelp({ locale }: { locale: string }) {
 
           <Link
             href="/contact"
-            className="inline-flex min-h-11 items-center justify-center rounded-sm text-sm font-bold text-foreground underline decoration-foreground/35 underline-offset-8 transition-colors hover:text-primary hover:decoration-primary sm:px-2"
+            className="inline-flex min-h-11 items-center justify-center rounded-sm text-sm font-bold text-card-foreground underline decoration-border underline-offset-8 transition-colors hover:text-primary hover:decoration-primary sm:px-2"
           >
             {t("home.helpContactLink")}
           </Link>

@@ -32,7 +32,7 @@ export function ProductImageFallback({
     >
       <span
         className={cn(
-          "flex items-center justify-center rounded-full bg-background/75 shadow-sm ring-1 ring-border",
+          "flex items-center justify-center rounded-full bg-background/75 shadow-card ring-1 ring-border",
           isLarge ? "size-16" : "size-11"
         )}
       >

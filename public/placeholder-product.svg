@@ -1,18 +1,18 @@
 <svg width="400" height="500" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">Product photography pending</title>
   <desc id="desc">A quiet botanical illustration used while product photography is unavailable.</desc>
-  <rect width="400" height="500" rx="30" fill="#ebe9dc"/>
-  <circle cx="200" cy="225" r="132" fill="#f6f3ea" fill-opacity="0.62"/>
+  <rect width="400" height="500" rx="30" fill="#dcd3c4"/>
+  <circle cx="200" cy="225" r="132" fill="#eee7db" fill-opacity="0.62"/>
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M199 310C195 249 202 199 209 150" stroke="#6f7d63" stroke-opacity="0.48" stroke-width="5"/>
-    <path d="M202 246C162 214 130 222 111 258C150 278 184 270 202 246Z" stroke="#6f7d63" stroke-opacity="0.58" stroke-width="7"/>
-    <path d="M204 230C244 197 279 207 296 244C255 263 223 255 204 230Z" stroke="#6f7d63" stroke-opacity="0.58" stroke-width="7"/>
-    <path d="M206 183C174 162 168 128 193 105C225 119 237 149 206 183Z" stroke="#a56f69" stroke-opacity="0.54" stroke-width="7"/>
-    <path d="M212 182C242 154 274 158 289 189C259 213 229 209 212 182Z" stroke="#a56f69" stroke-opacity="0.46" stroke-width="7"/>
-    <path d="M196 185C165 157 133 164 121 197C151 218 179 211 196 185Z" stroke="#a56f69" stroke-opacity="0.46" stroke-width="7"/>
-    <circle cx="204" cy="181" r="17" fill="#c98d7f" fill-opacity="0.28" stroke="#a56f69" stroke-opacity="0.4" stroke-width="5"/>
+    <path d="M199 310C195 249 202 199 209 150" stroke="#728157" stroke-opacity="0.48" stroke-width="5"/>
+    <path d="M202 246C162 214 130 222 111 258C150 278 184 270 202 246Z" stroke="#728157" stroke-opacity="0.58" stroke-width="7"/>
+    <path d="M204 230C244 197 279 207 296 244C255 263 223 255 204 230Z" stroke="#728157" stroke-opacity="0.58" stroke-width="7"/>
+    <path d="M206 183C174 162 168 128 193 105C225 119 237 149 206 183Z" stroke="#b2622d" stroke-opacity="0.54" stroke-width="7"/>
+    <path d="M212 182C242 154 274 158 289 189C259 213 229 209 212 182Z" stroke="#b2622d" stroke-opacity="0.46" stroke-width="7"/>
+    <path d="M196 185C165 157 133 164 121 197C151 218 179 211 196 185Z" stroke="#b2622d" stroke-opacity="0.46" stroke-width="7"/>
+    <circle cx="204" cy="181" r="17" fill="#d67f48" fill-opacity="0.28" stroke="#b2622d" stroke-opacity="0.4" stroke-width="5"/>
   </g>
-  <path d="M144 313H256L239 409C237 421 227 430 215 430H185C173 430 163 421 161 409L144 313Z" fill="#d4cbbb"/>
-  <path d="M156 334H244" stroke="#786f64" stroke-opacity="0.22" stroke-width="5" stroke-linecap="round"/>
-  <path d="M176 455H224" stroke="#3c4636" stroke-opacity="0.2" stroke-width="3" stroke-linecap="round"/>
+  <path d="M144 313H256L239 409C237 421 227 430 215 430H185C173 430 163 421 161 409L144 313Z" fill="#c0b6a5"/>
+  <path d="M156 334H244" stroke="#82796a" stroke-opacity="0.22" stroke-width="5" stroke-linecap="round"/>
+  <path d="M176 455H224" stroke="#2e2b25" stroke-opacity="0.2" stroke-width="3" stroke-linecap="round"/>
 </svg>

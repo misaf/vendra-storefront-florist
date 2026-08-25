@@ -34,7 +34,12 @@ const emptyMediaVariants = cva(
     variants: {
       variant: {
         default: "bg-transparent",
-        icon: "bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg:not([class*='size-'])]:size-6",
+        icon: "bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-full [&_svg:not([class*='size-'])]:size-6",
+        /* The Organic system draws an empty state as a soft petal washed in
+           sage→clay, not as an icon in a grey disc. Decorative only — the
+           EmptyTitle beside it is what carries the meaning, so call sites mark
+           it aria-hidden and pass no child. */
+        blob: "organic-blob size-32 bg-[linear-gradient(150deg,var(--sage-200),var(--clay-300))]",
       },
     },
     defaultVariants: {

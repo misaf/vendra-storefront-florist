@@ -15,8 +15,17 @@ const badgeVariants = cva(
           "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
         destructive:
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        /* The Organic system's `tag-outline`: the accent drawn as a ring
+           rather than a fill, for the one tag in a row that is *selected*. */
         outline:
-          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+          "border-primary text-primary [a&]:hover:bg-accent",
+        /* The three tints. Each pairs a ramp's 100 with its 800, which on a
+           shared lightness scale lands every one of them at ~9:1 — so a clay
+           tag and a sage tag beside it read at the same weight instead of one
+           shouting over the other. */
+        clay: "border-transparent bg-clay-100 text-clay-800 [a&]:hover:bg-clay-200",
+        sage: "border-transparent bg-sage-100 text-sage-800 [a&]:hover:bg-sage-200",
+        sand: "border-transparent bg-sand-100 text-sand-800 [a&]:hover:bg-sand-200",
       },
     },
     defaultVariants: {

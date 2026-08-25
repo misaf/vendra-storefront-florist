@@ -4,107 +4,199 @@ import { Link } from "@/shared/i18n/navigation";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { useStorefrontConfig } from "@/shared/config/storefront-context";
 import { useStorefrontName } from "@/shared/config/storefront-context";
-import { Newsletter } from "@/modules/newsletter";
-import { ArrowUpRight, Mail, Phone } from "lucide-react";
+import { Clock, Mail, MapPin } from "lucide-react";
+import {
+  InstagramIcon,
+  TelegramIcon,
+  WhatsAppIcon,
+} from "@/shared/components/ui/social-icons";
 import { useBrandIcon } from "@/shared/config/storefront-context";
 import {
   instagramProfileUrl,
   telegramProfileUrl,
   whatsappUrl,
 } from "@/shared/lib/social-url";
+import { formatBusinessHours } from "@/shared/lib/hours";
 import { telHref } from "@/shared/lib/utils";
 
 const footerLink =
-  "store-focus-invert -my-2 inline-flex min-h-11 items-center gap-1.5 rounded-sm py-2 text-sm text-white/80 transition-colors hover:text-white";
+  "store-focus-invert -my-1.5 inline-flex min-h-11 items-center rounded-sm py-1.5 text-sm text-white/75 transition-colors hover:text-white";
 
-export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) {
+/**
+ * The ink foot of every page, in the design system's two-part composition: the
+ * shop on one side, the site's map on the other.
+ *
+ * The left column is the shop as a person would give it — mark, name, a line
+ * about what it is, then the phone set large enough to dial from across the
+ * room, then where and when, then the accounts it answers on. The right column
+ * is a plain set of link lists that reflows on its own measure.
+ *
+ * It replaces a footer that restated the *home page's* `h1` at up to 3rem
+ * inside the foot of every route — a second masthead, in the display face,
+ * below the content it was meant to close. The small line here is the shop
+ * describing itself, which is what a footer is for; the headline belongs to
+ * the page that earns it.
+ */
+export function Footer() {
   const BrandIcon = useBrandIcon();
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const storefront = useStorefrontConfig();
   const storeName = useStorefrontName();
+  const { contact, social, address } = storefront;
+
   const socialLinks = [
-    ["Instagram", instagramProfileUrl(storefront.social.instagramUsername)],
-    ["Telegram", telegramProfileUrl(storefront.social.telegramUsername)],
-    ["WhatsApp", whatsappUrl(storefront.social.whatsappPhone)],
+    ["Instagram", instagramProfileUrl(social.instagramUsername), InstagramIcon],
+    ["Telegram", telegramProfileUrl(social.telegramUsername), TelegramIcon],
+    ["WhatsApp", whatsappUrl(social.whatsappPhone), WhatsAppIcon],
   ] as const;
+
+  // Every row here is store configuration; a shop that has not set one simply
+  // does not draw it, rather than drawing an empty line with an icon beside it.
+  const addressLine = [address.locality, address.country]
+    .filter(Boolean)
+    .join(", ");
+  const detailRows = [
+    addressLine ? { Icon: MapPin, value: addressLine } : null,
+    contact.hoursOpen && contact.hoursClose
+      ? {
+          Icon: Clock,
+          value: formatBusinessHours(
+            contact.hoursOpen,
+            contact.hoursClose,
+            locale
+          ),
+        }
+      : null,
+  ].filter((row): row is { Icon: typeof MapPin; value: string } => row !== null);
+
+  const columns = [
+    {
+      title: t("footer.shop"),
+      links: [
+        { href: "/products" as const, label: t("footer.allProducts") },
+        { href: "/faq" as const, label: t("footer.faq") },
+      ],
+    },
+    {
+      title: t("footer.company"),
+      links: [
+        { href: "/about" as const, label: t("common.about") },
+        { href: "/blog" as const, label: t("blog.title") },
+        { href: "/contact" as const, label: t("common.contact") },
+      ],
+    },
+  ];
 
   return (
     <footer className="bg-storefront-brand text-white">
-      <div className="store-container">
-        {showNewsletter ? (
-          <div className="store-section grid gap-8 border-b border-white/15 lg:grid-cols-[1.2fr_minmax(22rem,0.8fr)] lg:items-end">
-            <div className="max-w-2xl">
-              <p className="store-eyebrow boho-hero-eyebrow mb-4">{t("blog.eyebrow")}</p>
-              <h2 className="font-display text-3xl leading-tight text-white sm:text-4xl lg:text-5xl [.locale-fa_&]:leading-[1.5]">
-                {t("newsletter.title")}
-              </h2>
-              <p className="store-lede mt-3 max-w-xl text-sm text-white/70 sm:text-base">
-                {t("newsletter.description")}
-              </p>
+      <div className="store-container grid gap-10 pb-10 pt-12 sm:pt-[clamp(3.375rem,7vw,5.625rem)] lg:grid-cols-[minmax(17rem,0.85fr)_minmax(18.75rem,2fr)] lg:gap-[clamp(2rem,4vw,3.25rem)]">
+        <div>
+          <Link
+            href="/"
+            className="store-focus-invert inline-flex items-center gap-3 rounded-sm"
+          >
+            <span className="organic-mark flex size-8 items-center justify-center">
+              <BrandIcon className="size-4" />
+            </span>
+            <span className="font-display text-xl text-white">{storeName}</span>
+          </Link>
+
+          <p className="mt-4 max-w-[32ch] text-sm leading-relaxed text-white/70">
+            {t("common.storeTagline")}
+          </p>
+
+          {/* The one line in the foot set in the display face: a florist is
+              still a shop people ring up. */}
+          <a
+            href={telHref(contact.mobilePhone)}
+            dir="ltr"
+            className="store-focus-invert font-display mt-5 inline-block rounded-sm text-xl text-white transition-colors hover:text-clay-800"
+          >
+            <span className="sr-only">{t("common.callStore")}</span>
+            {contact.mobilePhone}
+          </a>
+
+          {detailRows.length > 0 || contact.email ? (
+            <div className="mt-5 flex flex-col gap-2.5">
+              {detailRows.map(({ Icon, value }) => (
+                <p key={value} className="flex items-start gap-3">
+                  <Icon
+                    className="mt-0.5 size-3.5 shrink-0 text-white/55"
+                    aria-hidden="true"
+                  />
+                  <span className="text-sm leading-relaxed text-white/72">
+                    {value}
+                  </span>
+                </p>
+              ))}
+              {contact.email ? (
+                <a
+                  href={`mailto:${contact.email}`}
+                  className="store-focus-invert -my-1 flex min-h-11 items-center gap-3 rounded-sm py-1"
+                >
+                  <Mail
+                    className="size-3.5 shrink-0 text-white/55"
+                    aria-hidden="true"
+                  />
+                  <span className="store-dynamic-text text-sm text-white/72 transition-colors hover:text-white">
+                    {contact.email}
+                  </span>
+                </a>
+              ) : null}
             </div>
-            <Newsletter variant="compact" />
-          </div>
-        ) : null}
+          ) : null}
 
-        <div className="store-section grid gap-12 lg:grid-cols-[1.1fr_1.4fr] lg:gap-20">
-          <div className="max-w-xl">
-            <Link href="/" className="store-focus-invert inline-flex items-center gap-3 rounded-sm">
-              <span className="flex size-11 items-center justify-center rounded-b-xl rounded-t-full bg-white text-primary"><BrandIcon className="size-5" /></span>
-              <span className="font-display text-2xl text-white sm:text-3xl">{storeName}</span>
-            </Link>
-            <p className="font-display mt-7 max-w-lg text-[clamp(1.8rem,3.4vw,3rem)] leading-[1.12] text-white/92 [.locale-fa_&]:leading-[1.55]">
-              {t("home.title")}
-            </p>
-            <p className="mt-5 max-w-md text-sm leading-7 text-white/68">{t("home.subtitle")}</p>
-
-            <div className="mt-7 flex flex-col items-start gap-1">
-              <a href={telHref(storefront.contact.mobilePhone)} dir="ltr" className={footerLink}>
-                <Phone className="size-3.5" aria-hidden="true" />
-                <span className="sr-only">{t("common.callStore")}</span>
-                {storefront.contact.mobilePhone}
+          <div className="mt-6 flex gap-2.5">
+            {socialLinks.map(([label, href, Icon]) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={label}
+                className="store-focus-invert flex size-11 items-center justify-center rounded-full bg-white/12 text-white transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                <Icon className="size-4" aria-hidden="true" />
               </a>
-              <a href={`mailto:${storefront.contact.email}`} className={footerLink}>
-                <Mail className="size-3.5" aria-hidden="true" />
-                {storefront.contact.email}
-              </a>
-            </div>
+            ))}
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-10 border-t border-white/15 pt-8 sm:grid-cols-3 lg:border-s lg:border-t-0 lg:ps-12 lg:pt-1">
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white/75 [.locale-fa_&]:tracking-normal">{t("footer.shop")}</h3>
-              <ul className="mt-5 space-y-3">
-                <li><Link href="/products" className={footerLink}>{t("footer.allProducts")}</Link></li>
-                <li><Link href="/faq" className={footerLink}>{t("footer.faq")}</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white/75 [.locale-fa_&]:tracking-normal">{t("footer.company")}</h3>
-              <ul className="mt-5 space-y-3">
-                <li><Link href="/about" className={footerLink}>{t("common.about")}</Link></li>
-                <li><Link href="/blog" className={footerLink}>{t("blog.title")}</Link></li>
-                <li><Link href="/contact" className={footerLink}>{t("common.contact")}</Link></li>
-              </ul>
-            </div>
-            <div className="col-span-2 sm:col-span-1">
-              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white/75 [.locale-fa_&]:tracking-normal">{t("footer.connect")}</h3>
-              <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-3 sm:block sm:space-y-3">
-                {socialLinks.map(([label, href]) => (
-                  <li key={label}>
-                    <a href={href} target="_blank" rel="noreferrer" className={footerLink}>{label}<ArrowUpRight className="size-3.5 rtl:rotate-180" /></a>
+        {/* A wrapping row, not an `auto-fit` grid: with two lists the grid
+            stretched each into half of a very wide track and left ~25rem of
+            nothing between "Shop" and "Company". Flex sizes each column to its
+            own content and wraps when the row runs out — which also lets a
+            Persian heading wider than its English counterpart reflow instead
+            of clipping. */}
+        <nav
+          aria-label={t("footer.company")}
+          className="flex flex-wrap content-start gap-x-16 gap-y-8"
+        >
+          {columns.map((column) => (
+            <div key={column.title}>
+              <h3 className="text-xs font-bold uppercase tracking-[0.09em] text-white/60 [.locale-fa_&]:tracking-normal">
+                {column.title}
+              </h3>
+              <ul className="mt-3 flex flex-col items-start">
+                {column.links.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className={footerLink}>
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
-          </div>
-        </div>
+          ))}
+        </nav>
+      </div>
 
-        <div className="flex flex-col items-start justify-between gap-5 border-t border-white/15 py-6 text-xs text-white/60 sm:flex-row sm:items-center">
-          <p>{t("footer.copyright")}</p>
-          <Link href="/contact" className="store-focus-invert rounded-sm underline decoration-white/25 underline-offset-4 hover:decoration-white/70">
-            {t("common.contact")}
-          </Link>
-        </div>
+      {/* The design closes with a rights line and a maker's credit. There is
+          no maker to credit here, and repeating the shop's name opposite a
+          copyright notice that already carries it says nothing twice — so the
+          bar holds the one line it has. */}
+      <div className="store-container border-t border-white/18 py-6 text-xs text-white/60">
+        <p>{t("footer.copyright")}</p>
       </div>
     </footer>
   );

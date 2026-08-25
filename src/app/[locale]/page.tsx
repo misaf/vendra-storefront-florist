@@ -11,6 +11,7 @@ import {
   loadInitialHomeCatalogue,
 } from "@/modules/home";
 import { BlogSection } from "@/modules/blog";
+import { Newsletter } from "@/modules/newsletter";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { buildMetadata } from "@/shared/seo";
 
@@ -39,13 +40,20 @@ export async function generateMetadata({
  * The order is one journey, not a stack of blocks:
  *
  *   Hero            what this shop sells, and one way in
- *   ServicePromises    a thin rule: why buy here, immediately after the promise
  *   CategoryDiscovery  every collection it sells, so "what for?" is answerable
  *   FreshArrivals      the one product surface — newest, buyable, today
+ *   ServicePromises    how the shop works, on its own band
  *   BrandStory         the editorial turn, in its own words
  *   BlogSection        what the shop knows, secondary to what it sells
  *   OrderHelp          the second conversion path, for the order that needs a
  *                      conversation rather than a cart
+ *   Newsletter         the standing invitation, for the visitor who is not
+ *                      buying today
+ *
+ * Commerce leads and the assurances follow it, which is the source design's
+ * order: a shopper who has just been told what the shop sells is ready to be
+ * told how buying works, whereas the same strip placed directly under the hero
+ * interrupts the one journey the page exists to start.
  */
 export default async function HomePage({
   params,
@@ -67,15 +75,16 @@ export default async function HomePage({
         inStockTotal={catalogue.inStockTotal}
         collectionCount={catalogue.categories.length}
       />
-      <ServicePromises locale={locale} />
       <CategoryDiscovery categories={catalogue.categories} locale={locale} />
       <FreshArrivals products={catalogue.arrivals} />
+      <ServicePromises locale={locale} />
       <BrandStory locale={locale} />
       <BlogSection
         allPosts={blog.initialBlogPosts}
         category={blog.initialBlogCategory}
       />
       <OrderHelp locale={locale} />
+      <Newsletter />
     </PageShell>
   );
 }

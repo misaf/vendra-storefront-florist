@@ -77,7 +77,7 @@ export function GlobalSearch({ full = false }: { full?: boolean }) {
       >
         <Search className="h-4 w-4" />
         <span className="min-w-0 flex-1 truncate whitespace-nowrap text-start">{t("search.placeholder")}</span>
-        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded-sm border border-border bg-card px-1.5 font-mono text-xs font-medium xl:flex">
+        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded-sm border border-border bg-card px-1.5 text-xs font-medium xl:flex">
           <span className="text-xs">{isMac ? "⌘" : "Ctrl"}</span>
           {isMac ? "K" : "+K"}
         </kbd>

@@ -29,14 +29,11 @@ import {
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle2,
-  Clock,
   MapPin,
   Hash,
   Heart,
   MessageCircle,
   Minus,
-  Package,
   Plus,
   ShoppingBag,
   PackageCheck,
@@ -45,7 +42,6 @@ import {
   Truck,
   Sparkles,
   Palette,
-  XCircle,
 } from "lucide-react";
 import { useCart } from "@/modules/cart";
 import { useFavorites } from "@/modules/account";
@@ -111,6 +107,7 @@ export default function ProductDetailClient({
   const hasDiscount = isPurchasable && originalPrice > price;
   const discountPercent =
     hasDiscount && product ? getDiscountPercent(product) : 0;
+  const isLowQuantity = product ? isLowStock(product) : false;
   // Stock tracking is optional in the catalogue: a positive count is a real
   // ceiling, anything else means "not tracked" and must not cap the stepper.
   const maxQuantity =
@@ -263,7 +260,7 @@ export default function ProductDetailClient({
 
 	              <div className="grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.78fr)] lg:items-start lg:gap-14 xl:gap-20">
 	                <div className="min-w-0">
-	                  <div className="relative aspect-square overflow-hidden rounded-b-[2rem] rounded-t-[min(12rem,34%)] bg-secondary shadow-card sm:aspect-[5/6]">
+	                  <div className="relative aspect-square overflow-hidden rounded-[2.25rem] bg-secondary shadow-panel">
 	                    {hasImageError ? (
                         <ProductImageFallback
                           size="lg"
@@ -305,7 +302,7 @@ export default function ProductDetailClient({
 	                              setSelectedImage(image);
 	                              setHasImageError(false);
 	                            }}
-	                            className={`relative aspect-square size-16 shrink-0 snap-start overflow-hidden rounded-b-lg rounded-t-[2rem] border-2 bg-storefront-brand-soft transition-colors dark:bg-storefront-brand-soft ${
+	                            className={`relative aspect-square size-16 shrink-0 snap-start overflow-hidden rounded-2xl border-2 bg-secondary transition-colors ${
 	                              isActive
 	                                ? "border-primary"
 	                                : "border-transparent hover:border-primary/40"
@@ -369,27 +366,33 @@ export default function ProductDetailClient({
                         </p>
                       )}
 
-                      <p
-                        className={cn(
-                          "inline-flex items-center gap-2 text-sm font-semibold",
-                          inStock ? "text-leaf" : "text-muted-foreground"
-                        )}
-                      >
-                        {/* The icon has to agree with the words: an X beside
-                            "back in stock soon" reads as a flat refusal. */}
-                        {inStock ? (
-                          <CheckCircle2 className="size-4 shrink-0" aria-hidden="true" />
-                        ) : product.availableSoon ? (
-                          <Clock className="size-4 shrink-0" aria-hidden="true" />
-                        ) : (
-                          <XCircle className="size-4 shrink-0" aria-hidden="true" />
-                        )}
+                      {/* The same dot the catalogue cards carry, at the same
+                          three colours, so availability reads as one fact
+                          stated the same way wherever a shopper meets it. It
+                          replaces a check/clock/cross icon set that only this
+                          page used — three glyphs to say what the words beside
+                          them already said, in a vocabulary no other surface
+                          shared. Colour never carries it alone. */}
+                      <p className="inline-flex items-center gap-2.5 text-sm text-muted-foreground">
+                        <span
+                          className={cn(
+                            "size-2 shrink-0 rounded-full",
+                            !inStock
+                              ? "bg-sand-400"
+                              : isLowQuantity
+                                ? "bg-rose"
+                                : "bg-leaf"
+                          )}
+                          aria-hidden="true"
+                        />
                         <span className="sr-only">{t("common.availability")}: </span>
-                        {inStock
-                          ? t("common.inStock")
-                          : product.availableSoon
+                        {!inStock
+                          ? product.availableSoon
                             ? t("products.backSoon")
-                            : t("products.outOfStock")}
+                            : t("products.outOfStock")
+                          : isLowQuantity && product.quantity != null
+                            ? formatQuantity(product.quantity)
+                            : t("common.inStock")}
                       </p>
                     </div>
 
@@ -401,17 +404,10 @@ export default function ProductDetailClient({
                       />
                     ) : null}
 
-	                    {isLowStock(product) && product.quantity != null ? (
-	                      <p className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
-	                        <Package className="size-4" />
-	                        {formatQuantity(product.quantity)}
-	                      </p>
-	                    ) : null}
-
                     {/* Buy block. On phones it pins to the bottom of the viewport
                         so the action stays reachable while the description is
                         read; from sm up it sits in the normal flow. */}
-                    <div className="sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 -mx-2 flex flex-col gap-3 rounded-xl border border-border bg-background/95 p-3 shadow-panel backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+                    <div className="sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 -mx-2 flex flex-col gap-3 rounded-3xl border border-border bg-background/95 p-3 shadow-panel backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
                       {isPurchasable ? (
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                           <div className="flex items-center gap-1 self-start rounded-full border border-border bg-card p-1">
@@ -630,7 +626,7 @@ export default function ProductDetailClient({
                     })
                   : product.name}
               </DialogDescription>
-              <div className="relative h-[82vh] max-h-[760px] w-full overflow-hidden rounded-md bg-secondary">
+              <div className="relative h-[82vh] max-h-[760px] w-full overflow-hidden rounded-3xl bg-secondary">
                 <ThemedProductImage
                   src={detailImage}
                   alt={product.name}
@@ -647,7 +643,7 @@ export default function ProductDetailClient({
                       size="icon"
                       aria-label={t("common.previousSlide")}
                       onClick={() => stepGallery(-1)}
-                      className="absolute start-2 top-1/2 -translate-y-1/2 rounded-full bg-card/95 shadow-md hover:bg-card"
+                      className="absolute start-2 top-1/2 -translate-y-1/2 rounded-full bg-card/95 shadow-card hover:bg-card"
                     >
                       {isRTL ? <ArrowRight className="size-4" /> : <ArrowLeft className="size-4" />}
                     </Button>
@@ -657,7 +653,7 @@ export default function ProductDetailClient({
                       size="icon"
                       aria-label={t("common.nextSlide")}
                       onClick={() => stepGallery(1)}
-                      className="absolute end-2 top-1/2 -translate-y-1/2 rounded-full bg-card/95 shadow-md hover:bg-card"
+                      className="absolute end-2 top-1/2 -translate-y-1/2 rounded-full bg-card/95 shadow-card hover:bg-card"
                     >
                       {isRTL ? <ArrowLeft className="size-4" /> : <ArrowRight className="size-4" />}
                     </Button>
@@ -726,7 +722,7 @@ function RelatedProductsSkeleton({
             key={index}
             className="flex w-[74%] shrink-0 flex-col min-[480px]:w-1/2 sm:w-1/3 lg:w-1/4"
           >
-            <Skeleton className="aspect-[4/5] w-full rounded-xl" />
+            <Skeleton className="aspect-square w-full rounded-[2.25rem]" />
             <Skeleton className="mt-3 h-4 w-3/4" />
             <Skeleton className="mt-2 h-5 w-1/2" />
           </div>
@@ -789,7 +785,7 @@ function RelatedProductsContent({
         ))}
       </CarouselContent>
       <CarouselPrevious
-        className={`z-10 bg-card/95 shadow-md hover:bg-card ${
+        className={`z-10 bg-card/95 shadow-card hover:bg-card ${
           isRTL ? "right-2 left-auto md:-right-4" : "left-2 right-auto md:-left-4"
         }`}
       >
@@ -797,7 +793,7 @@ function RelatedProductsContent({
         <span className="sr-only">{t("common.previousSlide")}</span>
       </CarouselPrevious>
       <CarouselNext
-        className={`z-10 bg-card/95 shadow-md hover:bg-card ${
+        className={`z-10 bg-card/95 shadow-card hover:bg-card ${
           isRTL ? "left-2 right-auto md:-left-4" : "right-2 left-auto md:-right-4"
         }`}
       >

@@ -13,14 +13,12 @@ import { cn } from "@/shared/lib/utils";
 interface PageShellProps {
   children: ReactNode;
   showFooter?: boolean;
-  showFooterNewsletter?: boolean;
   className?: string;
 }
 
 export function PageShell({
   children,
   showFooter = true,
-  showFooterNewsletter = true,
   className,
 }: PageShellProps) {
   return (
@@ -30,7 +28,7 @@ export function PageShell({
       <main id="main-content" tabIndex={-1} className="store-scroll-anchor focus:outline-none">
         {children}
       </main>
-      {showFooter ? <Footer showNewsletter={showFooterNewsletter} /> : null}
+      {showFooter ? <Footer /> : null}
     </div>
   );
 }

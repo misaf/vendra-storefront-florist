@@ -29,8 +29,12 @@ export default function GlobalError({
           justifyContent: "center",
           fontFamily:
             "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
-          background: "#f8f4e9",
-          color: "#173c30",
+          // This boundary renders its own document outside the locale layout,
+          // so `globals.css` never loads and no token resolves. The Organic
+          // palette is restated inline: page ground and ink from `--background`
+          // / `--foreground`, and it tracks them by hand.
+          background: "#f5ead8",
+          color: "#201e1d",
           padding: "1.5rem",
         }}
       >
@@ -38,17 +42,19 @@ export default function GlobalError({
           <h1 style={{ fontSize: "1.5rem", fontWeight: 600, margin: "0 0 0.75rem" }}>
             Something went wrong
           </h1>
-          <p style={{ margin: "0 0 1.5rem", lineHeight: 1.6, color: "#6b6259" }}>
+          <p style={{ margin: "0 0 1.5rem", lineHeight: 1.6, color: "#645c50" }}>
             An unexpected error occurred. Please try again.
           </p>
           <button
             onClick={() => reset()}
             style={{
               cursor: "pointer",
-              borderRadius: "0.35rem",
+              // `rounded-full` and clay-700 on cream (5.72:1), matching the
+              // button primitive this page cannot import.
+              borderRadius: "999px",
               border: "none",
-              background: "#173c30",
-              color: "#f8f4e9",
+              background: "#8c491a",
+              color: "#f5ead8",
               padding: "0.625rem 1.5rem",
               fontSize: "0.875rem",
               fontWeight: 600,

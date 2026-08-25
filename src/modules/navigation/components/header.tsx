@@ -117,13 +117,13 @@ export function Header({ showNav = true }: HeaderProps) {
         </div>
       </div>
 
-      <header className={cn("sticky top-0 z-50 border-b border-border/70 bg-background/92 backdrop-blur-xl", localeClass)}>
+      <header className={cn("sticky top-0 z-50 border-b border-border bg-background/88 backdrop-blur-xl", localeClass)}>
         <div className="store-container flex h-16 items-center gap-2 lg:h-[4.5rem] lg:gap-4">
           <Link
             href="/"
             className="group flex min-w-0 items-center gap-2.5 rounded-sm sm:gap-3"
           >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-b-lg rounded-t-full border border-primary/15 bg-primary text-primary-foreground transition-transform duration-300 group-hover:-translate-y-0.5">
+            <span className="organic-mark flex size-10 shrink-0 items-center justify-center transition-transform duration-300 group-hover:-translate-y-0.5">
               <BrandIcon className="size-5" />
             </span>
             <span className="min-w-0">

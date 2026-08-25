@@ -31,7 +31,7 @@ type NewsletterFormValues = z.infer<ReturnType<typeof createNewsletterSchema>>;
  * meaningful share of the bundle, and this form sits below the fold on every
  * page that carries it.
  */
-export default function NewsletterForm({ compact = false }: { compact?: boolean }) {
+export default function NewsletterForm() {
   const { t } = useTranslations();
   const storefront = useStorefrontConfig();
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -47,25 +47,15 @@ export default function NewsletterForm({ compact = false }: { compact?: boolean 
 
   useEffect(() => () => clearTimeout(idleTimer.current), []);
 
-  const styles = compact
-    ? {
-        form: "flex gap-2",
-        input: "min-w-0 border-border bg-card/80",
-        buttonSize: "default" as const,
-        button: "rounded-sm",
-        alert: "mt-2",
-        successAlert:
-          "mt-2 border-primary/30 bg-storefront-brand-soft text-primary dark:bg-storefront-brand-soft dark:text-primary",
-      }
-    : {
-        form: "flex flex-col gap-3 sm:flex-row",
-        input:
-          "h-11 rounded-sm border-border bg-card px-5 text-card-foreground placeholder:text-muted-foreground focus:bg-card",
-        buttonSize: "lg" as const,
-        button: "gap-2 whitespace-nowrap rounded-sm",
-        alert: "mt-4",
-        successAlert: "mt-4 border-border bg-secondary text-foreground",
-      };
+  const styles = {
+    form: "flex flex-col gap-3 sm:flex-row",
+    input:
+      "h-11 rounded-sm border-border bg-card px-5 text-card-foreground placeholder:text-muted-foreground focus:bg-card",
+    buttonSize: "lg" as const,
+    button: "gap-2 whitespace-nowrap rounded-sm",
+    alert: "mt-4",
+    successAlert: "mt-4 border-border bg-secondary text-foreground",
+  };
 
   const onSubmit = ({ email }: NewsletterFormValues) => {
     setError(null);
@@ -90,15 +80,13 @@ export default function NewsletterForm({ compact = false }: { compact?: boolean 
   const buttonContent = isSubmitting ? (
     <>
       <Loader2 className="h-4 w-4 animate-spin" />
-      {!compact && t("newsletter.subscribing")}
+      {t("newsletter.subscribing")}
     </>
   ) : isSubmitted ? (
     <>
       <CheckCircle2 className="h-4 w-4" />
-      {!compact && t("newsletter.subscribed")}
+      {t("newsletter.subscribed")}
     </>
-  ) : compact ? (
-    t("newsletter.subscribe")
   ) : (
     <>
       <Send className="h-4 w-4" />

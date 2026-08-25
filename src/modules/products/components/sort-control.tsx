@@ -23,17 +23,14 @@ interface SortControlProps<T extends string> {
 }
 
 /**
- * The catalogue's sort control, in the two shapes the two viewports want.
+ * The catalogue's sort control: a disclosure that names the order in force and
+ * reveals the others.
  *
- * Every option is a real link in both shapes, so an order stays a shareable
- * address and `aria-current` still marks the one in force. Only one shape is in
- * the accessibility tree at a time: the other is `display: none`, which removes
- * it from the tree entirely, so nothing is announced twice.
- *
- * The narrow shape is a disclosure — a button that reveals a list of links —
- * and deliberately not an ARIA menu, for the same reason `CategoryMenu` is not:
- * `role="menu"` describes an arrow-key-driven application widget that Tab exits,
- * which is the wrong contract for a short list of destinations.
+ * Every option is a real link, so an order stays a shareable address and
+ * `aria-current` marks the one in force. It is deliberately not an ARIA menu,
+ * for the same reason `CategoryMenu` is not: `role="menu"` describes an
+ * arrow-key-driven application widget that Tab exits, which is the wrong
+ * contract for a short list of destinations.
  */
 export function SortControl<T extends string>({
   options,
@@ -102,41 +99,14 @@ export function SortControl<T extends string>({
 
   return (
     <>
-      {/* Wide: every order visible and one tap away. */}
-      <div
-        role="group"
-        aria-label={t("products.sortLabel")}
-        className="hidden min-w-0 flex-wrap items-center gap-2.5 lg:flex"
-      >
-        <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted-foreground">
-          <ArrowUpDown className="size-4" aria-hidden="true" />
-          {t("products.sortBy")}
-        </span>
-        {options.map((option) => {
-          const isActive = option.value === active;
-
-          return (
-            <Link
-              key={option.value}
-              href={hrefFor(option.value)}
-              scroll={false}
-              aria-current={isActive ? "true" : undefined}
-              className={cn(
-                "inline-flex min-h-11 shrink-0 items-center rounded-full border px-3 text-xs font-semibold transition-colors",
-                isActive
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"
-              )}
-            >
-              {t(option.labelKey)}
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Narrow: one control instead of a second horizontal scroller competing
-          with the category row directly above it. */}
-      <div className="relative lg:hidden">
+      {/* One compact control at every width. It used to split into a row of
+          four pills above `lg` and this disclosure below it, which put the
+          catalogue's least important control at its widest exactly where the
+          results header has the most competing for the line — the design
+          system gives sort a single small control pushed to the end of that
+          row instead. Every option in the panel is still a real link, so an
+          order stays a shareable address. */}
+      <div className="relative">
         <button
           ref={triggerRef}
           type="button"
@@ -163,7 +133,7 @@ export function SortControl<T extends string>({
             ref={panelRef}
             id={panelId}
             onBlur={handleFocusOut}
-            className="absolute start-0 top-[calc(100%+0.5rem)] z-20 w-56 rounded-xl border border-border bg-card p-1.5 text-card-foreground shadow-panel animate-in fade-in-0 slide-in-from-top-1 duration-150"
+            className="absolute start-0 top-[calc(100%+0.5rem)] z-20 w-56 rounded-2xl border border-border bg-card p-1.5 text-card-foreground shadow-panel animate-in fade-in-0 slide-in-from-top-1 duration-150"
           >
             <ul aria-label={t("products.sortLabel")}>
               {options.map((option) => {
@@ -177,7 +147,7 @@ export function SortControl<T extends string>({
                       aria-current={isActive ? "true" : undefined}
                       onClick={() => setOpen(false)}
                       className={cn(
-                        "flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 text-sm transition-colors hover:bg-secondary",
+                        "flex min-h-11 items-center justify-between gap-3 rounded-full px-3 text-sm transition-colors hover:bg-secondary",
                         isActive ? "font-semibold text-primary" : "text-foreground/80"
                       )}
                     >

@@ -12,14 +12,17 @@ interface SectionHeaderProps {
    * section's content need `h3` so the document outline stays walkable.
    */
   as?: "h2" | "h3";
-  /** Inverts the copy for the ink-coloured brand bands. */
-  tone?: "default" | "inverted";
   className?: string;
 }
 
 /**
  * The header of a content section: eyebrow, heading, optional lede and one
  * end-aligned action. Companion to `PageHeader`, which opens a page.
+ *
+ * It used to carry an `inverted` tone for reversing the copy out of an ink
+ * band. No section is set on ink any more — the assurances band, the ordering
+ * band and the newsletter panel all sit on the system's warm surfaces — so the
+ * variant had no callers and three `cn()` branches maintaining it.
  */
 export function SectionHeader({
   eyebrow,
@@ -27,11 +30,8 @@ export function SectionHeader({
   description,
   action,
   as: Heading = "h2",
-  tone = "default",
   className,
 }: SectionHeaderProps) {
-  const inverted = tone === "inverted";
-
   return (
     <div
       className={cn(
@@ -40,33 +40,12 @@ export function SectionHeader({
       )}
     >
       <div className="min-w-0 max-w-2xl">
-        {eyebrow ? (
-          <p
-            className={cn(
-              "store-eyebrow mb-3",
-              inverted && "text-storefront-brand-foreground/70"
-            )}
-          >
-            {eyebrow}
-          </p>
-        ) : null}
-        <Heading
-          className={cn(
-            "store-section-title",
-            inverted ? "text-storefront-brand-foreground" : "text-foreground"
-          )}
-        >
+        {eyebrow ? <p className="store-eyebrow mb-3">{eyebrow}</p> : null}
+        <Heading className="store-section-title text-foreground">
           {title}
         </Heading>
         {description ? (
-          <p
-            className={cn(
-              "store-lede mt-3 text-sm sm:text-base",
-              inverted
-                ? "text-storefront-brand-foreground/75"
-                : "text-muted-foreground"
-            )}
-          >
+          <p className="store-lede mt-3 text-sm text-muted-foreground sm:text-base">
             {description}
           </p>
         ) : null}

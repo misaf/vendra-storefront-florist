@@ -5,15 +5,19 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/shared/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-semibold transition-[background-color,color,border-color,box-shadow,transform] duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 active:translate-y-px aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm transition-[background-color,color,border-color,box-shadow,transform] duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 active:translate-y-px aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground shadow-none hover:bg-primary/92",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        /* The Organic system's secondary: a hairline drawn on the page
+           itself, filling only on hover. It used to carry `bg-card/70`, which
+           now that the card surface sits *darker* than the page would have
+           read as a filled button beside the filled primary. */
         outline:
-          "border border-border bg-card/70 shadow-none hover:border-primary/35 hover:bg-card hover:text-primary dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border border-border bg-transparent shadow-none hover:bg-foreground/8 active:bg-foreground/14",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:

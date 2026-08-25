@@ -75,14 +75,12 @@ export function CategoryTile({
   return (
     <Link
       href={{ pathname: "/products", query: { category: category.slug } }}
-      className="group flex h-full flex-col gap-3 rounded-2xl outline-offset-4"
+      className="group flex h-full flex-col gap-3 rounded-3xl outline-offset-4"
     >
       {/* Fixed aspect on a `fill` image reserves the row before media arrives. */}
       <div
         className={`relative ${aspect} w-full overflow-hidden bg-secondary ring-1 ring-border/70 transition-shadow duration-300 group-hover:shadow-card ${
-          shape === "arch"
-            ? "rounded-b-2xl rounded-t-[min(10rem,45%)]"
-            : "rounded-xl"
+          shape === "arch" ? "organic-arch" : "rounded-3xl"
         }`}
       >
         {src ? (

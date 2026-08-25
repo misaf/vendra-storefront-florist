@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Vazirmatn, Geist } from "next/font/google";
+import { Cairo, Caprasimo, Figtree, Rakkas } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -25,18 +25,39 @@ import {
   websiteSchema,
 } from "@/shared/seo";
 
-const geist = Geist({
-  variable: "--font-geist",
+// The Organic design system's four faces. Latin gets Figtree for text and
+// Caprasimo for display; Persian gets Cairo and Rakkas, so an fa page has the
+// same two-texture split a Latin one has rather than the body face at 700
+// standing in for a masthead.
+const figtree = Figtree({
+  variable: "--font-figtree",
   subsets: ["latin"],
+  // Only what the storefront actually sets: body, semibold labels, bold
+  // eyebrows. Every extra weight is another file on the critical path.
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const vazirmatn = Vazirmatn({
-  variable: "--font-vazirmatn",
+// Both display faces ship a single weight, which is why `.font-display` asks
+// for 400 — anything heavier is synthesised and smears the counters shut.
+const caprasimo = Caprasimo({
+  variable: "--font-caprasimo",
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+});
+
+const cairo = Cairo({
+  variable: "--font-cairo",
   subsets: ["arabic", "latin"],
-  // Only what the storefront actually sets. 800 was requested and never
-  // used — one extra font file per subset on the default locale's critical path.
   weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const rakkas = Rakkas({
+  variable: "--font-rakkas",
+  subsets: ["arabic", "latin"],
+  weight: ["400"],
   display: "swap",
 });
 
@@ -102,7 +123,7 @@ export default async function LocaleLayout({
       suppressHydrationWarning
       lang={locale}
       dir={direction}
-      className={`${vazirmatn.variable} ${geist.variable}`}
+      className={`${cairo.variable} ${rakkas.variable} ${figtree.variable} ${caprasimo.variable}`}
     >
       <body className={`font-sans antialiased ${localeClassName}`}>
         <JsonLd data={[organizationSchema(locale), websiteSchema(locale)]} />

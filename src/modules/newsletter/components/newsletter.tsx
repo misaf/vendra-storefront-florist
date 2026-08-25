@@ -1,9 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { Mail } from "lucide-react";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 
 const NewsletterForm = dynamic(() => import("./newsletter-form"), {
@@ -11,57 +9,36 @@ const NewsletterForm = dynamic(() => import("./newsletter-form"), {
   // out of every page's critical path for a below-the-fold field. The skeleton
   // reserves the control's height so the swap-in shifts nothing.
   ssr: false,
-  loading: () => <Skeleton className="h-11 w-full rounded-sm" />,
+  loading: () => <Skeleton className="h-11 w-full rounded-full" />,
 });
 
 interface NewsletterProps {
-  variant?: "default" | "compact";
   className?: string;
 }
 
-export function Newsletter({ variant = "default", className = "" }: NewsletterProps) {
+export function Newsletter({ className = "" }: NewsletterProps) {
   const { t } = useTranslations();
 
-  if (variant === "compact") {
-    return (
-      <div className={className}>
-        <NewsletterForm compact />
-      </div>
-    );
-  }
-
+  /* The sign-up panel: a tinted plate on the page's own ground, words on one
+     side and the field on the other. It replaces a half-page composition that
+     gave a single email field a 30rem photograph of the studio — the same
+     photograph the home page already opens on, scrimmed, for a control that
+     needs no illustration at all. The clay tint is the system's louder
+     invitation surface, the pair to the sage one the FAQ closes on. */
   return (
-    <section className={`store-section bg-background ${className}`}>
-      <div className="store-container">
-        <div className="grid overflow-hidden rounded-3xl bg-secondary dark:bg-storefront-surface lg:grid-cols-[0.92fr_1.08fr]">
-          <div className="relative min-h-72 overflow-hidden bg-primary lg:min-h-[30rem]">
-            <Image
-              src="/hero-florist-studio.webp"
-              alt=""
-              fill
-              sizes="(min-width: 1024px) 40vw, 100vw"
-              className="object-cover"
-            />
-            <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-storefront-brand/70 via-transparent to-transparent" />
+    <section className={`bg-background ${className}`}>
+      <div className="store-container store-section">
+        <div className="grid items-center gap-8 rounded-[2.5rem] bg-clay-100 px-6 py-10 text-clay-900 sm:px-10 sm:py-12 lg:grid-cols-2 lg:gap-14 lg:px-14">
+          <div>
+            <h2 className="store-section-title text-clay-900">
+              {t("newsletter.title")}
+            </h2>
+            <p className="store-lede mt-3 max-w-[44ch] text-sm text-clay-800 sm:text-base">
+              {t("newsletter.description")}
+            </p>
           </div>
 
-          <div className="flex flex-col justify-center p-6 sm:p-10 lg:p-14">
-            <div className="max-w-2xl">
-              <span className="inline-flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <Mail className="h-5 w-5" />
-              </span>
-              <h2 className="store-section-title mt-6 text-foreground">
-                {t("newsletter.title")}
-              </h2>
-              <p className="store-lede mt-4 text-base text-muted-foreground">
-                {t("newsletter.description")}
-              </p>
-            </div>
-
-            <div className="mt-8">
-              <NewsletterForm />
-            </div>
-          </div>
+          <NewsletterForm />
         </div>
       </div>
     </section>

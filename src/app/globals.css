@@ -7,14 +7,48 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
-  --font-display: Iowan Old Style, Baskerville, Georgia, Times New Roman, serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-caprasimo), "Iowan Old Style", Georgia, serif;
   --color-rose: var(--rose);
   --color-rose-foreground: var(--rose-foreground);
-  --color-marigold: var(--marigold);
-  --color-iris: var(--iris);
   --color-leaf: var(--leaf);
+
+  /* The three tonal ramps of the Organic system. They are generated on one
+     shared lightness scale, so step N of clay, sage and sand read at the same
+     visual value — which is what lets a clay-100 tag and a sage-100 tag sit in
+     the same row without one shouting. `clay` is the terracotta accent, `sage`
+     the second accent, `sand` the warm neutral the page chrome is built from.
+     Semantic tokens below pick from these; a component should reach for a ramp
+     step only for a tint (a tag, a wash, an ink band), never for body text. */
+  --color-clay-100: var(--clay-100);
+  --color-clay-200: var(--clay-200);
+  --color-clay-300: var(--clay-300);
+  --color-clay-400: var(--clay-400);
+  --color-clay-500: var(--clay-500);
+  --color-clay-600: var(--clay-600);
+  --color-clay-700: var(--clay-700);
+  --color-clay-800: var(--clay-800);
+  --color-clay-900: var(--clay-900);
+
+  --color-sage-100: var(--sage-100);
+  --color-sage-200: var(--sage-200);
+  --color-sage-300: var(--sage-300);
+  --color-sage-400: var(--sage-400);
+  --color-sage-500: var(--sage-500);
+  --color-sage-600: var(--sage-600);
+  --color-sage-700: var(--sage-700);
+  --color-sage-800: var(--sage-800);
+  --color-sage-900: var(--sage-900);
+
+  --color-sand-100: var(--sand-100);
+  --color-sand-200: var(--sand-200);
+  --color-sand-300: var(--sand-300);
+  --color-sand-400: var(--sand-400);
+  --color-sand-500: var(--sand-500);
+  --color-sand-600: var(--sand-600);
+  --color-sand-700: var(--sand-700);
+  --color-sand-800: var(--sand-800);
+  --color-sand-900: var(--sand-900);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -49,49 +83,104 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 16px);
 
-  /* Two elevations, both keyed to the ink so they tint with the theme rather
-     than laying grey over porcelain. `card` is the resting lift for a surface;
-     `panel` is the single deeper step for a page's hero panel. */
-  --shadow-card: 0 18px 55px -42px color-mix(in oklch, var(--foreground) 35%, transparent);
-  --shadow-panel: 0 28px 80px -58px color-mix(in oklch, var(--foreground) 55%, transparent);
+  /* Two elevations, both keyed to `--shadow-ink` — a per-theme colour, not the
+     foreground. On the dark theme the foreground is *light*, so the old
+     `color-mix(…, var(--foreground) …)` was laying a pale haze under every
+     card where a shadow should have been darkness. `--shadow-ink` is warm
+     brown on the light theme and black on the dark one, which is what the
+     Organic system specifies for each.
+
+     `card` is the resting lift for a surface; `panel` is the single deeper
+     step for a page's hero panel. */
+  --shadow-card: 0 3px 12px -2px color-mix(in srgb, var(--shadow-ink) 20%, transparent);
+  --shadow-panel: 0 16px 44px -12px color-mix(in srgb, var(--shadow-ink) 32%, transparent);
 }
 
+/* ── The Organic palette ────────────────────────────────────────────────
+   Imported from the "Houshang Flowers" canvas design. Three tonal ramps
+   (clay / sage / sand) generated on one shared lightness scale, plus the
+   semantic tokens the storefront's components already speak in, chosen from
+   those ramps.
+
+   Every value that carries text was measured. Where the source design fell
+   short of WCAG 1.4.3 the token steps one rung down the same ramp rather than
+   changing hue: the design's `--color-accent` (#c67139) scores 3.03:1 against
+   the cream page — fine for the focus ring's 3:1 floor, not for a button
+   label — so `--primary` is clay-700 (5.72:1) and the lighter step stays on
+   `--ring` and the decorative fills, where 3:1 is the bar that applies. */
+
 :root.dark {
-  --background: oklch(0.18 0.018 155);
-  --foreground: oklch(0.94 0.014 88);
-  --card: oklch(0.225 0.018 153);
-  --card-foreground: oklch(0.95 0.012 88);
-  --popover: oklch(0.225 0.018 153);
-  --popover-foreground: oklch(0.95 0.012 88);
-  --primary: oklch(0.78 0.105 44);
-  --primary-foreground: oklch(0.18 0.018 155);
-  --secondary: oklch(0.27 0.018 153);
-  --secondary-foreground: oklch(0.94 0.014 88);
-  --muted: oklch(0.26 0.014 153);
-  --muted-foreground: oklch(0.74 0.018 103);
-  --accent: oklch(0.3 0.026 154);
-  --accent-foreground: oklch(0.96 0.012 88);
+  --clay-100: #3b2113;
+  --clay-200: #52301c;
+  --clay-300: #6e4225;
+  --clay-400: #915a31;
+  --clay-500: #c07948;
+  --clay-600: #e2a071;
+  --clay-700: #eebb92;
+  --clay-800: #ffd8bd;
+  --clay-900: #ffeee2;
+
+  --sage-100: #262c1c;
+  --sage-200: #333c26;
+  --sage-300: #444f33;
+  --sage-400: #5a6845;
+  --sage-500: #7d8f5f;
+  --sage-600: #9aab7c;
+  --sage-700: #b8c79b;
+  --sage-800: #d6e2bd;
+  --sage-900: #eef4de;
+
+  --sand-100: #2a241f;
+  --sand-200: #362f28;
+  --sand-300: #473f36;
+  --sand-400: #5d5347;
+  --sand-500: #7a6f60;
+  --sand-600: #9a8e7c;
+  --sand-700: #bdb0a0;
+  --sand-800: #ddd2c1;
+  --sand-900: #120e0c;
+
+  --shadow-ink: #000000;
+
+  --background: #1b1613;
+  --foreground: #f3e9d8;
+  --card: #272019;
+  --card-foreground: #f3e9d8;
+  --popover: #272019;
+  --popover-foreground: #f3e9d8;
+  /* clay-600 under cream-black text: 8.11:1 */
+  --primary: #e2a071;
+  --primary-foreground: #1b1613;
+  --secondary: #362f28;
+  --secondary-foreground: #f3e9d8;
+  --muted: #2a241f;
+  --muted-foreground: #9a8e7c;
+  --accent: #3b2113;
+  --accent-foreground: #ffd8bd;
   --destructive: oklch(0.64 0.2 22);
-  --border: oklch(0.91 0.018 92 / 14%);
+  /* The design's own divider: the ink at 18%. Decorative hairlines only. */
+  --border: color-mix(in srgb, #f3e9d8 18%, transparent);
   /* Field boundaries carry more weight than the decorative hairline above
-     them: at 20% they sat at 1.73:1 against the card, and a text field's
-     border is the only thing that says where the field is. 44% reads at
-     3.5:1, clearing WCAG 2.1 SC 1.4.11 (Non-text Contrast, 3:1). Only
-     `border-input` and the `bg-input/30` field fill use this token, so the
-     page's hairlines are untouched. */
-  --input: oklch(0.91 0.018 92 / 44%);
-  --ring: oklch(0.78 0.105 44);
-  --rose: oklch(0.72 0.13 35);
-  --rose-foreground: oklch(0.18 0.03 30);
-  --marigold: oklch(0.79 0.11 74);
-  --iris: oklch(0.62 0.08 305);
-  --leaf: oklch(0.66 0.08 151);
-  --storefront-surface: oklch(0.225 0.018 153);
-  --storefront-brand: oklch(0.145 0.025 155);
-  --storefront-brand-foreground: oklch(0.95 0.012 88);
-  --storefront-brand-soft: oklch(0.255 0.02 153);
-  --storefront-brand-muted: oklch(0.73 0.02 103);
-  --storefront-text-muted: oklch(0.73 0.02 103);
+     them — a text field's border is the only thing that says where the field
+     is, so it clears WCAG 2.1 SC 1.4.11 (Non-text Contrast, 3:1) on its own.
+     sand-500 measures 3.27:1 against the card. Only `border-input` and the
+     `bg-input/30` field fill use this token; the page's hairlines are
+     untouched. */
+  --input: #7a6f60;
+  --ring: #dd9059;
+  /* The storefront's one accent, in the Organic system's terracotta. Used as
+     small text (`text-rose`) as often as it is used as a fill, so it is the
+     text-safe step of the ramp: 9.30:1 on the card. */
+  --rose: #eebb92;
+  --rose-foreground: #1b1613;
+  /* The second accent — availability, growth, the quieter of the two tints. */
+  --leaf: #b8c79b;
+  --storefront-surface: #272019;
+  --storefront-brand: #120e0c;
+  --storefront-brand-foreground: #f3e9d8;
+  --storefront-brand-soft: #2a241f;
+  --storefront-brand-muted: #bdb0a0;
+  --storefront-text-muted: #9a8e7c;
 }
 
 :root {
@@ -100,39 +189,81 @@
      Sticky asides and scroll anchors offset against this instead of guessing —
      they used to sit at top-24 / top-28 / top-32 against a 4rem bar. */
   --store-header-h: 4rem;
-  --font-persian: var(--font-vazirmatn), Tahoma, Arial, sans-serif;
-  --background: oklch(0.975 0.012 91);
-  --foreground: oklch(0.225 0.028 154);
-  --card: oklch(0.993 0.007 92);
-  --card-foreground: oklch(0.225 0.028 154);
-  --popover: oklch(0.993 0.007 92);
-  --popover-foreground: oklch(0.225 0.028 154);
-  --primary: oklch(0.31 0.055 155);
-  --primary-foreground: oklch(0.985 0.01 91);
-  --secondary: oklch(0.925 0.025 100);
-  --secondary-foreground: oklch(0.27 0.04 154);
-  --muted: oklch(0.94 0.018 92);
-  --muted-foreground: oklch(0.48 0.035 145);
-  --accent: oklch(0.91 0.045 45);
-  --accent-foreground: oklch(0.28 0.04 154);
+  --font-persian: var(--font-cairo), Tahoma, Arial, sans-serif;
+  /* Persian display is a real Arabic-script display face, not the body face at
+     its heaviest. Rakkas is the Organic system's pairing for Caprasimo. */
+  --font-persian-display: var(--font-rakkas), var(--font-cairo), Tahoma, serif;
+
+  --clay-100: #fff2eb;
+  --clay-200: #ffe1d0;
+  --clay-300: #ffc6a5;
+  --clay-400: #f6a06b;
+  --clay-500: #d67f48;
+  --clay-600: #b2622d;
+  --clay-700: #8c491a;
+  --clay-800: #643312;
+  --clay-900: #402310;
+
+  --sage-100: #f0fae1;
+  --sage-200: #e1eecc;
+  --sage-300: #ccdbb2;
+  --sage-400: #aebf92;
+  --sage-500: #8fa073;
+  --sage-600: #728157;
+  --sage-700: #56633f;
+  --sage-800: #3d472b;
+  --sage-900: #272e1b;
+
+  --sand-100: #f9f4ed;
+  --sand-200: #eee7db;
+  --sand-300: #dcd3c4;
+  --sand-400: #c0b6a5;
+  --sand-500: #a19786;
+  --sand-600: #82796a;
+  --sand-700: #645c50;
+  --sand-800: #474238;
+  --sand-900: #2e2b25;
+
+  --shadow-ink: #2e2b25;
+
+  --background: #f5ead8;
+  --foreground: #201e1d;
+  /* Surface sits *darker* than the page here, not lighter. That inversion is
+     the Organic system's, and it is what makes a card read as a resting place
+     cut into the cream rather than a sheet laid on top of it. */
+  --card: #ebddc5;
+  --card-foreground: #201e1d;
+  /* A popover has to lift off both the page and the cards it covers, so it is
+     the one surface that goes lighter than the ground. */
+  --popover: #f9f4ed;
+  --popover-foreground: #201e1d;
+  /* clay-700 under cream text: 5.72:1 */
+  --primary: #8c491a;
+  --primary-foreground: #f5ead8;
+  --secondary: #eee7db;
+  --secondary-foreground: #201e1d;
+  --muted: #eee7db;
+  --muted-foreground: #645c50;
+  --accent: #fff2eb;
+  --accent-foreground: #643312;
   --destructive: oklch(0.52 0.2 27);
-  --border: oklch(0.84 0.025 98);
-  /* See the dark block: the same 3:1 floor, measured here at 3.5:1 on card
-     and 3.4:1 on the page. Darker than `--border` on purpose — a field has
-     to be found before it can be filled, while a section rule does not. */
-  --input: oklch(0.62 0.03 98);
-  --ring: oklch(0.58 0.13 35);
-  --rose: oklch(0.55 0.105 43);
-  --rose-foreground: oklch(0.99 0.005 91);
-  --marigold: oklch(0.75 0.12 70);
-  --iris: oklch(0.52 0.1 305);
-  --leaf: oklch(0.5 0.085 151);
-  --storefront-surface: oklch(0.993 0.007 92);
-  --storefront-brand: oklch(0.255 0.052 155);
-  --storefront-brand-foreground: oklch(0.978 0.012 91);
-  --storefront-brand-soft: oklch(0.92 0.026 104);
-  --storefront-brand-muted: oklch(0.66 0.03 105);
-  --storefront-text-muted: oklch(0.48 0.035 145);
+  /* The design's own divider: the ink at 16%. Decorative hairlines only. */
+  --border: color-mix(in srgb, #201e1d 16%, transparent);
+  /* See the dark block for why this is darker than `--border`: sand-600
+     measures 3.21:1 against the card and 3.5:1 against the page. */
+  --input: #82796a;
+  /* clay-600, the lightest step that still clears 3:1 against both the page
+     (3.77) and the card (3.35) — the floor a focus indicator has to hold. */
+  --ring: #b2622d;
+  --rose: #8c491a;
+  --rose-foreground: #fff2eb;
+  --leaf: #56633f;
+  --storefront-surface: #ebddc5;
+  --storefront-brand: #2e2b25;
+  --storefront-brand-foreground: #f9f4ed;
+  --storefront-brand-soft: #474238;
+  --storefront-brand-muted: #c0b6a5;
+  --storefront-text-muted: #645c50;
 }
 
 @layer base {
@@ -141,7 +272,7 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
-    font-family: var(--font-geist), sans-serif;
+    font-family: var(--font-figtree), sans-serif;
     text-rendering: optimizeLegibility;
   }
   :where(a, button, input, textarea, select, summary) {
@@ -179,30 +310,39 @@
     line-height: 1.85;
   }
   .locale-en {
-    font-family: var(--font-geist), sans-serif;
+    font-family: var(--font-figtree), sans-serif;
     line-height: 1.6;
   }
+  /* Caprasimo ships one weight. Asking for 500 here made every browser
+     synthesise a bold from the 400 file, which on a display face this heavy
+     smears the counters shut. The tracking is the design system's -0.015em,
+     not the -0.035em the old serif wanted: a slab this wide closes its own
+     gaps and pulling it tighter collides the terminals. */
   .font-display {
     font-family: var(--font-display);
     font-optical-sizing: auto;
-    letter-spacing: -0.035em;
-    font-weight: 500;
+    letter-spacing: -0.015em;
+    font-weight: 400;
   }
 }
 
-/* fa locale → Vazirmatn for every text node, including elements that opt into
-   the Latin font-sans / font-mono / font-display utilities. Unlayered so it
+/* fa locale → Cairo for every text node, including elements that opt into the
+   Latin font-sans / font-mono / font-display utilities. Unlayered so it
    outranks Tailwind's utility layer. */
 .locale-fa,
 .locale-fa .font-sans,
-.locale-fa .font-mono,
 .locale-fa .font-display {
   font-family: var(--font-persian);
 }
-/* Persian display: Vazirmatn at its heaviest, never the Latin display face */
+/* Persian display is Rakkas — an actual Arabic-script display face, and the
+   Organic system's pairing for Caprasimo. It replaces the old arrangement,
+   which had no display face for Persian at all and substituted the body face
+   at weight 700, so a Persian page had a single texture from masthead to
+   caption while a Latin one had two. Rakkas has one weight, like Caprasimo. */
 .locale-fa .font-display {
+  font-family: var(--font-persian-display);
   letter-spacing: 0;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 /* Comfortable, consistent control size — every button is floored at a 44x44px
@@ -219,6 +359,23 @@
 [data-slot="button"] {
   min-height: 44px;
   min-width: 44px;
+  /* The Organic system sets its controls in the display face — it is what
+     makes a button read as part of the same object as the heading above it
+     rather than as browser chrome dropped on the page. Weight 400 because
+     Caprasimo ships one file; asking for 600 here synthesised a bold. */
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
+/* Persian keeps the *body* face on controls. Rakkas is a display naskh — right
+   for a masthead, wrong on a quantity stepper and a filter chip, where its
+   swashes cost legibility at 14px in a way Caprasimo's slab does not. This is
+   the one place the two scripts deliberately diverge from each other. */
+.locale-fa [data-slot="button"] {
+  font-family: var(--font-persian);
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 ::selection {
@@ -251,39 +408,48 @@
 }
 
 @layer components {
+  /* The measure every band is set to: 1220px of content inside a gutter that
+     runs 16px → 30px with the viewport. Both numbers are the design system's
+     own. It was `min(100% - 2rem, 80rem)` — 1280px inside a stepped gutter —
+     which is 60px wider than the design, enough that a four-up product grid
+     drew cards a full step larger than the source and the eight-column footer
+     never reached the density it was drawn at.
+
+     Stated as max-width + padding rather than width, so the gutter belongs to
+     the container and a full-bleed child can still break out of it. */
   .store-container {
-    width: min(100% - 2rem, 80rem);
+    width: 100%;
+    max-width: calc(76.25rem + 2 * clamp(1rem, 3vw, 1.875rem));
     margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 1.875rem);
   }
+
+  /* Vertical rhythm, taken from the design system's own bands. The shape of it
+     is asymmetric everywhere: a page opens generously, its content follows
+     tight underneath, and the last band before the footer closes wide. That
+     asymmetry is what stops a page reading as a stack of equal boxes.
+
+       -head   a page's opening band            72 / 32
+       -sm     a supporting strip               40
+       default an ordinary content section      70
+       -lg     a feature band, an event         48 → 84
+       -close  the last band before the footer  26 / 100
+
+     The design states these as fixed pixels with no media query. They step
+     down once below 40rem, because 72px above and 100px below a phone-width
+     band is most of a viewport spent on nothing. */
+  .store-section-head  { padding-block: 2.75rem 1.5rem; }
+  .store-section-sm    { padding-block: 1.75rem; }
+  .store-section       { padding-block: 2.75rem; }
+  .store-section-lg    { padding-block: 3rem; }
+  .store-section-close { padding-block: 1.625rem 3.5rem; }
 
   @media (min-width: 40rem) {
-    .store-container { width: min(100% - 3rem, 80rem); }
-  }
-
-  @media (min-width: 64rem) {
-    .store-container { width: min(100% - 5rem, 80rem); }
-  }
-
-  /* Vertical rhythm. Three steps, so a page is built from bands that relate
-     rather than from eleven hand-picked padding pairs:
-       -sm      a supporting strip (hero, footer's top band)
-       default  an ordinary content section
-       -lg      a feature band that should read as an event on the page */
-  /* A page's opening band. Asymmetric on purpose: tighter at the top, where it
-     meets the sticky bar, than at the bottom, where it hands off to content.
-     PageHeader renders it, and the route skeletons that stand in for a masthead
-     reuse it so nothing shifts when the real one arrives. */
-  .store-section-head { padding-block: 1.5rem 2.5rem; }
-
-  .store-section-sm { padding-block: 2rem; }
-  .store-section    { padding-block: 3rem; }
-  .store-section-lg { padding-block: 4rem; }
-
-  @media (min-width: 40rem) {
-    .store-section-head { padding-block: 2rem 3.5rem; }
-    .store-section-sm { padding-block: 3rem; }
-    .store-section    { padding-block: 4rem; }
-    .store-section-lg { padding-block: 6rem; }
+    .store-section-head  { padding-block: 4.5rem 2rem; }
+    .store-section-sm    { padding-block: 2.5rem; }
+    .store-section       { padding-block: 4.375rem; }
+    .store-section-lg    { padding-block: clamp(3rem, 7vw, 5.25rem); }
+    .store-section-close { padding-block: 1.625rem 6.25rem; }
   }
 
   /* Anything pinned below the sticky bar, and anything scrolled to beneath it.
@@ -324,6 +490,28 @@
     outline-color: var(--storefront-brand-foreground);
   }
 
+  /* The micro-label: the small tracked capitals that caption a rail, a meta
+     row or a filter group. One definition, because the storefront had grown
+     nineteen of them across five different tracking values (0.14em → 0.22em)
+     and a `font-mono` that resolves to the body face anyway — so they were
+     five slightly different labels pretending to be one.
+     0.09em is the design system's own figure. Persian drops the tracking
+     entirely: letter-spacing in an Arabic-script face breaks the joins
+     between letters, which is a legibility fault rather than a style. */
+  .store-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .locale-fa .store-label {
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
   .store-eyebrow {
     display: inline-flex;
     align-items: center;
@@ -348,8 +536,8 @@
   .store-page-title {
     font-family: var(--font-display);
     font-size: clamp(2.25rem, 5vw, 3.75rem);
-    font-weight: 500;
-    letter-spacing: -0.035em;
+    font-weight: 400;
+    letter-spacing: -0.02em;
     line-height: 1.02;
     text-wrap: balance;
   }
@@ -357,8 +545,8 @@
   .store-section-title {
     font-family: var(--font-display);
     font-size: clamp(1.75rem, 3.2vw, 2.5rem);
-    font-weight: 500;
-    letter-spacing: -0.03em;
+    font-weight: 400;
+    letter-spacing: -0.015em;
     line-height: 1.08;
     text-wrap: balance;
   }
@@ -391,48 +579,155 @@
 
   .locale-fa .store-page-title,
   .locale-fa .store-section-title {
-    font-family: var(--font-persian);
-    font-weight: 700;
+    font-family: var(--font-persian-display);
+    font-weight: 400;
     letter-spacing: 0;
-    line-height: 1.4;
+    line-height: 1.45;
   }
 
-  .boho-hero-shell {
-    padding-block: 1rem 2.5rem;
+  /* ── Organic shape language ───────────────────────────────────────
+     The Organic system draws its media in cut shapes rather than rounded
+     rectangles: an arch for the tall hero plate, a soft asymmetric blob for
+     a mark or a portrait. Both are stated once here — a `border-radius`
+     shorthand with four slash-separated pairs is not something to retype at
+     a call site, and the arch's radius has to stay proportional to the plate
+     or it flattens on a phone.                                            */
+
+  /* A plate cut as an arch: round at the head, barely eased at the foot.
+     The head radius is a *percentage* of the plate's own width, not a viewport
+     unit — the same class has to hold its proportion on a 500px hero plate and
+     on a 150px catalogue tile in a four-up grid, and a vw-based radius would
+     round the tile into a lozenge while barely touching the hero. Capped in
+     rem so a full-bleed plate does not become a semicircle. */
+  .organic-arch {
+    border-start-start-radius: min(10rem, 45%);
+    border-start-end-radius: min(10rem, 45%);
+    border-end-start-radius: 1.75rem;
+    border-end-end-radius: 1.75rem;
   }
 
-  .boho-hero {
-    border-start-start-radius: min(12rem, 16vw);
+  /* The same cut at feature scale, for the two plates that are the subject of
+     their band rather than one tile in a grid of them. Two steps rather than
+     one class with a single cap, because the cap is what decides the shape: at
+     the tile step a 620px-wide collection card domed over into a semicircle,
+     and at the tile cap the 500px hero plate barely curved. */
+  .organic-arch-tall {
+    border-start-start-radius: min(15rem, 45%);
+    border-start-end-radius: min(15rem, 45%);
+    border-end-start-radius: 2.25rem;
+    border-end-end-radius: 2.25rem;
   }
 
-  .boho-hero-eyebrow {
+  /* The leaf: two opposite corners drawn long, the other two barely eased. The
+     system's cut for a single editorial portrait standing beside a column of
+     text — an arch would echo the hero and a plain radius would say nothing.
+     Logical corners, so the leaf mirrors with the document direction instead
+     of pointing the wrong way in Persian. */
+  .organic-leaf {
+    border-start-start-radius: min(11rem, 48%);
+    border-start-end-radius: 2.5rem;
+    border-end-start-radius: 2.5rem;
+    border-end-end-radius: min(11rem, 48%);
+  }
+
+  /* The system's soft asymmetric round — a petal, not a circle. Used for the
+     brand mark, avatars and the small decorative plates. */
+  .organic-blob {
+    border-radius: 50% 50% 46% 54% / 52% 48% 52% 48%;
+  }
+
+  /* The brand mark: the petal filled with the clay ramp's own gradient. One
+     definition, because the header and the footer draw the same object and had
+     drifted into two different corner recipes (`rounded-t-full rounded-b-lg`
+     against `rounded-t-full rounded-b-xl`).
+
+     The stops are 600→800 rather than the source design's 300→600 so the glyph
+     inside clears WCAG 1.4.11's 3:1 at *both* ends of the gradient in both
+     themes — a mark is a non-text graphic, so 3:1 is the bar, but the design's
+     lighter stop missed even that on the light theme. */
+  .organic-mark {
+    border-radius: 50% 50% 46% 54% / 52% 48% 52% 48%;
+    background-image: linear-gradient(150deg, var(--clay-600), var(--clay-800));
+    color: var(--primary-foreground);
+  }
+
+  /* The system's treatment for photography: pulled back in saturation and
+     contrast so the flowers in the picture stay the most colourful thing on a
+     page whose chrome is already warm. Behind a motion query it is not —
+     it is a still treatment, not an animation. */
+  .organic-washed {
+    filter: saturate(0.72) contrast(0.92) brightness(1.04);
+  }
+
+  /* The hero band. Asymmetric like `.store-section-head`: tight under the
+     sticky bar, open where it hands off to the collections below. */
+  .organic-hero-shell {
+    padding-block: 1.5rem 3rem;
+  }
+
+  /* The eyebrow and the seam rule, inverted for the ink surfaces — the hero
+     scrim, the mega-menu panel, the footer. */
+  .organic-invert-eyebrow {
     color: rgb(255 255 255 / 0.76);
   }
 
-  .boho-hero-eyebrow::before {
+  .organic-invert-eyebrow::before {
     background: rgb(255 255 255 / 0.55);
   }
 
-  .boho-sun {
-    position: absolute;
-    inset-inline-end: clamp(1.5rem, 5vw, 5rem);
-    inset-block-start: clamp(1.5rem, 4vw, 4rem);
-    width: clamp(6rem, 12vw, 10rem);
-    aspect-ratio: 1;
-    border: 1px solid rgb(255 255 255 / 0.22);
-    border-radius: 999px;
-    box-shadow: 0 0 0 1.5rem rgb(255 255 255 / 0.035), 0 0 0 3rem rgb(255 255 255 / 0.02);
+  /* ── Collection washes ───────────────────────────────────────────
+     The Organic system's five gradients for a plate with no photograph behind
+     it: a soft bloom of light off-centre over a slow diagonal. They are the
+     one place the ramps are used as pure decoration, so each is built from a
+     ramp's own 100→300 steps and nothing darker — a category tile is the
+     ground a name is read against, and an ink fill there reads as a hole in
+     the page rather than as a tile. (`bg-storefront-brand-soft` was doing
+     exactly that: sand-800 on the cream page, one tile in every three.)
+
+     Because each names ramp steps rather than fixed colours, the whole set
+     inverts with the theme along with everything else. */
+  .organic-wash-a {
+    background-image:
+      radial-gradient(58% 52% at 46% 62%, var(--clay-300) 0%, transparent 64%),
+      linear-gradient(158deg, var(--clay-100), var(--clay-200));
   }
 
-  .boho-arrivals {
+  .organic-wash-b {
     background-image:
-      radial-gradient(circle at 9% 10%, color-mix(in oklch, var(--rose) 10%, transparent) 0 7rem, transparent 7.1rem),
-      radial-gradient(circle at 94% 94%, color-mix(in oklch, var(--leaf) 9%, transparent) 0 9rem, transparent 9.1rem);
+      radial-gradient(58% 52% at 52% 60%, var(--sage-300) 0%, transparent 64%),
+      linear-gradient(158deg, var(--sage-100), var(--sage-200));
+  }
+
+  .organic-wash-c {
+    background-image:
+      radial-gradient(55% 50% at 48% 64%, var(--sand-300) 0%, transparent 62%),
+      linear-gradient(158deg, var(--sand-100), var(--sand-200));
+  }
+
+  .organic-wash-d {
+    background-image:
+      radial-gradient(60% 54% at 50% 58%, var(--clay-400) 0%, transparent 66%),
+      linear-gradient(158deg, var(--clay-200), var(--clay-300));
+  }
+
+  .organic-wash-e {
+    background-image:
+      radial-gradient(50% 46% at 36% 60%, var(--clay-300) 0%, transparent 60%),
+      radial-gradient(46% 44% at 70% 42%, var(--sage-300) 0%, transparent 62%),
+      linear-gradient(158deg, var(--sand-100), var(--sage-100));
+  }
+
+  /* Two faint washes bled in from opposite corners, so a full-width band reads
+     as lit rather than as a flat fill. */
+  .organic-wash-band {
+    background-image:
+      radial-gradient(58% 52% at 8% 6%, color-mix(in srgb, var(--rose) 12%, transparent) 0%, transparent 62%),
+      radial-gradient(52% 48% at 94% 96%, color-mix(in srgb, var(--leaf) 12%, transparent) 0%, transparent 62%);
   }
 
   @media (min-width: 40rem) {
-    .boho-hero-shell {
-      padding-block: 1.5rem 3.5rem;
+    .organic-hero-shell {
+      padding-block: 2rem 4rem;
     }
   }
 }
@@ -654,11 +949,11 @@
 
   /* The density blocks above name `--font-display` — a Latin serif with no
      Arabic coverage — so a Persian article heading fell through to whatever
-     the browser substituted, breaking mid-page from the Vazirmatn around it.
+     the browser substituted, breaking mid-page from the Cairo around it.
      Persian keeps its own face, and the tight Latin tracking with it. */
   .locale-fa .rich-text[data-density] :is(h1, h2, h3, h4) {
-    font-family: var(--font-persian);
-    font-weight: 700;
+    font-family: var(--font-persian-display);
+    font-weight: 400;
     letter-spacing: 0;
     line-height: 1.6;
   }

@@ -1,21 +1,24 @@
 import { getTranslations } from "next-intl/server";
-import { Flower2, PackageCheck, Truck } from "lucide-react";
+import { Flower2, PackageCheck, Palette, Truck } from "lucide-react";
 
 /**
- * Three quiet assurances, set as a thin rule across the page between the
- * category wall and the product rail — the point where a shopper has decided
- * what they are looking for and is about to look at prices. It used to sit a
- * band later, after the products, where it read as an afterthought rather than
- * as an answer to "why buy here".
+ * How this shop works, as its own band on the warm surface.
  *
- * Deliberately a strip and not a band: three cards here would be the third grid
- * of cards in as many screens. Static copy and static icons, so it renders on
- * the server.
+ * The Organic system gives this shape to the "and then what happens" band: the
+ * page's ground steps to `--card`, the heading is held to a 22ch measure so it
+ * reads as a sentence rather than a banner, and each item opens with a round
+ * medallion cut from the page colour behind it.
  *
- * A list rather than three sibling `<h2>`s: these are supporting facts, not
- * sections, and headings here would pad the outline a screen-reader user
- * navigates by. The same six strings caption the product detail page's
- * assurances, so they stay phrased for both places.
+ * The medallion carries the promise's icon rather than an ordinal. The source
+ * design numbers its four items because they are sequential steps; these four
+ * are qualities that hold simultaneously, and numbering them would claim an
+ * order the shop does not work in.
+ *
+ * A list rather than four sibling `<h2>`s: these are supporting facts under one
+ * heading, and headings here would pad the outline a screen-reader user
+ * navigates by. The same strings caption the product detail page's assurances,
+ * so they stay phrased for both places. Static copy and static icons, so it
+ * renders on the server.
  */
 export async function ServicePromises({ locale }: { locale: string }) {
   const t = await getTranslations({ locale });
@@ -25,6 +28,11 @@ export async function ServicePromises({ locale }: { locale: string }) {
       Icon: Flower2,
       title: t("home.serviceFreshnessTitle"),
       description: t("home.serviceFreshnessText"),
+    },
+    {
+      Icon: Palette,
+      title: t("home.serviceDesignTitle"),
+      description: t("home.serviceDesignText"),
     },
     {
       Icon: PackageCheck,
@@ -39,26 +47,30 @@ export async function ServicePromises({ locale }: { locale: string }) {
   ];
 
   return (
-    <section
-      className="bg-rose text-rose-foreground"
-      aria-label={t("home.servicesTitle")}
-    >
-      <ul className="store-container grid divide-y divide-current/15 py-2 min-[43.75rem]:grid-cols-3 min-[43.75rem]:divide-x min-[43.75rem]:divide-y-0">
-        {promises.map(({ Icon, title, description }) => (
-          <li
-            key={title}
-            className="flex gap-4 py-5 min-[43.75rem]:px-5 min-[43.75rem]:first:ps-0 min-[43.75rem]:last:pe-0 lg:px-7"
-          >
-            <Icon className="mt-0.5 size-5 shrink-0 text-current/75" aria-hidden="true" />
-            <div>
-              <p className="text-sm font-bold text-current">{title}</p>
-              <p className="store-lede mt-1 text-sm text-current/72">
+    <section className="bg-card text-card-foreground">
+      <div className="store-container store-section-lg">
+        <h2 className="store-section-title max-w-[22ch] text-card-foreground">
+          {t("home.servicesTitle")}
+        </h2>
+        <ul className="mt-10 grid gap-8 sm:grid-cols-2 lg:mt-12 lg:grid-cols-4 lg:gap-7">
+          {promises.map(({ Icon, title, description }) => (
+            <li key={title}>
+              <span
+                className="flex size-14 items-center justify-center rounded-full bg-background text-rose"
+                aria-hidden="true"
+              >
+                <Icon className="size-6" />
+              </span>
+              <p className="font-display mt-5 text-lg leading-snug text-card-foreground">
+                {title}
+              </p>
+              <p className="store-lede mt-2 text-sm text-muted-foreground">
                 {description}
               </p>
-            </div>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

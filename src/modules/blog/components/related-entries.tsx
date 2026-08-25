@@ -51,7 +51,7 @@ export function RelatedEntries({
         <div className="mb-8 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
           <h2
             id="related-entries"
-            className="store-dynamic-text flex items-center gap-2.5 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+            className="store-dynamic-text flex items-center gap-2.5 store-label"
           >
             <span className="petal-dot" aria-hidden="true" />
             <bdi>{heading}</bdi>
@@ -70,7 +70,6 @@ export function RelatedEntries({
               key={post.id}
               post={post}
               formatDate={formatDate}
-              readMoreText={t("blog.readMore")}
             />
           ))}
         </PostGrid>

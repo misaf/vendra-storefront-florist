@@ -139,7 +139,7 @@ export function UserPanel({ open, onOpenChange, onCloseAutoFocus }: UserPanelPro
                         onClick={() => onOpenChange(false)}
                         aria-hidden="true"
                         tabIndex={-1}
-                        className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md bg-muted"
+                        className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl bg-muted"
                       >
                         <SafeImage
                           src={item.image}
@@ -244,7 +244,7 @@ export function UserPanel({ open, onOpenChange, onCloseAutoFocus }: UserPanelPro
                         <div className="space-y-3">
                           {order.items.slice(0, 3).map((item) => (
                             <div key={item.id} className="flex gap-3">
-                              <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                              <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl bg-muted">
                                 <SafeImage
                                   src={item.image}
                                   alt={item.name}

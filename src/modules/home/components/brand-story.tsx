@@ -21,7 +21,7 @@ export async function BrandStory({ locale }: { locale: string }) {
   return (
     <section className="store-scroll-anchor overflow-hidden bg-background">
       <div className="store-container store-section-lg grid items-center gap-10 min-[43.75rem]:grid-cols-12 min-[43.75rem]:gap-12 lg:gap-16">
-        <div className="relative mx-auto aspect-[4/5] w-full max-w-xl overflow-hidden rounded-b-[2rem] rounded-t-[min(16rem,48%)] bg-secondary min-[43.75rem]:col-span-5 min-[43.75rem]:mx-0">
+        <div className="organic-arch-tall relative mx-auto aspect-[4/5] w-full max-w-xl overflow-hidden bg-secondary min-[43.75rem]:col-span-5 min-[43.75rem]:mx-0">
           <Image
             src="/hero-florist-studio-storefront.webp"
             alt={t("home.storyImageAlt")}

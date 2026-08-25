@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { FocusEvent as ReactFocusEvent } from "react";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Link, usePathname } from "@/shared/i18n/navigation";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { cn } from "@/shared/lib/utils";
 import { useProductCategories } from "../lib/queries";
 import { DynamicText } from "@/shared/components/dynamic-text";
+import { Button } from "@/shared/components/ui/button";
 
 interface CategoryMenuProps {
   /**
@@ -21,17 +22,19 @@ interface CategoryMenuProps {
 
 /**
  * Columns follow the catalogue rather than a fixed grid: a shop with four
- * categories gets a narrow list instead of a wide panel with empty columns,
- * and one with thirty still scans in three columns of ten.
+ * categories gets a single readable column instead of a wide panel with empty
+ * ones, and a shop with thirty still scans two-up.
  */
 function getPanelLayout(count: number) {
-  if (count >= 9) return { columns: "grid-cols-3" };
-  if (count >= 5) return { columns: "grid-cols-2" };
-  return { columns: "grid-cols-1" };
+  return { columns: count >= 7 ? "grid-cols-2" : "grid-cols-1" };
 }
 
+/* A destination, drawn as the system's pill. The rows used to carry a
+   two-digit `font-mono` ordinal and a hairline under each one, which numbered
+   the shop's collections 01…13 as though the order meant something and drew
+   thirteen rules inside a panel that is itself a floating card. */
 const CATEGORY_LINK_CLASS =
-  "group/category store-dynamic-text flex min-h-11 items-start gap-3 rounded-sm border-b border-border/65 px-2 py-3 text-sm text-foreground/82 transition-colors hover:bg-secondary/55 hover:text-foreground";
+  "store-dynamic-text flex min-h-11 items-center rounded-full px-3.5 py-2 text-sm leading-snug text-foreground transition-colors hover:bg-accent hover:text-accent-foreground";
 
 /**
  * The catalogue entry in the main navigation: a disclosure button and the panel
@@ -160,7 +163,7 @@ export function CategoryMenu({ className, active = false }: CategoryMenuProps) {
              by whichever viewport edge it collided with. */
           className={cn(
             "absolute end-0 top-[calc(50%+var(--store-header-h)/2)] z-10",
-            "w-[min(56rem,calc(100vw-5rem))] max-w-[calc(100vw-2rem)] overflow-hidden rounded-b-2xl border border-t-0 border-border bg-card text-card-foreground shadow-panel",
+            "w-[min(34.5rem,calc(100vw-3rem))] overflow-hidden rounded-[1.625rem] bg-popover p-4 text-popover-foreground shadow-panel",
             /* The header is not the only chrome above the panel — the utility
                bar sits above it until the page is scrolled — so the allowance
                covers both. Without it a short viewport clips the last category
@@ -170,64 +173,52 @@ export function CategoryMenu({ className, active = false }: CategoryMenuProps) {
             "animate-in fade-in-0 slide-in-from-top-1 duration-150"
           )}
         >
-          <div className="grid max-h-[calc(100dvh-var(--store-header-h)-5rem)] overflow-y-auto md:grid-cols-[15rem_minmax(0,1fr)]">
-            <div className="flex flex-col justify-between bg-storefront-brand p-6 text-storefront-brand-foreground">
-              <div>
-                <p className="store-eyebrow boho-hero-eyebrow">
-                  {t("home.collectionsEyebrow")}
-                </p>
-                <p className="font-display mt-4 text-[1.85rem] leading-[1.08] text-storefront-brand-foreground [.locale-fa_&]:leading-[1.55]">
-                  {t("home.collectionsTitle")}
-                </p>
-                <p className="store-lede mt-4 text-sm text-storefront-brand-foreground/68">
-                  {t("home.collectionsSubtitle")}
-                </p>
-              </div>
-              <Link
-                href="/products"
-                onClick={close}
-                className="store-focus-invert group mt-8 flex min-h-11 items-center justify-between gap-3 border-t border-white/18 pt-4 text-sm font-semibold text-storefront-brand-foreground"
-              >
-                {t("common.allProducts")}
-                <ArrowRight className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" aria-hidden="true" />
-              </Link>
-            </div>
-
-            <div className="p-5 sm:p-6">
+          <div className="grid max-h-[calc(100dvh-var(--store-header-h)-6rem)] grid-cols-[repeat(auto-fit,minmax(min(100%,11.125rem),1fr))] gap-5 overflow-y-auto overscroll-contain">
+            <div>
               {/* Named, not just captioned: tabbing into the panel otherwise
                   announces "list, 13 items" with no clue what the list is of. */}
-              <p id={listLabelId} className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground [.locale-fa_&]:tracking-normal">
+              <p id={listLabelId} className="sr-only">
                 {t("common.browseByCategory")}
               </p>
 
               {isLoading ? (
-                <ul className={cn("grid gap-x-5", layout.columns)} aria-hidden="true">
+                <ul className={cn("grid gap-x-1.5 gap-y-0.5", layout.columns)} aria-hidden="true">
                   {Array.from({ length: 6 }).map((_, index) => (
-                    <li key={index} className="flex min-h-11 items-center border-b border-border/65 px-2 py-3">
+                    <li key={index} className="flex min-h-11 items-center px-3.5 py-2">
                       <span className="h-3.5 w-full animate-pulse rounded-full bg-muted" />
                     </li>
                   ))}
                 </ul>
               ) : categories.length === 0 ? (
-                <p className="px-2 py-3 text-sm text-muted-foreground">{t("common.noCategories")}</p>
+                <p className="px-3.5 py-2 text-sm text-muted-foreground">{t("common.noCategories")}</p>
               ) : (
-                <ul aria-labelledby={listLabelId} className={cn("grid gap-x-5", layout.columns)}>
-                  {categories.map((category, index) => (
+                <ul aria-labelledby={listLabelId} className={cn("grid content-start gap-x-1.5 gap-y-0.5", layout.columns)}>
+                  {categories.map((category) => (
                     <li key={category.id}>
                       <Link
                         href={{ pathname: "/products", query: { category: category.slug } }}
                         onClick={close}
                         className={CATEGORY_LINK_CLASS}
                       >
-                        <span className="mt-0.5 w-5 shrink-0 font-mono text-[0.65rem] tabular-nums text-muted-foreground" aria-hidden="true">
-                          {new Intl.NumberFormat(locale, { minimumIntegerDigits: 2 }).format(index + 1)}
-                        </span>
                         <DynamicText>{category.name}</DynamicText>
                       </Link>
                     </li>
                   ))}
                 </ul>
               )}
+            </div>
+
+            {/* The panel's second half: one sentence about how the shop groups
+                itself, and the way through to the unfiltered catalogue. It was
+                an ink slab carrying a 1.85rem display headline — a masthead
+                inside a dropdown, and the only inverted surface in the header. */}
+            <div className="flex flex-col items-start gap-3.5 border-border ps-5 max-[28rem]:border-t max-[28rem]:pt-4 max-[28rem]:ps-0 min-[28rem]:border-s">
+              <p className="store-lede text-xs text-muted-foreground">
+                {t("home.collectionsSubtitle")}
+              </p>
+              <Button asChild variant="outline" size="sm" onClick={close}>
+                <Link href="/products">{t("common.allProducts")}</Link>
+              </Button>
             </div>
           </div>
         </div>

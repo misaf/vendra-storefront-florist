@@ -110,15 +110,23 @@ export default function ContactClient({
             />
 
           <aside className="space-y-8 store-sticky-lg">
-              <section className="bg-storefront-brand px-6 py-8 text-storefront-brand-foreground sm:px-8 sm:py-10">
-                <BrandIcon className="size-6 text-storefront-brand-foreground/70" />
+              {/* The system's warm plate, not an ink one. This sits directly
+                  beside the form card in the same column pair, and two panels
+                  of the same size in opposite surfaces read as two different
+                  kinds of thing rather than as a form and the notes beside it.
+                  Sage on the ticks, the colour this system gives a settled
+                  fact. */}
+              <section className="rounded-3xl bg-card px-6 py-8 text-card-foreground shadow-card sm:px-8 sm:py-10">
+                <span className="organic-mark flex size-11 items-center justify-center">
+                  <BrandIcon className="size-5" />
+                </span>
                 <h2 className="font-display mt-6 text-2xl leading-tight">
                   {t("contact.customerHelpTitle")}
                 </h2>
-                <div className="mt-6 divide-y divide-storefront-brand-foreground/15 border-y border-storefront-brand-foreground/15">
+                <div className="mt-6 divide-y divide-border border-y border-border">
                   {guidanceItems.map((item) => (
-                    <p key={item} className="flex gap-3 py-4 text-sm leading-6 text-storefront-brand-foreground/85">
-                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-storefront-brand-foreground/65" />
+                    <p key={item} className="flex gap-3 py-4 text-sm leading-6 text-muted-foreground">
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-leaf" />
                       <span>{item}</span>
                     </p>
                   ))}
@@ -154,7 +162,7 @@ function VisitStudioMap({
             <span className="petal-dot" aria-hidden="true" />
             <span className="h-px flex-1" aria-hidden="true" />
           </span>
-          <p className="font-mono text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <p className="store-label">
             {t("contact.visitEyebrow")}
           </p>
           <h2 className="font-display mt-3 text-2xl leading-tight sm:text-3xl">
@@ -168,10 +176,10 @@ function VisitStudioMap({
         <div className="relative">
           {/* Offset frame — the editorial inset rectangle used on the About hero. */}
           <div
-            className="pointer-events-none absolute -inset-2 rounded-xl border border-border sm:-inset-3"
+            className="pointer-events-none absolute -inset-2 rounded-[2.25rem] border border-border sm:-inset-3"
             aria-hidden="true"
           />
-          <div className="relative overflow-hidden rounded-lg border border-border bg-storefront-brand-soft shadow-lg shadow-storefront-brand/10">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-muted shadow-panel">
             <iframe
               title={t("contact.mapLabel")}
               src={embedUrl}
@@ -182,7 +190,7 @@ function VisitStudioMap({
             />
             {/* Ink address plate — same primary card as the help panel. */}
             <div className="pointer-events-none absolute inset-x-3 bottom-3 sm:inset-x-5 sm:bottom-5">
-              <div className="pointer-events-auto max-w-sm rounded-lg bg-primary p-4 text-primary-foreground shadow-xl shadow-storefront-brand/30 sm:p-5">
+              <div className="pointer-events-auto max-w-sm rounded-3xl bg-primary p-4 text-primary-foreground shadow-panel shadow-storefront-brand/30 sm:p-5">
                 <div className="flex items-center gap-2">
                   <MapPin className="size-4 shrink-0 text-primary-foreground/80" />
                   <p className="font-display text-base font-semibold leading-tight sm:text-lg">
@@ -196,7 +204,7 @@ function VisitStudioMap({
                   href={directionsUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="store-focus-invert mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-sm bg-primary-foreground px-4 py-2 text-sm font-semibold text-primary motion-safe:transition hover:opacity-90"
+                  className="store-focus-invert mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary-foreground px-4 py-2 text-sm font-semibold text-primary motion-safe:transition hover:opacity-90"
                 >
                   {t("contact.getDirections")}
                   <ArrowUpRight className="size-4 rtl:rotate-180" />
@@ -328,9 +336,13 @@ function ContactForm({
             ref={successRef}
             tabIndex={-1}
             role="status"
-            className="flex min-h-96 flex-col items-center justify-center rounded-lg border border-primary/30 bg-storefront-brand-soft px-6 text-center"
+            /* The card surface, not sand-800: this panel carries a heading and two
+               paragraphs in ink, and an ink fill behind them put the whole
+               confirmation at about 1.6:1. */
+            className="flex min-h-96 flex-col items-center justify-center rounded-3xl bg-card px-6 text-center"
           >
-            <div className="flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-storefront-brand/20">
+            {/* Sage, the system's colour for a thing that went right. */}
+            <div className="flex size-16 items-center justify-center rounded-full bg-leaf text-background shadow-card">
               <CheckCircle2 className="size-8" />
             </div>
             <h2 className="mt-5 text-2xl font-semibold">{t("contact.messageSent")}</h2>
@@ -461,7 +473,7 @@ function ContactForm({
                       <Textarea
                         placeholder={t("contact.messagePlaceholder")}
                         aria-required="true"
-                        className="min-h-32 resize-none rounded-none border-0 border-b border-border bg-transparent px-0 py-2 text-base shadow-none focus-visible:border-primary dark:bg-transparent"
+                        className="min-h-32 resize-none text-base"
                         {...field}
                       />
                     </FormControl>
@@ -503,4 +515,4 @@ function ContactForm({
 }
 
 const underlineFieldClass =
-  "h-11 rounded-none border-0 border-b border-border bg-transparent px-0 text-base shadow-none focus-visible:border-primary dark:bg-transparent";
+  "h-11 text-base";

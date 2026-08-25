@@ -27,21 +27,21 @@ export function ProductsPageSkeleton() {
         </div>
 
         <div className="store-container">
-          <div className="grid min-w-0 gap-7 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-8 xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-10">
+          <div className="grid min-w-0 gap-7 lg:grid-cols-[minmax(14.125rem,15.75rem)_minmax(0,1fr)] lg:items-start lg:gap-[clamp(1.875rem,3.4vw,2.75rem)]">
             {/* Desktop filter rail */}
-            <aside className="hidden border-e border-border pe-6 lg:block xl:pe-8">
+            <aside className="hidden pe-2.5 lg:block">
               <Skeleton className="h-6 w-24" />
               <Skeleton className="mt-7 h-5 w-28" />
               <div className="mt-3 space-y-2">
                 {Array.from({ length: 6 }, (_, i) => (
-                  <Skeleton key={i} className="h-11 w-full rounded-lg" />
+                  <Skeleton key={i} className="h-11 w-full rounded-full" />
                 ))}
               </div>
               <Skeleton className="mt-7 h-px w-full" />
               <Skeleton className="mt-7 h-5 w-24" />
               <div className="mt-3 space-y-2">
                 {Array.from({ length: 3 }, (_, i) => (
-                  <Skeleton key={i} className="h-11 w-full rounded-lg" />
+                  <Skeleton key={i} className="h-11 w-full rounded-full" />
                 ))}
               </div>
             </aside>

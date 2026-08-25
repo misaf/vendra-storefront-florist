@@ -34,11 +34,13 @@ import {
  * drift apart — they previously sat on three different containers and started
  * at three different left edges.
  */
-const ARTICLE_GRID =
-  "grid gap-8 md:grid-cols-[10rem_minmax(0,1fr)] md:gap-12 lg:grid-cols-[12rem_minmax(0,1fr)]";
-
-/** The reading measure — ~70 characters at the article type scale. */
-const PROSE_WIDTH = "max-w-[42rem]";
+/* One centred column at the design system's article measure (760px), not a
+   prose column with a metadata rail beside it. The rail set the category,
+   date and reading time as a vertical index down the outer margin, which put
+   an article's least important facts in the position a reader's eye lands on
+   first and left the copy pushed off the page's own centre. The same facts now
+   run as a single line under the title, where a journal puts them. */
+const ARTICLE_COLUMN = "mx-auto w-full max-w-[47.5rem]";
 
 /**
  * The post's own address, independent of how the visitor arrived. `/blog/7`,
@@ -175,7 +177,7 @@ export default async function BlogPostDetail({
             <span className="store-seam mx-auto mb-8 max-w-[10rem]">
               <span className="petal-dot" aria-hidden="true" />
             </span>
-            <p className="font-mono text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            <p className="store-label">
               {t("blog.eyebrow")}
             </p>
             <h1 className="font-display mt-4 text-3xl tracking-tight text-foreground sm:text-4xl">
@@ -212,82 +214,73 @@ export default async function BlogPostDetail({
               same document, not three sibling bands that happen to sit near
               each other. */}
           <article className="bg-background pt-6 sm:pt-8">
-            <header className="store-container max-w-6xl">
-              <Breadcrumbs
-                items={breadcrumbItems}
-                label={t("blog.breadcrumb")}
-              />
+            <header className="store-container">
+              <div className={ARTICLE_COLUMN}>
+                <Breadcrumbs
+                  items={breadcrumbItems}
+                  label={t("blog.breadcrumb")}
+                />
+              </div>
 
-              <div
-                className={`${ARTICLE_GRID} mt-6 border-y border-border py-9 lg:py-11`}
-              >
-                <div className="order-2 flex flex-wrap gap-x-6 gap-y-4 text-sm text-muted-foreground md:order-1 md:block md:space-y-6 md:border-e md:border-border md:pe-8">
+              <div className={`${ARTICLE_COLUMN} mt-6 flex flex-col gap-6 pb-9 lg:pb-11`}>
+                {/* One line of facts under the title — collection, date,
+                    reading time — the way a journal sets a byline. The rail
+                    that used to hold them stacked each value under a
+                    "CATEGORY" / "PUBLISHED" caption, which is a table's
+                    grammar: three headings for three single values, and an
+                    uneven baseline across the row. */}
+                <div className="order-2 flex flex-wrap items-center gap-x-2.5 gap-y-2 text-sm text-muted-foreground">
                   {post.category ? (
-                    <div className="min-w-0">
-                      <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        {t("blog.category")}
-                      </p>
+                    <>
                       {post.categorySlug ? (
                         <Link
                           href={{
                             pathname: "/blog",
                             query: { category: post.categorySlug },
                           }}
-                          // The negative bottom margin keeps the 44px tap target from
-                          // stretching the rail, the way Breadcrumbs does it.
-                          className="store-dynamic-text -mb-2 mt-2 inline-flex min-h-11 items-center rounded-sm py-2 font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+                          /* The negative margin keeps the 44px tap target from
+                             stretching the line, the way Breadcrumbs does it. */
+                          className="store-dynamic-text -my-2 inline-flex min-h-11 items-center rounded-sm py-2 font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
                         >
                           <bdi>{post.category}</bdi>
                         </Link>
                       ) : (
-                        <p className="store-dynamic-text mt-2 font-medium text-foreground">
+                        <span className="store-dynamic-text font-medium text-foreground">
                           <bdi>{post.category}</bdi>
-                        </p>
+                        </span>
                       )}
-                    </div>
+                      <span aria-hidden="true" className="text-border">&middot;</span>
+                    </>
                   ) : null}
 
-                  <div>
-                    <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      {t("blog.published")}
-                    </p>
-                    <time
-                      dateTime={publishedAt}
-                      className="mt-2 inline-flex items-center gap-2 font-medium text-foreground"
-                    >
-                      <Calendar className="size-3.5 shrink-0" aria-hidden="true" />
-                      {formatLocaleDate(publishedAt, locale as Locale)}
-                    </time>
-                  </div>
+                  <time dateTime={publishedAt} className="inline-flex items-center gap-2">
+                    <Calendar className="size-3.5 shrink-0" aria-hidden="true" />
+                    {formatLocaleDate(publishedAt, locale as Locale)}
+                  </time>
 
                   {readingMinutes > 0 ? (
-                    <div>
-                      {/* No label above it — "6 min read" already says what it
-                          is, where a "Reading time" heading would only repeat
-                          the value underneath. */}
+                    <>
+                      <span aria-hidden="true" className="text-border">&middot;</span>
                       <time
                         dateTime={`PT${readingMinutes}M`}
-                        className="inline-flex items-center gap-2 font-medium text-foreground"
+                        className="inline-flex items-center gap-2"
                       >
                         <Clock className="size-3.5 shrink-0" aria-hidden="true" />
                         {t("blog.readingTime", {
-                          // A bare ICU placeholder substitutes the raw value,
-                          // which put a Latin "3" beside a Persian date on the
-                          // same rail. Format it the way the journal index
-                          // formats its post count.
+                          /* A bare ICU placeholder substitutes the raw value,
+                             which put a Latin "3" beside a Persian date on the
+                             same line. Format it the way the journal index
+                             formats its post count. */
                           minutes: new Intl.NumberFormat(locale).format(
                             readingMinutes
                           ),
                         })}
                       </time>
-                    </div>
+                    </>
                   ) : null}
                 </div>
 
-                <div className="order-1 min-w-0 md:order-2">
-                  <span className="store-seam mb-5 max-w-[8rem]">
-                    <span className="petal-dot" aria-hidden="true" />
-                  </span>
+                <div className="order-1 min-w-0">
                   <h1
                     className="store-dynamic-text store-page-title text-foreground"
                     dir="auto"
@@ -301,9 +294,8 @@ export default async function BlogPostDetail({
             {hasLeadImage && (
               /* No caption, because the API carries none — inventing one would
                  be worse than the photograph standing on its own. */
-              <figure className={`store-container max-w-6xl ${ARTICLE_GRID} mt-8 sm:mt-10`}>
-                <div className="hidden md:block" aria-hidden="true" />
-                <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border bg-muted">
+              <figure className="store-container">
+                <div className={`${ARTICLE_COLUMN} relative aspect-[16/9] overflow-hidden rounded-[2rem] bg-muted shadow-card`}>
                   <SafeImage
                     src={post.image}
                     alt={post.title}
@@ -318,19 +310,15 @@ export default async function BlogPostDetail({
             )}
 
             <div className="store-section">
-              <div className={`store-container max-w-6xl ${ARTICLE_GRID}`}>
-                <div className="hidden md:block" aria-hidden="true">
-                  <div className="store-sticky h-px w-full bg-border" />
-                </div>
-
-                <div className={`min-w-0 ${PROSE_WIDTH}`}>
+              <div className={`store-container ${ARTICLE_COLUMN}`}>
+                <div className="min-w-0">
                   {hasArticleContent ? (
                     <RichText
                       content={post.richContent ?? post.content}
                       density="article"
                     />
                   ) : (
-                    <div className="rounded-xl border border-border bg-card/65 p-6 sm:p-8">
+                    <div className="rounded-3xl border border-border bg-card/65 p-6 sm:p-8">
                       <span className="flex size-11 items-center justify-center rounded-full bg-secondary text-primary">
                         <BookOpen className="size-5" aria-hidden="true" />
                       </span>

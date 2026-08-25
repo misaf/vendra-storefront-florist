@@ -56,7 +56,7 @@ const AddressMapPicker = dynamic(() => import("./address-map-picker"), {
   loading: () => (
     <div className="space-y-2.5">
       <div className="h-8 w-40 animate-pulse rounded-md bg-muted" />
-      <div className="h-64 w-full animate-pulse rounded-xl border border-border bg-muted sm:h-80" />
+      <div className="h-64 w-full animate-pulse rounded-3xl border border-border bg-muted sm:h-80" />
     </div>
   ),
 });
@@ -266,7 +266,7 @@ export default function CheckoutClient() {
           <button
             type="button"
             onClick={openCart}
-            className="-ms-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="-ms-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
             <ArrowLeft className="size-4 rtl:rotate-180" />
             {t("common.backToCart")}
@@ -282,23 +282,33 @@ export default function CheckoutClient() {
               {t("checkout.pageDescription")}
             </p>
           </div>
+          {/* The three steps as the design system draws them: a numbered
+              medallion, its name, and a hairline running on to the next. It
+              was a bordered three-column table with `01 / 02 / 03` set in the
+              mono face — a face this storefront otherwise never shows a
+              reader, and a grid that boxed each step into a cell rather than
+              connecting it to the one after. */}
           <ol
-            className="grid grid-cols-3 border-y border-border"
+            className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-3"
             aria-label={t("checkout.title")}
           >
             {["stepDetails", "stepReview", "stepConfirm"].map((key, index) => (
-              <li
-                key={key}
-                className="border-e border-border px-3 py-4 last:border-e-0 sm:px-4"
-              >
-                <span className="font-mono text-[0.65rem] text-muted-foreground">
-                  {numberFormat
-                    .format(index + 1)
-                    .padStart(2, numberFormat.format(0))}
+              <li key={key} className="flex items-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className="font-display flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-sm text-card-foreground"
+                >
+                  {numberFormat.format(index + 1)}
                 </span>
-                <span className="mt-1 block text-xs font-medium leading-5 text-foreground sm:text-sm">
+                <span className="text-sm text-muted-foreground">
                   {t(`checkout.${key}`)}
                 </span>
+                {index < 2 ? (
+                  <span
+                    aria-hidden="true"
+                    className="hidden h-px w-8 bg-border sm:block"
+                  />
+                ) : null}
               </li>
             ))}
           </ol>
@@ -521,11 +531,16 @@ export default function CheckoutClient() {
 
             {/* Right Column - Order Summary */}
             <div className="min-w-0">
-              <Card className="store-sticky min-w-0 overflow-hidden border-0 bg-storefront-brand pt-0 text-storefront-brand-foreground shadow-xl shadow-storefront-brand/20">
-                <div aria-hidden="true" className="h-1.5 w-full bg-rose" />
+              {/* No accent sliver along the top edge any more: at the
+                  Organic system's card radius the card is only a few pixels
+                  wide where a 6px strip would sit, so the strip clipped into a
+                  short floating line detached from the panel it was marking.
+                  The ink surface against the cream page already makes this the
+                  loudest thing in the column. */}
+              <Card className="store-sticky min-w-0 overflow-hidden border-0 shadow-card">
                 <CardHeader>
-                  <h2 className="font-display flex items-center gap-3 text-2xl font-semibold leading-none text-storefront-brand-foreground">
-                    <span className="flex size-9 items-center justify-center rounded-full bg-storefront-brand-foreground text-storefront-brand">
+                  <h2 className="font-display flex items-center gap-3 text-2xl leading-none text-card-foreground">
+                    <span className="flex size-9 items-center justify-center rounded-full bg-clay-100 text-clay-800">
                       <ShoppingBag className="h-5 w-5" />
                     </span>
                     {t("checkout.orderSummary")}
@@ -535,7 +550,7 @@ export default function CheckoutClient() {
                   <div className="space-y-3">
                     {items.map((item) => (
                       <div key={item.id} className="flex gap-3">
-                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-2xl bg-muted">
                           <SafeImage
                             src={item.image}
                             alt={item.name}
@@ -545,13 +560,13 @@ export default function CheckoutClient() {
                           />
                         </div>
                         <div className="flex flex-1 flex-col">
-                          <p className="store-dynamic-text text-sm font-medium text-storefront-brand-foreground">
+                          <p className="store-dynamic-text text-sm font-medium text-card-foreground">
                             <bdi>{item.name}</bdi>
                           </p>
-                          <p className="text-xs text-storefront-brand-foreground/80">
+                          <p className="text-xs text-muted-foreground">
                             {t("common.quantity")}: {numberFormat.format(item.quantity)}
                           </p>
-                          <p className="mt-1 text-sm font-medium text-storefront-brand-foreground" dir="ltr">
+                          <p className="mt-1 text-sm font-medium text-card-foreground" dir="ltr">
                             {formatPrice(item.price * item.quantity)}
                           </p>
                         </div>
@@ -559,29 +574,29 @@ export default function CheckoutClient() {
                     ))}
                   </div>
 
-                  <div className="border-t border-storefront-brand-foreground/25 pt-4">
+                  <div className="border-t border-border pt-4">
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-storefront-brand-foreground/80">{t("checkout.subtotal")}</span>
-                        <span className="text-storefront-brand-foreground" dir="ltr">
+                        <span className="text-muted-foreground">{t("checkout.subtotal")}</span>
+                        <span className="text-card-foreground" dir="ltr">
                           {formatPrice(subtotal)}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-storefront-brand-foreground/80">{t("checkout.shipping")}</span>
-                        <span className="text-storefront-brand-foreground" dir="ltr">
+                        <span className="text-muted-foreground">{t("checkout.shipping")}</span>
+                        <span className="text-card-foreground" dir="ltr">
                           {formatPrice(shipping)}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-storefront-brand-foreground/80">{t("checkout.tax")}</span>
-                        <span className="text-storefront-brand-foreground" dir="ltr">
+                        <span className="text-muted-foreground">{t("checkout.tax")}</span>
+                        <span className="text-card-foreground" dir="ltr">
                           {formatPrice(tax)}
                         </span>
                       </div>
-                      <div className="flex justify-between border-t border-storefront-brand-foreground/25 pt-3 text-lg font-bold">
-                        <span className="text-storefront-brand-foreground">{t("common.total")}</span>
-                        <span className="text-storefront-brand-foreground" dir="ltr">
+                      <div className="font-display flex justify-between border-t border-border pt-3 text-lg">
+                        <span className="text-card-foreground">{t("common.total")}</span>
+                        <span className="tabular-nums text-rose" dir="ltr">
                           {formatPrice(total)}
                         </span>
                       </div>
@@ -591,7 +606,7 @@ export default function CheckoutClient() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full gap-2 bg-storefront-brand-foreground text-storefront-brand hover:bg-storefront-brand-foreground/90"
+                    className="w-full gap-2"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (

@@ -37,7 +37,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Loader2, Package, SlidersHorizontal, X } from "lucide-react";
+import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { useProductCatalogue, useProductCategories } from "../lib/queries";
 import type { FetchProductsResult, ProductCategory } from "../types";
 import { buildProductsQueryKey, getProductsApiSort } from "../lib/keys";
@@ -333,13 +333,21 @@ export default function ProductsClient({
         </PageHeader>
 
         <div className="store-container">
-          <div className="grid min-w-0 gap-7 border-t border-border pt-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-8 lg:pt-8 xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-10">
+          <div className="grid min-w-0 gap-7 pt-6 lg:grid-cols-[minmax(14.125rem,15.75rem)_minmax(0,1fr)] lg:items-start lg:gap-[clamp(1.875rem,3.4vw,2.75rem)] lg:pt-8">
+            {/* The rail rides with the results instead of scrolling away from
+                them: a shopper eleven rows into 560 products is exactly the one
+                who wants to narrow, and the design system pins it under the
+                bar. It scrolls inside its own height so a shop with forty
+                collections cannot push the page taller than the viewport.
+                No rule down its edge — the grid's own gutter separates the two
+                columns, and the border was a third vertical line beside the
+                page's gutter and the card grid's. */}
             <aside
-              className="hidden min-w-0 border-e border-border pe-6 text-card-foreground lg:block xl:pe-8"
+              className="store-sticky-lg hidden max-h-[calc(100vh-var(--store-header-h)-3rem)] min-w-0 overflow-y-auto overscroll-contain pe-2.5 text-card-foreground lg:block"
               aria-label={t("products.filtersTitle")}
             >
               <div className="mb-6 flex items-center justify-between gap-3">
-                <h2 className="text-lg font-bold text-foreground">
+                <h2 className="sr-only">
                   {t("products.filtersTitle")}
                 </h2>
                 {hasActiveFilters ? (
@@ -369,9 +377,17 @@ export default function ProductsClient({
             </aside>
 
             <div className="min-w-0" aria-busy={loading || loadingMore}>
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+              {/* The results header, as the design system composes it: how
+                  much there is, what is narrowing it, and the control that
+                  reorders it — one row closed by a rule, rather than a count on
+                  one line and its controls opposite.
+                  The design also names the active collection at the head of
+                  this row. Here the page's own <h1> already becomes that name
+                  the moment a collection is chosen, so repeating it would print
+                  the same words twice, one under the other. */}
+              <div className="flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-3 border-b border-border pb-5">
                 <span
-                  className="shrink-0 text-sm font-semibold text-foreground"
+                  className="shrink-0 text-sm text-muted-foreground"
                   role="status"
                   aria-live="polite"
                 >
@@ -387,7 +403,7 @@ export default function ProductsClient({
                   )}
                 </span>
 
-                <div className="flex min-w-0 items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2 ms-auto">
                   <Sheet
                     open={filterSheetOpen}
                     onOpenChange={handleFilterSheetOpenChange}
@@ -492,7 +508,7 @@ export default function ProductsClient({
               {hasActiveFilters ? (
                 <section
                   aria-label={t("products.selectedFilters")}
-                  className="mt-4 flex min-w-0 flex-wrap items-center gap-2"
+                  className="mt-5 flex min-w-0 flex-wrap items-center gap-2"
                 >
                   {activeCategoryFilter ? (
                     <Link
@@ -502,7 +518,7 @@ export default function ProductsClient({
                         sort: hasExplicitSort ? sort : undefined,
                       })}
                       scroll={false}
-                      className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground hover:bg-muted"
+                      className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border border-border bg-clay-100 px-3 py-1 text-xs font-semibold text-clay-800 transition-colors hover:bg-clay-200"
                       aria-label={t("products.removeSelectedFilter", {
                         filter: activeCategoryLabel,
                       })}
@@ -521,7 +537,7 @@ export default function ProductsClient({
                         sort: hasExplicitSort ? sort : undefined,
                       })}
                       scroll={false}
-                      className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground hover:bg-muted"
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-clay-100 px-3 py-1 text-xs font-semibold text-clay-800 transition-colors hover:bg-clay-200"
                       aria-label={t("products.removeSelectedFilter", {
                         filter:
                           availability === "in-stock"
@@ -580,12 +596,7 @@ export default function ProductsClient({
             // category was empty when in fact the request never arrived.
             <Empty className="py-12">
               <EmptyHeader>
-                <EmptyMedia
-                  variant="icon"
-                  className="size-14 rounded-full bg-secondary text-muted-foreground ring-1 ring-border"
-                >
-                  <Package className="h-6 w-6" />
-                </EmptyMedia>
+                <EmptyMedia variant="blob" aria-hidden="true" />
                 <EmptyTitle role="heading" aria-level={2}>
                   {hasActiveFilters
                     ? t("products.noFilteredProducts")

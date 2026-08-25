@@ -23,7 +23,7 @@ export function BlogPageSkeleton() {
         <div className="store-container">
           {/* Featured lead */}
           <div className="mt-12 grid gap-6 border-b border-border pb-12 lg:grid-cols-12 lg:items-center lg:gap-10">
-            <Skeleton className="aspect-[16/10] w-full rounded-2xl lg:col-span-7" />
+            <Skeleton className="aspect-[16/10] w-full rounded-3xl lg:col-span-7" />
             <div className="lg:col-span-5">
               <Skeleton className="h-4 w-28" />
               <Skeleton className="mt-4 h-10 w-full" />

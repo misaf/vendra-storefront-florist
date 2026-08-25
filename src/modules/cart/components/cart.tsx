@@ -18,7 +18,6 @@ import { useTranslations } from "@/shared/hooks/use-translations";
 import { formatRemainingQuantity } from "@/modules/products";
 
 import { SafeImage } from "@/shared/components/ui/safe-image";
-import { useBrandIcon } from "@/shared/config/storefront-context";
 import { useFormatPrice } from "@/shared/config/storefront-context";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
 import { toast } from "sonner";
@@ -37,7 +36,6 @@ export function Cart() {
     setCartOpen,
     cartOpenerRef,
   } = useCart();
-  const BrandIcon = useBrandIcon();
   const { t, locale } = useTranslations();
   const [recentlyRemovedItem, setRecentlyRemovedItem] =
     useState<CartItem | null>(null);
@@ -140,12 +138,7 @@ export function Cart() {
           {items.length === 0 ? (
             <Empty className="py-12">
               <EmptyHeader>
-                <EmptyMedia
-                  variant="icon"
-                  className="size-14 rounded-full bg-secondary text-muted-foreground ring-1 ring-border"
-                >
-                  <BrandIcon className="h-6 w-6" />
-                </EmptyMedia>
+                <EmptyMedia variant="blob" aria-hidden="true" />
                 <EmptyTitle>{t("common.emptyCart")}</EmptyTitle>
                 <EmptyDescription>
                   {t("common.addSomeProducts")}
@@ -163,7 +156,10 @@ export function Cart() {
               </Button>
             </Empty>
           ) : (
-            <div className="divide-y divide-border">
+            /* Each line is its own plate on the page ground — the system's
+               shape for a list of things you can still act on — instead of
+               strips separated by hairlines. */
+            <div className="flex flex-col gap-3">
               {items.map((item) => {
                 // The catalogue only tracks stock when it reports a count, so a
                 // null ceiling means "as many as you like", not "none left".
@@ -173,14 +169,14 @@ export function Cart() {
                 return (
                 <div
                   key={item.id}
-                  className="flex gap-4 py-5 first:pt-0 last:pb-0"
+                  className="flex gap-4 rounded-[1.75rem] bg-card p-4"
                 >
                   <Link
                     href={`/products/${createReadableResourcePath(item.id, item.slug)}`}
                     onClick={() => setCartOpen(false)}
                     aria-hidden="true"
                     tabIndex={-1}
-                    className="relative h-24 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-secondary"
+                    className="relative h-[6.75rem] w-[5.75rem] flex-shrink-0 overflow-hidden rounded-[1.375rem] bg-secondary"
                   >
                     <SafeImage
                       src={item.thumbnail || item.image}
@@ -210,10 +206,11 @@ export function Cart() {
                       </p>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <div className="flex h-10 items-center gap-1 rounded-full border border-border px-1">
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="size-8 min-h-8 min-w-8"
                           disabled={item.quantity <= 1}
                           aria-label={t("common.decreaseQuantity")}
                           onClick={() =>
@@ -222,12 +219,13 @@ export function Cart() {
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="w-8 text-center text-sm font-medium" aria-live="polite">
+                        <span className="font-display w-7 text-center text-sm" aria-live="polite">
                           {numberFormat.format(item.quantity)}
                         </span>
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="size-8 min-h-8 min-w-8"
                           disabled={atStockCeiling}
                           aria-label={t("common.increaseQuantity")}
                           onClick={() =>
@@ -255,11 +253,11 @@ export function Cart() {
                         {formatRemainingQuantity(t, locale, item.stock)}
                       </p>
                     ) : null}
-                    <p className="text-sm font-medium text-card-foreground">
-                      <span className="text-muted-foreground">
+                    <p className="font-display text-base text-rose">
+                      <span className="sr-only">
                         {t("common.lineTotal")}:{" "}
                       </span>
-                      <span dir="ltr">
+                      <span dir="ltr" className="tabular-nums">
                         {formatPrice(Number(item.price) * item.quantity)}
                       </span>
                     </p>

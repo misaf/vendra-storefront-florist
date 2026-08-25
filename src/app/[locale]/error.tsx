@@ -24,7 +24,8 @@ export default function Error({
   return (
     <PageShell>
       <section className="store-section-lg bg-background">
-        <div className="store-container max-w-3xl border-y border-border bg-secondary/30 px-6 py-12 sm:px-12 sm:py-16">
+        <div className="store-container max-w-3xl">
+          <div className="rounded-[2.5rem] bg-card px-6 py-12 shadow-card sm:px-12 sm:py-16">
           <p className="store-eyebrow">
             {t("errors.errorEyebrow")}
           </p>
@@ -42,6 +43,7 @@ export default function Error({
             <Button asChild variant="outline">
               <Link href="/">{t("errors.backHome")}</Link>
             </Button>
+          </div>
           </div>
         </div>
       </section>

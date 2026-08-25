@@ -3,7 +3,6 @@
 import { Link } from "@/shared/i18n/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { BlogPostCard } from "./blog-post-card";
-import { FeaturedBlogPostCard } from "./featured-blog-post-card";
 import { isRtlLocale } from "@/shared/lib/locale";
 import { useCallback } from "react";
 import { formatLocaleDate } from "@/shared/lib/date";
@@ -32,7 +31,6 @@ export function BlogSection({ allPosts, category }: BlogSectionProps) {
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
   const sectionTitle = t("blog.title") || "Blog";
   const posts = allPosts.slice(0, MAX_STOREFRONT_POSTS);
-  const [featuredPost, ...gridPosts] = posts;
   const blogHref = category
     ? {
         pathname: "/blog" as const,
@@ -60,33 +58,26 @@ export function BlogSection({ allPosts, category }: BlogSectionProps) {
         />
 
         {posts.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-background/50 px-5 py-8 text-sm leading-6 text-muted-foreground">
+          <div className="rounded-3xl border border-dashed border-border bg-background/50 px-5 py-8 text-sm leading-6 text-muted-foreground">
             {t("blog.noPosts") || "No posts found"}
           </div>
         ) : (
-          <div className="grid gap-5 min-[43.75rem]:grid-cols-[1.15fr_0.85fr] min-[43.75rem]:gap-6">
-            <div>
-              <FeaturedBlogPostCard
-                post={featuredPost}
-                imageUnavailableText={t("blog.imageUnavailable")}
+          /* Three equal cards. The band used to lead on one large entry with a
+             scrim over its photograph and set the other two as small
+             title-only tiles, which said the newest post was the important one
+             — a ranking the journal never expressed. Three of the same object
+             is what the design system draws here, and it is also what the
+             content is: three recent entries, none of them featured. */
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+            {posts.map((post) => (
+              <BlogPostCard
+                key={post.id}
+                post={post}
+                formatDate={formatDate}
+                showDate={false}
+                compact
               />
-            </div>
-            {gridPosts.length > 0 ? (
-              <div className="grid grid-cols-2 gap-4 min-[43.75rem]:content-start">
-                {gridPosts.map((post) => (
-                  <BlogPostCard
-                    key={post.id}
-                    post={post}
-                    formatDate={formatDate}
-                    showDate={false}
-                    showExcerpt={false}
-                    showReadMore={false}
-                    showCategory={false}
-                    compact
-                  />
-                ))}
-              </div>
-            ) : null}
+            ))}
           </div>
         )}
       </div>

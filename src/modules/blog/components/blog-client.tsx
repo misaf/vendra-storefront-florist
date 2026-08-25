@@ -63,7 +63,7 @@ function FeaturedPost({
       className="group block rounded-2xl"
     >
       <article className="grid gap-6 lg:grid-cols-12 lg:items-center lg:gap-10">
-        <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-muted lg:col-span-7">
+        <div className="relative aspect-[16/10] overflow-hidden rounded-3xl bg-muted lg:col-span-7">
           {hasImageError ? (
             <div className="flex h-full w-full items-center justify-center text-storefront-text-muted">
               <ImageOff className="h-8 w-8" />
@@ -71,7 +71,7 @@ function FeaturedPost({
           ) : (
             <Image
               src={normalizeImageUrl(post.image)}
-              /* The title is inside the same link — see FeaturedBlogPostCard. */
+              /* The title is inside the same link, so an alt would repeat it. */
               alt=""
               fill
               sizes="(min-width: 1024px) 58vw, 100vw"
@@ -84,7 +84,7 @@ function FeaturedPost({
         </div>
 
         <div className="lg:col-span-5">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 store-label">
             <span className="text-foreground">{metaText}</span>
             {post.category ? (
               <>
@@ -104,7 +104,7 @@ function FeaturedPost({
             </p>
           ) : null}
 
-          <div className="mt-5 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+          <div className="mt-5 flex items-center gap-2 store-label">
             <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
             <time dateTime={dateValue}>{dateText}</time>
           </div>
@@ -306,7 +306,7 @@ export default function BlogPostsClient({
                       aria-pressed={isActive}
                       onClick={() => handleCategoryChange(item.value)}
                       className={cn(
-                        "group/cat relative min-h-11 shrink-0 whitespace-nowrap rounded-sm px-3 py-2.5 font-mono text-xs uppercase tracking-[0.16em] transition-colors",
+                        "group/cat relative min-h-11 shrink-0 whitespace-nowrap rounded-sm px-3 py-2.5 store-label transition-colors",
                         isActive
                           ? "text-foreground"
                           : "text-muted-foreground hover:text-foreground"
@@ -340,7 +340,7 @@ export default function BlogPostsClient({
 
           {/* Results meta */}
           <div className="mt-8 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-            <p className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="store-label">
               {searchQuery ? (
                 <>
                   {t("blog.searchResults") || "Search results"}
@@ -425,7 +425,7 @@ export default function BlogPostsClient({
                         featuredPost.publishedAt || featuredPost.createdAt
                       )}
                       dateValue={featuredPost.publishedAt || featuredPost.createdAt}
-                      readMoreText={t("blog.readMore") || "Read More"}
+                      readMoreText={t("blog.readMore") || "Read more"}
                       isRtl={isRtl}
                     />
                   </div>
@@ -438,7 +438,6 @@ export default function BlogPostsClient({
                         key={post.id}
                         post={post}
                         formatDate={formatDate}
-                        readMoreText={t("blog.readMore") || "Read More"}
                       />
                     ))}
                   </PostGrid>
@@ -471,7 +470,7 @@ export default function BlogPostsClient({
                   <div className="mt-10">
                     <span className="store-seam mx-auto max-w-xs">
                       <span className="h-px flex-1" aria-hidden="true" />
-                      <span className="font-mono text-xs uppercase tracking-[0.18em]">
+                      <span className="store-label">
                         {t("blog.allPostsLoaded") || "All posts loaded"}
                       </span>
                       <span className="h-px flex-1" aria-hidden="true" />

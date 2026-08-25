@@ -6,16 +6,26 @@ import { useFormatPrice } from "@/shared/config/storefront-context";
 import { cn } from "@/shared/lib/utils";
 import type { Product } from "../types";
 
-const priceVariants = cva("inline-flex flex-wrap items-baseline gap-x-2", {
-  variants: {
-    size: {
-      sm: "gap-x-2 text-xs font-semibold leading-4",
-      md: "gap-x-2 text-base font-bold leading-6",
-      lg: "gap-x-3 gap-y-1 text-3xl font-bold sm:text-4xl",
+/**
+ * A price is set in the display face, in the clay accent, at every size. That
+ * pairing is what makes the number read as the shop's own voice rather than as
+ * a data field, and it is the one treatment the Organic system applies
+ * identically on a catalogue tile, a cart line and a product masthead — so the
+ * variants below change only the step, never the face or the colour.
+ */
+const priceVariants = cva(
+  "font-display inline-flex flex-wrap items-baseline gap-x-2 text-rose",
+  {
+    variants: {
+      size: {
+        sm: "gap-x-2 text-sm leading-5",
+        md: "gap-x-2 text-base leading-6",
+        lg: "gap-x-3 gap-y-1 text-3xl sm:text-4xl",
+      },
     },
-  },
-  defaultVariants: { size: "md" },
-});
+    defaultVariants: { size: "md" },
+  }
+);
 
 const originalVariants = cva("font-medium text-muted-foreground decoration-1", {
   variants: {
@@ -73,7 +83,7 @@ export function Price({
       <span className="sr-only">
         {t(hasDiscount ? "products.salePrice" : "products.priceLabel")}:{" "}
       </span>
-      <span className={cn("tabular-nums text-foreground", valueClassName)}>
+      <span className={cn("tabular-nums", valueClassName)}>
         {formatPrice(product.price, product.formattedPrice)}
       </span>
       {hasDiscount ? (

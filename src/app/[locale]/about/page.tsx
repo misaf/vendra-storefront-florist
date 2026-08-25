@@ -46,7 +46,7 @@ export default async function AboutPage({
   const categories = await loadAboutCategories(locale);
 
   return (
-    <PageShell showFooterNewsletter={false}>
+    <PageShell>
       <AboutMasthead locale={locale} />
       <AboutStory locale={locale} />
       <AboutApproach locale={locale} />
