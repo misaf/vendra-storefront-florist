@@ -1,53 +1,22 @@
 "use client";
 
-import { cva, type VariantProps } from "class-variance-authority";
+import type { ComponentProps } from "react";
+import { PriceView } from "@/shared/components/ui/price-view";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { useFormatPrice } from "@/shared/config/storefront-context";
-import { cn } from "@/shared/lib/utils";
 import type { Product } from "../types";
 
-/**
- * A price is set in the display face, in the clay accent, at every size. That
- * pairing is what makes the number read as the shop's own voice rather than as
- * a data field, and it is the one treatment the Organic system applies
- * identically on a catalogue tile, a cart line and a product masthead — so the
- * variants below change only the step, never the face or the colour.
- */
-const priceVariants = cva(
-  "font-display inline-flex flex-wrap items-baseline gap-x-2 text-rose",
-  {
-    variants: {
-      size: {
-        sm: "gap-x-2 text-sm leading-5",
-        md: "gap-x-2 text-base leading-6",
-        lg: "gap-x-3 gap-y-1 text-3xl sm:text-4xl",
-      },
-    },
-    defaultVariants: { size: "md" },
-  }
-);
-
-const originalVariants = cva("font-medium text-muted-foreground decoration-1", {
-  variants: {
-    size: {
-      sm: "text-xs font-normal",
-      md: "text-sm",
-      lg: "text-base sm:text-lg",
-    },
-  },
-  defaultVariants: { size: "md" },
-});
-
-interface PriceProps extends VariantProps<typeof priceVariants> {
+interface PriceProps
+  extends Pick<
+    ComponentProps<typeof PriceView>,
+    "size" | "className" | "valueClassName"
+  > {
   product: Pick<
     Product,
     "price" | "formattedPrice" | "originalPrice" | "formattedOriginalPrice"
   >;
   /** Whether a discount may be shown — a sold-out row has no live sale. */
   showDiscount?: boolean;
-  className?: string;
-  /** Applied to the current price itself, for per-surface truncation. */
-  valueClassName?: string;
 }
 
 /**
@@ -62,7 +31,8 @@ interface PriceProps extends VariantProps<typeof priceVariants> {
  * heard one price and no indication anything was reduced.
  *
  * Both prices are now real text, each introduced by a visually hidden word, so
- * the reduction is spoken as well as drawn.
+ * the reduction is spoken as well as drawn. The drawing itself is `PriceView`,
+ * in the shared kit; this wrapper supplies the locale's formatting and words.
  */
 export function Price({
   product,
@@ -79,22 +49,20 @@ export function Price({
   const hasDiscount = showDiscount && originalPrice > price;
 
   return (
-    <span className={cn(priceVariants({ size }), className)} dir="ltr">
-      <span className="sr-only">
-        {t(hasDiscount ? "products.salePrice" : "products.priceLabel")}:{" "}
-      </span>
-      <span className={cn("tabular-nums", valueClassName)}>
-        {formatPrice(product.price, product.formattedPrice)}
-      </span>
-      {hasDiscount ? (
-        <>
-          <span className="sr-only">{t("products.originalPrice")}: </span>
-          <del className={cn(originalVariants({ size }), "tabular-nums")}>
-            {formatPrice(product.originalPrice, product.formattedOriginalPrice)}
-          </del>
-        </>
-      ) : null}
-    </span>
+    <PriceView
+      size={size}
+      className={className}
+      valueClassName={valueClassName}
+      value={formatPrice(product.price, product.formattedPrice)}
+      originalValue={
+        hasDiscount
+          ? formatPrice(product.originalPrice, product.formattedOriginalPrice)
+          : undefined
+      }
+      priceLabel={t("products.priceLabel")}
+      saleLabel={t("products.salePrice")}
+      originalLabel={t("products.originalPrice")}
+    />
   );
 }
 

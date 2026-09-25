@@ -4,7 +4,7 @@ import { Badge } from "@/shared/components/ui/badge";
 import { DynamicText } from "@/shared/components/dynamic-text";
 import { Link } from "@/shared/i18n/navigation";
 import { getCategoryTileImage } from "./category-tile";
-import { CategoryImageFallback } from "./category-image-fallback";
+import { CategoryImageFallback } from "@/shared/components/ui/category-image-fallback";
 import type { ProductCategory } from "../types";
 
 interface CollectionsIndexProps {

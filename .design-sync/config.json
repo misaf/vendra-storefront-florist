@@ -11,9 +11,11 @@
   "componentSrcMap": {
     "Alert": "src/shared/components/ui/alert.tsx",
     "Badge": "src/shared/components/ui/badge.tsx",
+    "BlogPostCardView": "src/shared/components/ui/blog-post-card-view.tsx",
     "Button": "src/shared/components/ui/button.tsx",
     "Card": "src/shared/components/ui/card.tsx",
     "Carousel": "src/shared/components/ui/carousel.tsx",
+    "CategoryTileView": "src/shared/components/ui/category-tile-view.tsx",
     "Command": "src/shared/components/ui/command.tsx",
     "Dialog": "src/shared/components/ui/dialog.tsx",
     "DropdownMenu": "src/shared/components/ui/dropdown-menu.tsx",
@@ -22,6 +24,8 @@
     "Form": "src/shared/components/ui/form.tsx",
     "Input": "src/shared/components/ui/input.tsx",
     "Label": "src/shared/components/ui/label.tsx",
+    "NewsletterFormView": "src/shared/components/ui/newsletter-form-view.tsx",
+    "PriceView": "src/shared/components/ui/price-view.tsx",
     "Sheet": "src/shared/components/ui/sheet.tsx",
     "Skeleton": "src/shared/components/ui/skeleton.tsx",
     "Tabs": "src/shared/components/ui/tabs.tsx",
@@ -60,6 +64,15 @@
       "cardMode": "column"
     },
     "Textarea": {
+      "cardMode": "column"
+    },
+    "CategoryTileView": {
+      "cardMode": "column"
+    },
+    "BlogPostCardView": {
+      "cardMode": "column"
+    },
+    "NewsletterFormView": {
       "cardMode": "column"
     }
   },

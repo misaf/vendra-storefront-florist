@@ -1,10 +1,9 @@
-import Image from "next/image";
-import { DynamicText } from "@/shared/components/dynamic-text";
+import { CategoryTileView } from "@/shared/components/ui/category-tile-view";
 import { Link } from "@/shared/i18n/navigation";
 import { normalizeImageUrl } from "@/shared/lib/utils";
 import { resolveCategoryImage } from "../lib/category-images";
 import type { ProductCategory } from "../types";
-import { CategoryImageFallback } from "./category-image-fallback";
+import { CategoryTileImage } from "./category-tile-image";
 
 /**
  * The catalogue's picture for a category, or `null` to draw the fallback tile.
@@ -68,54 +67,28 @@ export function CategoryTile({
   const src = getCategoryTileImage(category);
 
   return (
-    <Link
-      href={{ pathname: "/products", query: { category: category.slug } }}
-      className="group flex h-full flex-col rounded-[1.75rem] outline-offset-4"
-    >
-      {/* Fixed aspect on a `fill` image reserves the row before media arrives. */}
-      <div
-        className={`organic-washed relative ${aspect} w-full overflow-hidden bg-secondary shadow-card transition-shadow duration-300 group-hover:shadow-panel ${
-          shape === "arch" ? "organic-arch" : "rounded-[1.75rem]"
-        }`}
-      >
-        {src ? (
-          <Image
+    <CategoryTileView
+      asChild
+      name={category.name}
+      description={category.description}
+      image={
+        src ? (
+          <CategoryTileImage
             src={src}
-            /* Empty on purpose: the category's name is drawn directly below,
-               inside the same link. An alt here would make the link announce
-               itself twice. */
-            alt=""
-            fill
             sizes={sizes}
             unoptimized={isProxiedStorageImage(src)}
-            /* Never priority: every caller places this below its own masthead,
-               so no tile competes with the page's LCP image. */
-            className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            tone={tone}
           />
-        ) : (
-          <CategoryImageFallback tone={tone} />
-        )}
-      </div>
-
-      {/* Name and caption on the page's own ground, under the plate — the
-          design sets no arrow and no chip here. The picture is the affordance,
-          and the whole tile is the link. */}
-      <div className="flex flex-1 flex-col">
-        <h3
-          className={`store-dynamic-text font-display leading-tight text-foreground transition-colors group-hover:text-rose [.locale-fa_&]:leading-normal ${
-            showDescription
-              ? "mt-[1.125rem] text-xl sm:text-[1.375rem]"
-              : "mt-3.5 text-base sm:text-lg"
-          }`}
-        >
-          <DynamicText>{category.name}</DynamicText>
-        </h3>
-        {showDescription && category.description ? (
-          <p className="store-lede mt-1 line-clamp-2 text-[0.84375rem] text-foreground/65">
-            <DynamicText>{category.description}</DynamicText>
-          </p>
-        ) : null}
-      </div>
-    </Link>
+        ) : undefined
+      }
+      aspect={aspect}
+      tone={tone}
+      showDescription={showDescription}
+      shape={shape}
+    >
+      <Link
+        href={{ pathname: "/products", query: { category: category.slug } }}
+      />
+    </CategoryTileView>
   );
 }
