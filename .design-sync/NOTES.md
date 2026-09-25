@@ -18,6 +18,13 @@
 - Views take the router link through `asChild` + Radix `Slottable` (the child `<Link />` becomes the root, and the view's markup renders inside it). Previews pass a plain `href="#"` instead.
 - Previews use `organic-wash-*` divs as photography stand-ins, the same as the Carousel previews.
 
+## Design System artifact (separate from the Claude Design project)
+
+- The "Vendra Florist" style-guide artifact (https://claude.ai/artifact/5iBoXBHBtVp8LPgjsV7vT9, Design System type) carries the same components. `/design-sync` does not update it.
+- After a sync: `node .design-sync/artifact-gen.mjs` writes `components/**` (bundle, bundle.css, React 19 in `lib/`, per-component `preview.html`, `README.md`, `.d.ts`) to `.design-sync/.cache/artifact/project/`. Then ask Claude to publish that folder to the artifact: read the artifact first, send only `project/components/**` (`.d.ts` files as `text/plain`), and send `project/design-system.json` only if `namespace`/`libraries` change (currently `VendraUI`, React 19.2.8).
+- The generator makes `bundle.css` answer to the artifact's `data-theme="dark"` as well as `.dark`, and pins `--radius-sm`/`--radius-lg`, which the artifact's tokens.css also defines.
+- A new component needs an entry in the generator's `GROUPS` (else it lands in "Other") and ideally in `HEIGHTS`.
+
 ## Excluded components
 
 - `SafeImage` (`next/image`) and `ShareButton` (needs next-intl context) only run inside the Next app — left out of entry.ts and componentSrcMap.
