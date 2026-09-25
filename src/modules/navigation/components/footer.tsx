@@ -17,10 +17,7 @@ import {
 import { formatBusinessHours, toLocaleDigits } from "@/shared/lib/hours";
 import { telHref } from "@/shared/lib/utils";
 import { useProductCategories } from "@/modules/products";
-import { DynamicText } from "@/shared/components/dynamic-text";
-
-const footerLink =
-  "store-focus-invert -my-1.5 inline-flex min-h-11 items-start rounded-sm py-1.5 text-start text-sm text-white/75 transition-colors hover:text-white";
+import { FooterView } from "@/shared/components/ui/footer-view";
 
 /** The design marks each address line with a glyph rather than an icon: a
  *  ring for a place, a clock face for an hour. They sit in a fixed 22px
@@ -42,6 +39,9 @@ const HOURS_GLYPH = "◷";
  * stopping at "all products". Those rows are the shop's real categories, so a
  * shop that renames a collection renames it here too — and one that has none
  * simply shows a shorter column.
+ *
+ * The drawing is `FooterView`, in the shared kit; this wrapper supplies the
+ * store's settings, its categories and the locale's words.
  */
 export function Footer() {
   const { t, locale } = useTranslations();
@@ -109,124 +109,28 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-storefront-brand text-storefront-brand-foreground">
-      <div className="store-container grid gap-8 pb-10 pt-14 sm:pt-[clamp(3.375rem,7vw,5.625rem)] lg:grid-cols-[minmax(17rem,0.85fr)_minmax(18.75rem,2fr)] lg:gap-[clamp(2rem,4vw,3.25rem)]">
-        <div>
-          <Link
-            href="/"
-            className="store-focus-invert inline-flex items-center gap-[0.6875rem] rounded-sm"
-          >
-            {/* Decorative, and deliberately empty: the design's footer mark is
-                the petal itself rather than a second glyph holder. */}
-            <span className="organic-mark-petal size-[1.875rem] shrink-0" aria-hidden="true" />
-            <span className="font-display text-[1.1875rem] leading-tight text-white">
-              {storeName}
-            </span>
-          </Link>
-
-          <p className="mt-4 max-w-[32ch] text-sm leading-[1.65] text-white/70">
-            {t("common.storeTagline")}
-          </p>
-
-          {/* The one line in the foot set in the display face: a florist is
-              still a shop people ring up. */}
-          <a
-            href={telHref(contact.mobilePhone)}
-            dir="ltr"
-            className="store-focus-invert font-display mt-5 inline-block rounded-sm text-[1.1875rem] text-white transition-colors hover:text-clay-800"
-          >
-            <span className="sr-only">{t("common.callStore")}</span>
-            {toLocaleDigits(contact.mobilePhone, locale)}
-          </a>
-
-          {detailRows.length > 0 || contact.email ? (
-            <div className="mt-4 flex flex-col gap-2.5">
-              {detailRows.map(({ glyph, value }) => (
-                <p key={value} className="flex items-start gap-[0.6875rem]">
-                  <span
-                    aria-hidden="true"
-                    className="w-[1.375rem] shrink-0 text-center text-[0.8125rem] leading-6 text-white/55"
-                  >
-                    {glyph}
-                  </span>
-                  <span className="text-[0.84375rem] leading-normal text-white/72">
-                    {value}
-                  </span>
-                </p>
-              ))}
-              {contact.email ? (
-                <a
-                  href={`mailto:${contact.email}`}
-                  className="store-focus-invert -my-1 flex min-h-11 items-start gap-[0.6875rem] rounded-sm py-1"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="w-[1.375rem] shrink-0 text-center text-[0.8125rem] leading-6 text-white/55"
-                  >
-                    ✉
-                  </span>
-                  <span className="store-dynamic-text text-[0.84375rem] leading-6 text-white/72 transition-colors hover:text-white">
-                    {contact.email}
-                  </span>
-                </a>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div className="mt-6 flex gap-2.5">
-            {socialLinks.map(([label, href, Icon]) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={label}
-                className="store-focus-invert flex size-11 items-center justify-center rounded-full bg-white/12 text-white transition-colors hover:bg-primary hover:text-primary-foreground"
-              >
-                <Icon className="size-[1.0625rem]" aria-hidden="true" />
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* One `auto-fit` row on a 108px floor, exactly as the design states
-            it: three lists on a laptop, two on a tablet, one on a phone —
-            without a breakpoint per step, and with a Persian heading wider
-            than its English counterpart free to reflow instead of clipping. */}
-        <nav
-          aria-label={t("footer.company")}
-          className="grid content-start gap-[clamp(1.25rem,2.4vw,2.25rem)] [grid-template-columns:repeat(auto-fit,minmax(min(100%,6.75rem),1fr))]"
-        >
-          {columns.map((column) => (
-            <div key={column.title}>
-              <h3 className="text-xs font-semibold uppercase tracking-[0.09em] text-white/60 [.locale-fa_&]:tracking-normal">
-                {column.title}
-              </h3>
-              <ul className="mt-4 flex flex-col items-start">
-                {column.links.map((link) => (
-                  <li key={link.key} className="max-w-full">
-                    <Link href={link.href} className={footerLink}>
-                      <span className="store-dynamic-text">
-                        <DynamicText>{link.label}</DynamicText>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </nav>
-      </div>
-
-      {/* The design closes on two lines pushed to opposite ends: the rights
-          notice, and a place. There is no maker to credit here, so the second
-          slot carries where the shop actually is — which is configuration the
-          storefront already holds, and disappears for a shop that has not set
-          it rather than printing an empty half. */}
-      <div className="store-container flex flex-wrap justify-between gap-5 border-t border-white/18 pb-10 pt-6 text-[0.78125rem] text-white/60">
-        <p>{t("footer.copyright")}</p>
-        {address.locality ? <p>{t("footer.madeIn", { place: address.locality })}</p> : null}
-      </div>
-    </footer>
+    <FooterView
+      linkAs={Link}
+      storeName={storeName}
+      tagline={t("common.storeTagline")}
+      phone={{
+        href: telHref(contact.mobilePhone),
+        label: toLocaleDigits(contact.mobilePhone, locale),
+      }}
+      callLabel={t("common.callStore")}
+      details={detailRows}
+      email={contact.email}
+      socials={socialLinks.map(([label, href, Icon]) => ({
+        label,
+        href,
+        icon: <Icon aria-hidden="true" />,
+      }))}
+      columns={columns}
+      navLabel={t("footer.company")}
+      copyright={t("footer.copyright")}
+      madeIn={
+        address.locality ? t("footer.madeIn", { place: address.locality }) : null
+      }
+    />
   );
 }

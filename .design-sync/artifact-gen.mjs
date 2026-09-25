@@ -16,6 +16,7 @@ const cfg = JSON.parse(fs.readFileSync(path.join(REPO, ".design-sync/config.json
 
 // A component missing from these groups lands in "Other" - add it here.
 const GROUPS = {
+  Layout: ["HeaderView", "FooterView"],
   Storefront: ["CategoryTileView", "BlogPostCardView", "PriceView", "NewsletterFormView"],
   Actions: ["Button", "Badge", "WhatsAppIcon"],
   Forms: ["Form", "Input", "Label", "Textarea"],
@@ -25,7 +26,10 @@ const GROUPS = {
 };
 // Row heights measured from each preview rendered at 900px (rows grow to fit).
 // A component missing here falls back to 260px, or its viewport height for overlays.
-const HEIGHTS = {"Alert":300,"Badge":194,"BlogPostCardView":797,"Button":561,"Card":688,"Carousel":576,"CategoryTileView":1207,"Command":407,"Dialog":420,"DropdownMenu":392,"Empty":487,"ErrorState":437,"Form":1010,"Input":310,"Label":232,"NewsletterFormView":558,"PriceView":382,"Sheet":520,"Skeleton":946,"Tabs":368,"Textarea":643,"Toaster":320,"WhatsAppIcon":222};
+const HEIGHTS = {"Alert":300,"Badge":194,"BlogPostCardView":797,"Button":561,"Card":688,"Carousel":576,"CategoryTileView":1207,"Command":407,"Dialog":420,"DropdownMenu":392,"Empty":487,"ErrorState":437,"Form":1010,"Input":310,"Label":232,"NewsletterFormView":558,"PriceView":382,"Sheet":520,"Skeleton":946,"Tabs":368,"Textarea":643,"Toaster":320,"WhatsAppIcon":222,"HeaderView":470,"FooterView":860};
+// Laid out at this width and scaled down to fit: the header only shows its
+// desktop nav from 1024px.
+const WIDTHS = {"HeaderView":1280,"FooterView":1280};
 const groupOf = Object.fromEntries(
   Object.entries(GROUPS).flatMap(([g, names]) => names.map((n) => [n, g]))
 );
@@ -71,7 +75,8 @@ for (const name of names) {
 
   const exports = [...previewJs.matchAll(/\b([A-Z]\w*):\s*\(\)\s*=>/g)].map((m) => m[1]);
   const height = HEIGHTS[name] ?? (mode === "single" ? vh || 420 : 260);
-  const width = mode === "single" && vw ? ` width=${vw}` : "";
+  const layoutWidth = WIDTHS[name] ?? (mode === "single" ? vw : undefined);
+  const width = layoutWidth ? ` width=${layoutWidth}` : "";
 
   const html = `<!-- @dsCard group="${groupOf[name] ?? "Other"}" height=${height}${width} -->
 <!doctype html>

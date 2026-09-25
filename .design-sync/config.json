@@ -21,7 +21,9 @@
     "DropdownMenu": "src/shared/components/ui/dropdown-menu.tsx",
     "Empty": "src/shared/components/ui/empty.tsx",
     "ErrorState": "src/shared/components/ui/error-state.tsx",
+    "FooterView": "src/shared/components/ui/footer-view.tsx",
     "Form": "src/shared/components/ui/form.tsx",
+    "HeaderView": "src/shared/components/ui/header-view.tsx",
     "Input": "src/shared/components/ui/input.tsx",
     "Label": "src/shared/components/ui/label.tsx",
     "NewsletterFormView": "src/shared/components/ui/newsletter-form-view.tsx",
@@ -74,6 +76,14 @@
     },
     "NewsletterFormView": {
       "cardMode": "column"
+    },
+    "HeaderView": {
+      "cardMode": "column",
+      "viewport": "1280x200"
+    },
+    "FooterView": {
+      "cardMode": "column",
+      "viewport": "1280x620"
     }
   },
   "readmeHeader": ".design-sync/conventions.md"
