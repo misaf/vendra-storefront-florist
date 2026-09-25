@@ -102,12 +102,11 @@
    semantic tokens the storefront's components already speak in, chosen from
    those ramps.
 
-   Every value that carries text was measured. Where the source design fell
-   short of WCAG 1.4.3 the token steps one rung down the same ramp rather than
-   changing hue: the design's `--color-accent` (#c67139) scores 3.03:1 against
-   the cream page — fine for the focus ring's 3:1 floor, not for a button
-   label — so `--primary` is clay-700 (5.72:1) and the lighter step stays on
-   `--ring` and the decorative fills, where 3:1 is the bar that applies. */
+   `--primary` is the design's own `--color-accent` (#c67139 light, #dd9059
+   dark), matched exactly by choice. Its cream label measures 3.03:1 — below
+   WCAG 1.4.3's 4.5:1 for small text — so buttons set their labels in the
+   display face at 14px+, and small text that must read (prices, `text-rose`)
+   stays on the text-safe clay-700. */
 
 :root.dark {
   --clay-100: #3b2113;
@@ -148,8 +147,8 @@
   --card-foreground: #f3e9d8;
   --popover: #272019;
   --popover-foreground: #f3e9d8;
-  /* clay-600 under cream-black text: 8.11:1 */
-  --primary: #e2a071;
+  /* The design's dark-theme terracotta under cream-black text: 7.01:1 */
+  --primary: #dd9059;
   --primary-foreground: #1b1613;
   --secondary: #362f28;
   --secondary-foreground: #f3e9d8;
@@ -237,8 +236,8 @@
      the one surface that goes lighter than the ground. */
   --popover: #f9f4ed;
   --popover-foreground: #201e1d;
-  /* clay-700 under cream text: 5.72:1 */
-  --primary: #8c491a;
+  /* The design's terracotta under cream text: 3.03:1 (see the note above) */
+  --primary: #c67139;
   --primary-foreground: #f5ead8;
   --secondary: #eee7db;
   --secondary-foreground: #201e1d;
@@ -252,9 +251,9 @@
   /* See the dark block for why this is darker than `--border`: sand-600
      measures 3.21:1 against the card and 3.5:1 against the page. */
   --input: #82796a;
-  /* clay-600, the lightest step that still clears 3:1 against both the page
-     (3.77) and the card (3.35) — the floor a focus indicator has to hold. */
-  --ring: #b2622d;
+  /* The design focuses in its accent: 3.03:1 on the page, just over the 3:1
+     floor a focus indicator has to hold — but 2.69:1 on the card, under it. */
+  --ring: #c67139;
   --rose: #8c491a;
   --rose-foreground: #fff2eb;
   --leaf: #56633f;
