@@ -36,9 +36,9 @@ export default async function ContactPage({
   return (
     <PageShell>
       <div className="bg-background text-foreground">
-        {/* Masthead and the four contact facts are static — server-rendered.
-            Only the map, the form and the FAQ accordion below need JavaScript. */}
-        <ContactIntro contactInfo={contactInfo} locale={locale} />
+        {/* The masthead is static — server-rendered. The form, the map and
+            the FAQ accordion beside it need JavaScript. */}
+        <ContactIntro locale={locale} />
         <ContactClient
           contactInfo={contactInfo}
           initialSubject={subject?.slice(0, 160)}

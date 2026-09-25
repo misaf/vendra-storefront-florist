@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,25 +15,35 @@ import {
   FormMessage,
 } from "@/shared/components/ui/form";
 import { Input } from "@/shared/components/ui/input";
-import { Skeleton } from "@/shared/components/ui/skeleton";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { useStorefrontName } from "@/shared/config/storefront-context";
-import { Link } from "@/shared/i18n/navigation";
 import type { StorefrontContact } from "@/shared/config/types";
-import { useFaqs } from "@/modules/faq";
+import type { LucideIcon } from "lucide-react";
 import {
-  ArrowRight,
-  ArrowUpRight,
+  CalendarClock,
   CheckCircle2,
-  ChevronDown,
   Clock,
-  HelpCircle,
   Loader2,
+  Mail,
   MapPin,
+  PhoneCall,
   Send,
+  Smartphone,
 } from "lucide-react";
-import { useBrandIcon } from "@/shared/config/storefront-context";
+import {
+  InstagramIcon,
+  TelegramIcon,
+  WhatsAppIcon,
+} from "@/shared/components/ui/social-icons";
+import {
+  instagramProfileUrl,
+  telegramProfileUrl,
+  whatsappUrl,
+} from "@/shared/lib/social-url";
+import { useStorefrontConfig } from "@/shared/config/storefront-context";
+import { formatBusinessHours, toLocaleDigits } from "@/shared/lib/hours";
+import { cn, telHref } from "@/shared/lib/utils";
 
 function createContactFormSchema(t: (key: string) => string) {
   return z.object({
@@ -54,16 +65,74 @@ export default function ContactClient({
   initialSubject?: string;
 }) {
   const { t, locale } = useTranslations();
-  const BrandIcon = useBrandIcon();
+  const { social } = useStorefrontConfig();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const contactFormSchema = useMemo(() => createContactFormSchema(t), [t]);
 
   const email = contactInfo.email;
 
-  const guidanceItems = [
-    t("contact.supportNoteProducts"),
-    t("contact.supportNoteCustom"),
-    t("contact.supportNoteDelivery"),
+  /* The five things people actually walk in asking for. Content, so they live
+     in the message catalogue and a shop can rename them. */
+  const occasions = [
+    t("contact.occasionBouquet"),
+    t("contact.occasionWedding"),
+    t("contact.occasionEvent"),
+    t("contact.occasionSympathy"),
+    t("contact.occasionCorporate"),
+  ];
+
+  const socialLinks = [
+    { label: "WhatsApp", href: whatsappUrl(social.whatsappPhone), Icon: WhatsAppIcon },
+    { label: "Telegram", href: telegramProfileUrl(social.telegramUsername), Icon: TelegramIcon },
+    { label: "Instagram", href: instagramProfileUrl(social.instagramUsername), Icon: InstagramIcon },
+  ];
+
+  /* The four facts, in the column beside the form rather than in a band of
+     their own above it. Every one is store configuration the page already
+     holds. */
+  const details: Array<{
+    icon: LucideIcon;
+    title: string;
+    value: string;
+    href?: string;
+    valueDir?: "ltr" | "rtl" | "auto";
+  }> = [
+    {
+      icon: Smartphone,
+      title: t("contact.mobilePhoneLabel"),
+      value: toLocaleDigits(contactInfo.mobilePhone, locale),
+      href: telHref(contactInfo.mobilePhone),
+      valueDir: "ltr",
+    },
+    {
+      icon: PhoneCall,
+      title: t("contact.officePhoneLabel"),
+      value: toLocaleDigits(contactInfo.officePhone, locale),
+      href: telHref(contactInfo.officePhone),
+      valueDir: "ltr",
+    },
+    {
+      icon: MapPin,
+      title: t("contact.address"),
+      value: t("contact.addressValue"),
+    },
+    {
+      icon: CalendarClock,
+      title: t("contact.hours"),
+      value: formatBusinessHours(
+        contactInfo.hoursOpen,
+        contactInfo.hoursClose,
+        locale
+      ),
+      valueDir: "ltr",
+    },
+    {
+      icon: Mail,
+      title: t("contact.email"),
+      value: email,
+      href: `mailto:${email}`,
+      valueDir: "ltr",
+    },
   ];
 
   const form = useForm<ContactFormValues>({
@@ -94,54 +163,126 @@ export default function ContactClient({
   };
 
   return (
-    <>
-      <VisitStudioMap mapQuery={contactInfo.mapQuery} locale={locale} t={t} />
+    <section className="store-container pb-[6.25rem] pt-[0.5rem]">
+      {/* One band, two columns: the form on one side and, on the other, the
+          studio as a person would ask for it — a look at the bench, where it
+          is, the accounts it answers on, and the four facts underneath. The
+          page used to spend a full-width map band and a masthead photograph
+          before reaching either. */}
+      <div className="grid items-start gap-[clamp(1.875rem,4vw,3.5rem)] [grid-template-columns:repeat(auto-fit,minmax(min(100%,20.625rem),1fr))]">
+        <ContactForm
+          form={form}
+          occasions={occasions}
+          isSubmitted={isSubmitted}
+          isSubmitting={form.formState.isSubmitting}
+          onSubmit={onSubmit}
+          onReset={() => setIsSubmitted(false)}
+          email={email}
+          t={t}
+        />
 
-      <section className="border-b border-border bg-secondary/25">
-        <div className="store-container store-section grid gap-10 lg:grid-cols-[1.25fr_0.75fr] lg:gap-14">
-          <ContactForm
-              form={form}
-              isSubmitted={isSubmitted}
-              isSubmitting={form.formState.isSubmitting}
-              onSubmit={onSubmit}
-              onReset={() => setIsSubmitted(false)}
-              email={email}
-              t={t}
+        <aside className="flex flex-col gap-6">
+          <div className="organic-washed overflow-hidden rounded-[2rem] shadow-card">
+            <Image
+              src="/contact-consultation.webp"
+              alt=""
+              width={720}
+              height={450}
+              sizes="(min-width: 64rem) 34rem, calc(100vw - 2rem)"
+              className="aspect-[16/10] w-full object-cover"
             />
+          </div>
 
-          <aside className="space-y-8 store-sticky-lg">
-              {/* The system's warm plate, not an ink one. This sits directly
-                  beside the form card in the same column pair, and two panels
-                  of the same size in opposite surfaces read as two different
-                  kinds of thing rather than as a form and the notes beside it.
-                  Sage on the ticks, the colour this system gives a settled
-                  fact. */}
-              <section className="rounded-3xl bg-card px-6 py-8 text-card-foreground shadow-card sm:px-8 sm:py-10">
-                <span className="organic-mark flex size-11 items-center justify-center">
-                  <BrandIcon className="size-5" />
-                </span>
-                <h2 className="font-display mt-6 text-2xl leading-tight">
-                  {t("contact.customerHelpTitle")}
-                </h2>
-                <div className="mt-6 divide-y divide-border border-y border-border">
-                  {guidanceItems.map((item) => (
-                    <p key={item} className="flex gap-3 py-4 text-sm leading-6 text-muted-foreground">
-                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-leaf" />
-                      <span>{item}</span>
-                    </p>
-                  ))}
-                </div>
-              </section>
+          <StudioMap mapQuery={contactInfo.mapQuery} locale={locale} t={t} />
 
-              <ContactFaqCard locale={locale} t={t} />
-          </aside>
-        </div>
-      </section>
-    </>
+          <div className="flex flex-wrap gap-2.5">
+            {socialLinks.map(({ label, href, Icon }) => (
+              <Button key={label} asChild variant="outline" size="sm" className="gap-2">
+                <a href={href} target="_blank" rel="noreferrer">
+                  <Icon className="size-4" aria-hidden="true" />
+                  {label}
+                </a>
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex flex-col">
+            {details.map((detail) => (
+              <ContactDetail key={detail.title} {...detail} />
+            ))}
+          </div>
+        </aside>
+      </div>
+    </section>
   );
 }
 
-function VisitStudioMap({
+/**
+ * One fact about the shop: the system's clay medallion, the label, the value.
+ * Ruled underneath rather than boxed — four boxes beside a form card read as a
+ * second form.
+ */
+function ContactDetail({
+  icon: Icon,
+  title,
+  value,
+  href,
+  valueDir,
+}: {
+  icon: LucideIcon;
+  title: string;
+  value: string;
+  href?: string;
+  valueDir?: "ltr" | "rtl" | "auto";
+}) {
+  const body = (
+    <>
+      <span
+        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-clay-100 text-clay-800"
+        aria-hidden="true"
+      >
+        <Icon className="size-4" />
+      </span>
+      <span className="min-w-0">
+        <span className="font-display block text-[0.9375rem] leading-tight text-foreground">
+          {title}
+        </span>
+        <span
+          dir={valueDir}
+          className="store-dynamic-text mt-1 block text-sm leading-[1.55] text-foreground/75"
+        >
+          {value}
+        </span>
+      </span>
+    </>
+  );
+
+  return (
+    <div className="border-b border-border py-5">
+      {href ? (
+        <a
+          href={href}
+          aria-label={`${title}: ${value}`}
+          className="group flex items-start gap-4 rounded-sm transition-colors hover:[&_span]:text-foreground"
+        >
+          {body}
+        </a>
+      ) : (
+        <div className="flex items-start gap-4">{body}</div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The studio on a map, as a plate in the column beside the form: the embed on
+ * top, and a single link bar across its foot on the warm surface.
+ *
+ * It replaced a full-width band of its own — an eyebrow, a heading, a
+ * paragraph, a 30rem embed inside an offset frame, and an ink address plate
+ * floating over the bottom of it. Five objects to say where the shop is.
+ */
+function StudioMap({
   mapQuery,
   locale,
   t,
@@ -155,143 +296,39 @@ function VisitStudioMap({
   const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
 
   return (
-    <section className="border-b border-border bg-background">
-      <div className="store-container store-section">
-        <div className="mb-7 max-w-2xl sm:mb-9">
-          <span className="store-seam mb-3 max-w-[7rem]">
-            <span className="petal-dot" aria-hidden="true" />
-            <span className="h-px flex-1" aria-hidden="true" />
-          </span>
-          <p className="store-label">
-            {t("contact.visitEyebrow")}
-          </p>
-          <h2 className="font-display mt-3 text-2xl leading-tight sm:text-3xl">
-            {t("contact.visitTitle")}
-          </h2>
-          <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">
-            {t("contact.visitDescription")}
-          </p>
-        </div>
-
-        <div className="relative">
-          {/* Offset frame — the editorial inset rectangle used on the About hero. */}
-          <div
-            className="pointer-events-none absolute -inset-2 rounded-[2.25rem] border border-border sm:-inset-3"
-            aria-hidden="true"
-          />
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-muted shadow-panel">
-            <iframe
-              title={t("contact.mapLabel")}
-              src={embedUrl}
-              className="store-map block h-80 w-full border-0 sm:h-[26rem] lg:h-[30rem]"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
-            {/* Ink address plate — same primary card as the help panel. */}
-            <div className="pointer-events-none absolute inset-x-3 bottom-3 sm:inset-x-5 sm:bottom-5">
-              <div className="pointer-events-auto max-w-sm rounded-3xl bg-primary p-4 text-primary-foreground shadow-panel shadow-storefront-brand/30 sm:p-5">
-                <div className="flex items-center gap-2">
-                  <MapPin className="size-4 shrink-0 text-primary-foreground/80" />
-                  <p className="font-display text-base font-semibold leading-tight sm:text-lg">
-                    {storeName}
-                  </p>
-                </div>
-                <p className="mt-1.5 text-sm leading-6 text-primary-foreground/85">
-                  {t("contact.addressValue")}
-                </p>
-                <a
-                  href={directionsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="store-focus-invert mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary-foreground px-4 py-2 text-sm font-semibold text-primary motion-safe:transition hover:opacity-90"
-                >
-                  {t("contact.getDirections")}
-                  <ArrowUpRight className="size-4 rtl:rotate-180" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <div className="overflow-hidden rounded-[2rem] bg-secondary shadow-card">
+      <iframe
+        title={`${t("contact.mapLabel")} — ${storeName}`}
+        src={embedUrl}
+        className="store-map block aspect-[16/11] w-full border-0"
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        allowFullScreen
+      />
+      <a
+        href={directionsUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="flex min-h-11 items-center gap-2.5 bg-card px-5 py-3.5 text-[0.84375rem] text-rose transition-colors hover:bg-clay-100"
+      >
+        <MapPin className="size-4 shrink-0" aria-hidden="true" />
+        <span className="store-dynamic-text">
+          {t("contact.getDirections")} — {t("contact.addressValue")}
+        </span>
+      </a>
+    </div>
   );
 }
 
-function ContactFaqCard({
-  locale,
-  t,
-}: {
-  locale: string;
-  t: (key: string) => string;
-}) {
-  const { data: faqs, isPending } = useFaqs(locale, { perPage: 5 });
-
-  // Secondary content: skeleton while loading, hide entirely on error/empty.
-  if (isPending) {
-    return (
-      <section className="border-y border-border py-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <HelpCircle className="size-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">{t("contact.faqTitle")}</h2>
-          </div>
-          <div className="mt-4 space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-5 w-full" />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (!faqs || faqs.length === 0) {
-    return null;
-  }
-
-  const answeredFaqs = faqs.filter((faq) => faq.answer.trim().length > 0);
-
-  if (answeredFaqs.length === 0) {
-    return null;
-  }
-
-  return (
-    <section className="border-y border-border py-6">
-      <div>
-        <div className="flex items-center gap-2">
-          <HelpCircle className="size-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">{t("contact.faqTitle")}</h2>
-        </div>
-        <div className="mt-3 divide-y divide-border">
-          {answeredFaqs.map((faq) => (
-            <details key={faq.id} className="group py-3">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-sm text-sm font-medium text-card-foreground">
-                <span>{faq.question}</span>
-                <ChevronDown className="size-4 shrink-0 text-muted-foreground motion-safe:transition-transform group-open:rotate-180" />
-              </summary>
-              {faq.answer && (
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {faq.answer}
-                </p>
-              )}
-            </details>
-          ))}
-        </div>
-        <Link
-          href="/faq"
-          className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-sm text-sm font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground"
-        >
-          {t("contact.faqViewAll")}
-          <ArrowRight className="size-4 rtl:rotate-180" />
-        </Link>
-      </div>
-    </section>
-  );
-}
-
+/**
+ * The design's card: the warm surface, the system's deepest container radius
+ * and one elevation step. It used to be a full-width band ruled top and bottom,
+ * carrying a masthead-sized `h2` above the fields — a second page title inside
+ * the page.
+ */
 function ContactForm({
   form,
+  occasions,
   isSubmitted,
   isSubmitting,
   onSubmit,
@@ -300,6 +337,8 @@ function ContactForm({
   t,
 }: {
   form: ReturnType<typeof useForm<ContactFormValues>>;
+  /** The occasions offered by the subject select, in the shop's own words. */
+  occasions: string[];
   isSubmitted: boolean;
   isSubmitting: boolean;
   onSubmit: (values: ContactFormValues) => Promise<void>;
@@ -319,42 +358,40 @@ function ContactForm({
   }, [isSubmitted]);
 
   return (
-    <section className="border-y border-border bg-background">
-      <header className="border-b border-border px-5 py-7 sm:px-9 sm:py-9">
-        <p className="store-eyebrow">{t("contact.subtitle")}</p>
-        <h2 className="font-display mt-3 text-3xl leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+    <section className="rounded-[2rem] bg-card px-[clamp(1.375rem,3vw,2.125rem)] pb-[2.375rem] pt-[clamp(1.375rem,3vw,2.125rem)] text-card-foreground shadow-panel">
+      <header className="mb-6">
+        <h2 className="font-display text-2xl leading-tight">
           {t("contact.formTitle")}
         </h2>
-        <p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground">
+        <p className="store-lede mt-2 max-w-xl text-sm text-card-foreground/75">
           {t("contact.formDescription")}
         </p>
       </header>
 
-      <div className="px-5 py-7 sm:px-9 sm:py-9">
+      <div>
         {isSubmitted ? (
           <div
             ref={successRef}
             tabIndex={-1}
             role="status"
-            /* The card surface, not sand-800: this panel carries a heading and two
-               paragraphs in ink, and an ink fill behind them put the whole
-               confirmation at about 1.6:1. */
-            className="flex min-h-96 flex-col items-center justify-center rounded-3xl bg-card px-6 text-center"
+            className="flex flex-col items-center justify-center px-2 py-10 text-center"
           >
             {/* Sage, the system's colour for a thing that went right. */}
-            <div className="flex size-16 items-center justify-center rounded-full bg-leaf text-background shadow-card">
+            <div className="flex size-[4.25rem] items-center justify-center rounded-full bg-leaf text-background">
               <CheckCircle2 className="size-8" />
             </div>
-            <h2 className="mt-5 text-2xl font-semibold">{t("contact.messageSent")}</h2>
-            <p className="mt-2 max-w-md text-sm leading-7 text-muted-foreground">
+            <h3 className="font-display mt-5 text-2xl">
+              {t("contact.messageSent")}
+            </h3>
+            <p className="mt-2 max-w-md text-sm leading-7 text-card-foreground/75">
               {t("contact.messageSentDescription")}
             </p>
-            <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
+            <p className="mt-4 max-w-md text-sm leading-6 text-card-foreground/75">
               {t("contact.messageSentFallback")}{" "}
               <a
                 href={`mailto:${email}`}
                 dir="ltr"
-                className="font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground"
+                className="store-dynamic-text font-medium text-rose underline underline-offset-4"
               >
                 {email}
               </a>
@@ -370,8 +407,11 @@ function ContactForm({
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7">
-              <div className="grid gap-x-8 gap-y-7 sm:grid-cols-2">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-[1.125rem]"
+            >
+              <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,11.875rem),1fr))]">
                 <FormField
                   control={form.control}
                   name="name"
@@ -415,7 +455,9 @@ function ContactForm({
                     </FormItem>
                   )}
                 />
+              </div>
 
+              <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,11.875rem),1fr))]">
                 <FormField
                   control={form.control}
                   name="phone"
@@ -443,23 +485,48 @@ function ContactForm({
                   )}
                 />
 
+                {/* The design asks for the *occasion*, not a free-text subject,
+                    because on a florist's form that is the one answer which
+                    changes what gets made. It writes into the same `subject`
+                    the form has always sent, so the FAQ's "?subject=…" deep
+                    links still arrive intact — an incoming subject that is not
+                    one of the listed occasions is kept as its own option
+                    rather than silently discarded. */}
                 <FormField
                   control={form.control}
                   name="subject"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("contact.subject")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          className={underlineFieldClass}
-                          placeholder={t("contact.subjectPlaceholder")}
-                          aria-required="true"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const preset =
+                      field.value && !occasions.includes(field.value)
+                        ? [field.value]
+                        : [];
+
+                    return (
+                      <FormItem>
+                        <FormLabel>{t("contact.occasion")}</FormLabel>
+                        <FormControl>
+                          <select
+                            {...field}
+                            aria-required="true"
+                            className={cn(
+                              underlineFieldClass,
+                              "w-full cursor-pointer appearance-none rounded-full border border-input px-5 pe-10 text-foreground"
+                            )}
+                          >
+                            <option value="">
+                              {t("contact.occasionPlaceholder")}
+                            </option>
+                            {[...preset, ...occasions].map((occasion) => (
+                              <option key={occasion} value={occasion}>
+                                {occasion}
+                              </option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
 
@@ -473,7 +540,7 @@ function ContactForm({
                       <Textarea
                         placeholder={t("contact.messagePlaceholder")}
                         aria-required="true"
-                        className="min-h-32 resize-none text-base"
+                        className="min-h-32 resize-none rounded-[1.375rem] bg-background px-4 py-3 text-base"
                         {...field}
                       />
                     </FormControl>
@@ -482,11 +549,11 @@ function ContactForm({
                 )}
               />
 
-              <div className="flex flex-col gap-4 border-t border-border pt-6">
+              <div className="flex flex-col gap-3 pt-1">
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full gap-2 px-8"
+                  className="h-12 w-full gap-2 px-8 text-[0.9375rem]"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -501,10 +568,10 @@ function ContactForm({
                     </>
                   )}
                 </Button>
-                <div className="flex items-center justify-center gap-2 text-xs leading-5 text-muted-foreground">
-                  <Clock className="size-3.5 shrink-0 text-muted-foreground" />
+                <p className="flex items-start gap-2 text-[0.78125rem] leading-5 text-card-foreground/60">
+                  <Clock className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                   <span>{t("contact.privacyNote")}</span>
-                </div>
+                </p>
               </div>
             </form>
           </Form>
@@ -514,5 +581,6 @@ function ContactForm({
   );
 }
 
-const underlineFieldClass =
-  "h-11 text-base";
+/* Fields sit on the page colour inside the card, so a filled control reads as
+   a control rather than as another shade of the same plate. */
+const underlineFieldClass = "h-11 bg-background text-base";

@@ -189,10 +189,10 @@
      Sticky asides and scroll anchors offset against this instead of guessing —
      they used to sit at top-24 / top-28 / top-32 against a 4rem bar. */
   --store-header-h: 4rem;
-  --font-persian: var(--font-cairo), Tahoma, Arial, sans-serif;
-  /* Persian display is a real Arabic-script display face, not the body face at
-     its heaviest. Rakkas is the Organic system's pairing for Caprasimo. */
-  --font-persian-display: var(--font-rakkas), var(--font-cairo), Tahoma, serif;
+  --font-persian: var(--font-vazirmatn), Tahoma, Arial, sans-serif;
+  /* Persian display is a real Persian display face, not the body face at its
+     heaviest. Lalezar is the Organic system's pairing for Caprasimo. */
+  --font-persian-display: var(--font-lalezar), var(--font-vazirmatn), Tahoma, serif;
 
   --clay-100: #fff2eb;
   --clay-200: #ffe1d0;
@@ -326,19 +326,19 @@
   }
 }
 
-/* fa locale → Cairo for every text node, including elements that opt into the
-   Latin font-sans / font-mono / font-display utilities. Unlayered so it
+/* fa locale → Vazirmatn for every text node, including elements that opt into
+   the Latin font-sans / font-mono / font-display utilities. Unlayered so it
    outranks Tailwind's utility layer. */
 .locale-fa,
 .locale-fa .font-sans,
 .locale-fa .font-display {
   font-family: var(--font-persian);
 }
-/* Persian display is Rakkas — an actual Arabic-script display face, and the
-   Organic system's pairing for Caprasimo. It replaces the old arrangement,
-   which had no display face for Persian at all and substituted the body face
-   at weight 700, so a Persian page had a single texture from masthead to
-   caption while a Latin one had two. Rakkas has one weight, like Caprasimo. */
+/* Persian display is Lalezar — an actual Persian display face, and the Organic
+   system's own pairing for Caprasimo. It replaces the old arrangement, which
+   had no display face for Persian at all and substituted the body face at
+   weight 700, so a Persian page had a single texture from masthead to caption
+   while a Latin one had two. Lalezar has one weight, like Caprasimo. */
 .locale-fa .font-display {
   font-family: var(--font-persian-display);
   letter-spacing: 0;
@@ -355,10 +355,19 @@
    so a row of four icon buttons in the header went from 176px to 352px at a
    doubled default — pushing the header cluster past the viewport while adding
    nothing a reader could read. Buttons carrying text still outgrow the floor on
-   their own, because their text still scales. */
-[data-slot="button"] {
+   their own, because their text still scales.
+
+   Icon buttons are excluded because they satisfy the same 44px with an overlay
+   rather than with their box: the design draws a `.btn-icon` at 36px, and the
+   variant lays a transparent, positioned 44px target over it (see button.tsx).
+   The fingertip still gets its 44px; the row gets the 36px disc the design
+   draws. */
+[data-slot="button"]:not([data-size="icon"]) {
   min-height: 44px;
   min-width: 44px;
+}
+
+[data-slot="button"] {
   /* The Organic system sets its controls in the display face — it is what
      makes a button read as part of the same object as the heading above it
      rather than as browser chrome dropped on the page. Weight 400 because
@@ -368,10 +377,10 @@
   letter-spacing: -0.005em;
 }
 
-/* Persian keeps the *body* face on controls. Rakkas is a display naskh — right
+/* Persian keeps the *body* face on controls. Lalezar is a display face — right
    for a masthead, wrong on a quantity stepper and a filter chip, where its
-   swashes cost legibility at 14px in a way Caprasimo's slab does not. This is
-   the one place the two scripts deliberately diverge from each other. */
+   heavy strokes close the counters at 14px in a way Caprasimo's slab does not.
+   This is the one place the two scripts deliberately diverge from each other. */
 .locale-fa [data-slot="button"] {
   font-family: var(--font-persian);
   font-weight: 600;
@@ -380,6 +389,20 @@
 
 ::selection {
   background: color-mix(in oklch, var(--rose) 24%, transparent);
+}
+
+/* The design's arrival: fourteen pixels up, from nothing. Driven from
+   `SectionRise`, which only reaches for it once it has confirmed the reader
+   has not asked for reduced motion. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -535,7 +558,7 @@
      large enough to push the content it introduces off the screen. */
   .store-page-title {
     font-family: var(--font-display);
-    font-size: clamp(2.25rem, 5vw, 3.75rem);
+    font-size: clamp(2.375rem, 4.6vw, 4rem);
     font-weight: 400;
     letter-spacing: -0.02em;
     line-height: 1.02;
@@ -544,7 +567,7 @@
 
   .store-section-title {
     font-family: var(--font-display);
-    font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+    font-size: clamp(1.875rem, 3.2vw, 2.75rem);
     font-weight: 400;
     letter-spacing: -0.015em;
     line-height: 1.08;
@@ -612,10 +635,10 @@
      the tile step a 620px-wide collection card domed over into a semicircle,
      and at the tile cap the 500px hero plate barely curved. */
   .organic-arch-tall {
-    border-start-start-radius: min(15rem, 45%);
-    border-start-end-radius: min(15rem, 45%);
-    border-end-start-radius: 2.25rem;
-    border-end-end-radius: 2.25rem;
+    border-start-start-radius: min(16.25rem, 45%);
+    border-start-end-radius: min(16.25rem, 45%);
+    border-end-start-radius: 2.5rem;
+    border-end-end-radius: 2.5rem;
   }
 
   /* The leaf: two opposite corners drawn long, the other two barely eased. The
@@ -624,10 +647,10 @@
      Logical corners, so the leaf mirrors with the document direction instead
      of pointing the wrong way in Persian. */
   .organic-leaf {
-    border-start-start-radius: min(11rem, 48%);
+    border-start-start-radius: min(15rem, 48%);
     border-start-end-radius: 2.5rem;
     border-end-start-radius: 2.5rem;
-    border-end-end-radius: min(11rem, 48%);
+    border-end-end-radius: min(15rem, 48%);
   }
 
   /* The system's soft asymmetric round — a petal, not a circle. Used for the
@@ -645,10 +668,23 @@
      inside clears WCAG 1.4.11's 3:1 at *both* ends of the gradient in both
      themes — a mark is a non-text graphic, so 3:1 is the bar, but the design's
      lighter stop missed even that on the light theme. */
+  /* The source design draws the header mark as a solid accent tile domed at
+     the head and barely eased at the foot — `999px 999px 14px 14px` — not as
+     the petal. The petal is the *footer's* mark, which carries no glyph and is
+     kept below as `.organic-mark-petal`. Splitting them is what stops one
+     recipe having to serve a 36px glyph holder and a 30px decorative dot. */
   .organic-mark {
-    border-radius: 50% 50% 46% 54% / 52% 48% 52% 48%;
-    background-image: linear-gradient(150deg, var(--clay-600), var(--clay-800));
+    border-radius: 999px 999px 14px 14px;
+    background: var(--primary);
     color: var(--primary-foreground);
+  }
+
+  /* The footer's mark: the petal, filled with the clay ramp's own gradient.
+     Decorative only — nothing is set inside it — so the stops are the design's
+     own 300 → 600 rather than the darker pair a glyph would need. */
+  .organic-mark-petal {
+    border-radius: 50% 50% 46% 54% / 52% 48% 52% 48%;
+    background-image: linear-gradient(150deg, var(--clay-300), var(--clay-600));
   }
 
   /* The system's treatment for photography: pulled back in saturation and
@@ -656,7 +692,7 @@
      page whose chrome is already warm. Behind a motion query it is not —
      it is a still treatment, not an animation. */
   .organic-washed {
-    filter: saturate(0.72) contrast(0.92) brightness(1.04);
+    filter: saturate(0.6) contrast(0.85) brightness(1.1) opacity(0.94);
   }
 
   /* The hero band. Asymmetric like `.store-section-head`: tight under the
@@ -717,6 +753,101 @@
       linear-gradient(158deg, var(--sand-100), var(--sage-100));
   }
 
+  /* ── The bar's navigation link ─────────────────────────────────
+     The design sets these at 13.5px in the body face, resting at 72% of the
+     ink and lifting to the accent on hover; the section in view is marked by a
+     2px accent rule pinned under the label rather than by a filled pill. One
+     definition, because the bar, the catalogue disclosure inside it and the
+     mobile drawer's desktop twin all draw the same object. */
+  .store-nav-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: 0.125rem;
+    padding-block: 0.3125rem 0.4375rem;
+    font-size: 0.84375rem;
+    line-height: 1.3;
+    color: var(--foreground);
+    opacity: 0.72;
+    transition: color 200ms, opacity 200ms;
+  }
+
+  .store-nav-link::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0.125rem;
+    bottom: 0.6875rem;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--rose);
+    transform: scaleX(0);
+    transition: transform 200ms;
+  }
+
+  .store-nav-link:hover {
+    opacity: 1;
+    color: var(--rose);
+  }
+
+  .store-nav-link[data-active="true"] {
+    opacity: 1;
+  }
+
+  .store-nav-link[data-active="true"]::after {
+    transform: scaleX(1);
+  }
+
+  /* ── The ghost action ──────────────────────────────────────────
+     The design's `btn-ghost`: the accent set as text in the display face, with
+     a pill of the accent's own tint appearing under it on hover. It is what
+     every "all collections" / "shop everything" / "all writing" link in a
+     section header is, and each of those was previously an underlined bold
+     link with an arrow — a different object in the same slot on every band. */
+  .store-text-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.75rem;
+    padding-inline: 0.5rem;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 0.875rem;
+    letter-spacing: -0.005em;
+    color: var(--rose);
+    transition: background-color 200ms, color 200ms;
+  }
+
+  .store-text-action:hover {
+    background: color-mix(in srgb, var(--rose) 10%, transparent);
+  }
+
+  .store-text-action:active {
+    background: color-mix(in srgb, var(--rose) 18%, transparent);
+  }
+
+  /* Lalezar is a display face — right for a masthead, wrong on a 14px control,
+     exactly as on `[data-slot="button"]`. */
+  .locale-fa .store-text-action {
+    font-family: var(--font-persian);
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  /* The tinted closing panel: a wide, heavily rounded band of a ramp's 100
+     step, holding a heading on one side and its one action on the other. The
+     home page's newsletter and the FAQ's closing offer are the same object in
+     two tints, and both were being spelled out per call site. */
+  .organic-panel {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+    border-radius: 2.5rem;
+    padding: clamp(2rem, 5vw, 3.5rem) clamp(1.5rem, 4vw, 3rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18.75rem), 1fr));
+  }
+
   /* Two faint washes bled in from opposite corners, so a full-width band reads
      as lit rather than as a flat fill. */
   .organic-wash-band {
@@ -729,6 +860,86 @@
     .organic-hero-shell {
       padding-block: 2rem 4rem;
     }
+  }
+}
+
+/* ── Price track ────────────────────────────────────────────────
+   Two native range inputs stacked on one rail, which is the only way to get a
+   two-ended filter that still arrow-keys and announces as two real controls.
+   The inputs themselves are transparent and pointer-transparent — the rail and
+   the band under them are what is seen — so only the thumbs take the pointer
+   back. Everything is set in logical properties: in RTL the browser flips the
+   input's own axis, and `inset-inline-start` flips the band with it.       */
+@layer components {
+  .store-price-track {
+    position: relative;
+    height: 1.375rem;
+  }
+  .store-price-track input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    position: absolute;
+    inset-inline-start: 0;
+    width: 100%;
+    height: 1.375rem;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    /* The rail is drawn beneath; the input exists for its thumb and its
+       keyboard behaviour, so it must not swallow clicks meant for the other
+       thumb sitting on top of it. */
+    pointer-events: none;
+  }
+  .store-price-track input[type="range"]::-webkit-slider-runnable-track {
+    background: transparent;
+    border: 0;
+  }
+  .store-price-track input[type="range"]::-moz-range-track {
+    background: transparent;
+    border: 0;
+  }
+  .store-price-track input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    pointer-events: auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: var(--rose);
+    border: 3px solid var(--background);
+    box-shadow: var(--shadow-card);
+    cursor: grab;
+  }
+  .store-price-track input[type="range"]::-moz-range-thumb {
+    pointer-events: auto;
+    box-sizing: border-box;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: var(--rose);
+    border: 3px solid var(--background);
+    box-shadow: var(--shadow-card);
+    cursor: grab;
+  }
+  .store-price-track input[type="range"]:active::-webkit-slider-thumb {
+    cursor: grabbing;
+  }
+  .store-price-track input[type="range"]:active::-moz-range-thumb {
+    cursor: grabbing;
+  }
+  /* The page's focus rule targets the element, but a range input's visible
+     control is its thumb — an outline on the full-width input would draw a box
+     across the whole rail. The ring is moved onto the thumb instead, at the
+     same width and offset the base layer uses. */
+  .store-price-track input[type="range"]:focus-visible {
+    outline: none;
+  }
+  .store-price-track input[type="range"]:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+  .store-price-track input[type="range"]:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
   }
 }
 
@@ -925,17 +1136,73 @@
     text-decoration-color: var(--foreground);
   }
   .rich-text[data-density="article"] strong { font-weight: 600; color: var(--foreground); }
+  /* The pull-quote, as the design draws it: a heavily rounded plate of the
+     sage tint with the words set in the display face, and no rule down its
+     edge. It was a card-coloured slab with a hairline border-start — the same
+     surface as everything else on the page, marked by a line — so the one
+     sentence the writer chose to lift never actually lifted. */
   .rich-text[data-density="article"] blockquote {
-    margin-block: 2.5rem;
-    border-inline-start-color: var(--foreground);
-    background: var(--card);
-    padding: 1.25rem 1.5rem;
-    font-size: 1.25rem;
-    line-height: 2.25rem;
-    color: color-mix(in oklch, var(--foreground) 85%, transparent);
+    margin-block: 2.125rem;
+    border: 0;
+    border-radius: 1.875rem;
+    background: var(--sage-100);
+    color: var(--sage-900);
+    padding: 1.875rem 2.125rem;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.4375rem;
+    line-height: 1.34;
+    letter-spacing: -0.015em;
+  }
+
+  .locale-fa .rich-text[data-density="article"] blockquote {
+    font-family: var(--font-persian-display);
+    letter-spacing: 0;
+    line-height: 1.75;
+  }
+
+  /* An ordered list in an article is a set of steps, and the design numbers
+     them in the accent medallion it uses for a step everywhere else rather
+     than with the browser's own decimal marker. `counter-reset` on the list
+     and a counter in the marker box, so the numbering survives any start
+     value the editor sets. */
+  .rich-text[data-density="article"] ol {
+    list-style: none;
+    counter-reset: rich-step;
+    padding-inline-start: 0;
+  }
+
+  .rich-text[data-density="article"] ol > li {
+    counter-increment: rich-step;
+    position: relative;
+    padding-inline-start: 3.125rem;
+    min-height: 2.125rem;
+  }
+
+  .rich-text[data-density="article"] ol > li::before {
+    content: counter(rich-step);
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.125rem;
+    display: grid;
+    place-items: center;
+    width: 2.125rem;
+    height: 2.125rem;
+    border-radius: 999px;
+    background: var(--clay-100);
+    color: var(--clay-800);
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 0.9375rem;
+    line-height: 1;
+  }
+
+  .locale-fa .rich-text[data-density="article"] ol > li::before {
+    font-family: var(--font-persian);
+    font-weight: 600;
   }
   .rich-text[data-density="article"] img { border-radius: var(--radius-xl); }
-  .rich-text[data-density="article"] :is(ul, ol) { padding-inline-start: 1.5rem; }
+  .rich-text[data-density="article"] ul { padding-inline-start: 1.5rem; }
   .rich-text[data-density="article"] li + li { margin-block-start: 0.5rem; }
   .rich-text[data-density="article"] :is(th, td) { color: inherit; }
   /* A section reached from a shared #anchor must clear the pinned bar. */
@@ -949,7 +1216,7 @@
 
   /* The density blocks above name `--font-display` — a Latin serif with no
      Arabic coverage — so a Persian article heading fell through to whatever
-     the browser substituted, breaking mid-page from the Cairo around it.
+     the browser substituted, breaking mid-page from the Vazirmatn around it.
      Persian keeps its own face, and the tight Latin tracking with it. */
   .locale-fa .rich-text[data-density] :is(h1, h2, h3, h4) {
     font-family: var(--font-persian-display);

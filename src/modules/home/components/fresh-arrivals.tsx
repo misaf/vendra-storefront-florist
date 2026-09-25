@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   ProductCard,
   type Product,
@@ -8,7 +7,6 @@ import {
 import { SectionHeader } from "@/shared/components/layout/section-header";
 import { Link } from "@/shared/i18n/navigation";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { isRtlLocale } from "@/shared/lib/locale";
 
 interface FreshArrivalsProps {
   products: Product[];
@@ -28,54 +26,51 @@ interface FreshArrivalsProps {
  * `/products?sort=newest&availability=in-stock` is the same query, unpaged. A
  * preview a shopper can step into is worth more than one they have to trust.
  *
+ * On the page's own ground, not a tinted band: the design keeps every home
+ * band on the cream and reserves the warm surface for the one that explains
+ * how ordering works.
+ *
  * Renders nothing at all when the catalogue returns nothing buyable. An empty
  * "no products" panel on a home page is worse than one section fewer: the rest
  * of the page still works, and the shop does not announce its own outage.
  */
 export function FreshArrivals({ products }: FreshArrivalsProps) {
   const { t, locale } = useTranslations();
-  const ArrowIcon = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
 
   if (products.length === 0) {
     return null;
   }
 
   return (
-    <section className="organic-wash-band store-scroll-anchor bg-secondary/55">
-      <div className="store-container store-section-lg">
+    <section className="store-scroll-anchor bg-background">
+      <div className="store-container pb-[4.375rem] pt-10">
         <SectionHeader
-          eyebrow={t("home.arrivalsEyebrow")}
           title={t("home.arrivalsTitle")}
-          description={t("home.arrivalsSubtitle")}
           action={
             <Link
               href={{
                 pathname: "/products",
                 query: { sort: "newest", availability: "in-stock" },
               }}
-              className="group inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-bold text-foreground underline decoration-border underline-offset-8 transition-colors hover:text-primary hover:decoration-primary"
+              className="store-text-action"
             >
               {t("home.arrivalsViewAll")}
-              <ArrowIcon
-                className="size-4 transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5"
-                aria-hidden="true"
-              />
             </Link>
           }
         />
 
-        <ul className="store-scroll-row -mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 min-[43.75rem]:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
+        {/* `auto-fit` at the design's own 216px floor on a 22px gutter. With
+            four cards that resolves to one flush row on a laptop and reflows
+            by itself below; two up on a phone is stated separately, because
+            `auto-fit` would give it a single column. */}
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-[repeat(auto-fit,minmax(min(100%,13.5rem),1fr))] sm:gap-x-[1.375rem]">
           {products.map((product) => (
-            <li
-              key={product.id}
-              className="w-[72vw] max-w-[18rem] shrink-0 snap-start sm:w-auto sm:max-w-none"
-            >
+            <li key={product.id}>
               <ProductCard
                 product={product}
                 locale={locale}
                 t={t}
-                showCategory
-                sizes="(min-width: 1280px) 18rem, (min-width: 768px) 22vw, (min-width: 640px) 46vw, 72vw"
+                sizes="(min-width: 1280px) 18rem, (min-width: 768px) 22vw, (min-width: 640px) 46vw, 45vw"
               />
             </li>
           ))}

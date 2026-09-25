@@ -1,8 +1,6 @@
 import Image from "next/image";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { DynamicText } from "@/shared/components/dynamic-text";
 import { Link } from "@/shared/i18n/navigation";
-import { isRtlLocale } from "@/shared/lib/locale";
 import { normalizeImageUrl } from "@/shared/lib/utils";
 import { resolveCategoryImage } from "../lib/category-images";
 import type { ProductCategory } from "../types";
@@ -31,7 +29,6 @@ function isProxiedStorageImage(src: string): boolean {
 
 interface CategoryTileProps {
   category: ProductCategory;
-  locale: string;
   /** Rendered `sizes` for the tile image, matched to the caller's grid. */
   sizes: string;
   /** Tailwind aspect utility for the image frame, e.g. `aspect-[5/4]`. */
@@ -62,25 +59,23 @@ interface CategoryTileProps {
  */
 export function CategoryTile({
   category,
-  locale,
   sizes,
   aspect = "aspect-[5/4]",
   tone = 0,
   showDescription = false,
   shape = "soft",
 }: CategoryTileProps) {
-  const ArrowIcon = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
   const src = getCategoryTileImage(category);
 
   return (
     <Link
       href={{ pathname: "/products", query: { category: category.slug } }}
-      className="group flex h-full flex-col gap-3 rounded-3xl outline-offset-4"
+      className="group flex h-full flex-col rounded-[1.75rem] outline-offset-4"
     >
       {/* Fixed aspect on a `fill` image reserves the row before media arrives. */}
       <div
-        className={`relative ${aspect} w-full overflow-hidden bg-secondary ring-1 ring-border/70 transition-shadow duration-300 group-hover:shadow-card ${
-          shape === "arch" ? "organic-arch" : "rounded-3xl"
+        className={`organic-washed relative ${aspect} w-full overflow-hidden bg-secondary shadow-card transition-shadow duration-300 group-hover:shadow-panel ${
+          shape === "arch" ? "organic-arch" : "rounded-[1.75rem]"
         }`}
       >
         {src ? (
@@ -102,26 +97,21 @@ export function CategoryTile({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col px-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <h3
-            className={`store-dynamic-text font-semibold text-foreground transition-colors group-hover:text-primary ${
-              showDescription
-                ? "text-base leading-7 sm:text-lg"
-                : "text-sm leading-6 sm:text-base"
-            }`}
-          >
-            <DynamicText>{category.name}</DynamicText>
-          </h3>
-          {/* Static, not hover-revealed: the affordance has to be there for the
-              shopper on a phone, who has no hover. */}
-          <ArrowIcon
-            className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
-            aria-hidden="true"
-          />
-        </div>
+      {/* Name and caption on the page's own ground, under the plate — the
+          design sets no arrow and no chip here. The picture is the affordance,
+          and the whole tile is the link. */}
+      <div className="flex flex-1 flex-col">
+        <h3
+          className={`store-dynamic-text font-display leading-tight text-foreground transition-colors group-hover:text-rose [.locale-fa_&]:leading-normal ${
+            showDescription
+              ? "mt-[1.125rem] text-xl sm:text-[1.375rem]"
+              : "mt-3.5 text-base sm:text-lg"
+          }`}
+        >
+          <DynamicText>{category.name}</DynamicText>
+        </h3>
         {showDescription && category.description ? (
-          <p className="store-lede mt-1.5 line-clamp-2 text-sm text-muted-foreground">
+          <p className="store-lede mt-1 line-clamp-2 text-[0.84375rem] text-foreground/65">
             <DynamicText>{category.description}</DynamicText>
           </p>
         ) : null}

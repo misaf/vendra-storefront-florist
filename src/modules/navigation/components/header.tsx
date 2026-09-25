@@ -22,6 +22,7 @@ import { useTranslations } from "@/shared/hooks/use-translations";
 import { useStorefrontName } from "@/shared/config/storefront-context";
 import { useStorefrontConfig } from "@/shared/config/storefront-context";
 import { cn, telHref } from "@/shared/lib/utils";
+import { toLocaleDigits } from "@/shared/lib/hours";
 import { isRtlLocale } from "@/shared/lib/locale";
 import { ArrowLeft, ArrowRight, ChevronDown, Menu, Phone } from "lucide-react";
 import { useBrandIcon } from "@/shared/config/storefront-context";
@@ -61,21 +62,27 @@ export function Header({ showNav = true }: HeaderProps) {
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
   const localeClass = locale === "fa" ? "locale-fa" : "locale-en";
   const phone = storefront.contact.mobilePhone;
+  /* Every destination, for the drawer — a phone has room for the whole site
+     and no footer within reach while the drawer is open. */
   const links = [
     { href: "/", label: t("common.home") },
+    { href: "/collections", label: t("collections.viewAll") },
     { href: "/about", label: t("common.about") },
     { href: "/blog", label: t("blog.title") },
     { href: "/faq", label: t("common.faq") },
     { href: "/contact", label: t("common.contact") },
   ];
 
-  const navLinkClass = (active: boolean) =>
-    cn(
-      "relative inline-flex min-h-11 items-center rounded-sm px-2.5 py-2 text-sm font-semibold transition-colors after:absolute after:inset-x-2.5 after:bottom-1 after:h-px after:origin-center after:bg-rose after:transition-transform",
-      active
-        ? "text-foreground after:scale-x-100"
-        : "text-muted-foreground after:scale-x-0 hover:text-foreground hover:after:scale-x-100"
-    );
+  /* The bar itself carries four: home, the catalogue, the journal and the way
+     to reach a person. The design deliberately keeps it that short — About and
+     the FAQ are reference pages a shopper goes looking for, and the footer's
+     Studio and Help columns are where they are looked for. Six links plus a
+     disclosure crowded the row enough that the bar wrapped to two lines on an
+     ordinary laptop. */
+  const barLinks = [
+    { href: "/blog" as const, label: t("blog.title") },
+    { href: "/contact" as const, label: t("common.contact") },
+  ];
 
   return (
     <>
@@ -91,25 +98,34 @@ export function Header({ showNav = true }: HeaderProps) {
         role="region"
         aria-label={t("common.storeUtilities")}
         className={cn(
-          "border-b border-white/10 bg-storefront-brand text-storefront-brand-foreground",
+          "bg-clay-800 text-clay-100",
           localeClass
         )}
       >
-        <div className="store-container flex min-h-9 flex-wrap items-center justify-center gap-x-4 gap-y-1 py-1.5 text-xs font-medium sm:justify-between">
-          <p className="text-center text-storefront-brand-foreground/78">
+        <div className="store-container flex min-h-9 flex-wrap items-center justify-center gap-x-4 gap-y-0.5 py-1 text-xs sm:justify-between">
+          <p className="text-center leading-normal text-clay-100/82">
             {t("home.heroQuality")}
-            <span className="mx-2 text-storefront-brand-foreground/35" aria-hidden="true">•</span>
+            <span className="mx-2 text-clay-100/40" aria-hidden="true">•</span>
             {t("home.heroDelivery")}
           </p>
-          <div className="flex items-center gap-1 [&_[data-slot=button]]:text-storefront-brand-foreground [&_[data-slot=button]]:hover:bg-white/10 [&_[data-slot=button]]:hover:text-white">
+          {/* The bar's controls are pills of the surface itself: transparent at
+              rest, lifting to a 12% white wash on hover. The globe and the
+              moon inherit the bar's colour rather than the page's.
+
+              The negative block margin is the same trick the breadcrumb trail
+              and the footer's link lists use: every control keeps its full
+              fingertip target, but less of it counts toward the row's height,
+              so the strip stays the thin band the design draws instead of
+              growing around them. */}
+          <div className="flex items-center gap-1 [&_button]:-my-1 [&_button]:min-w-0 [&_button]:px-2.5 [&_button]:text-clay-100/86 [&_button:hover]:bg-white/12 [&_button:hover]:text-clay-100 [&_svg]:size-[0.9375rem]">
             <a
               href={telHref(phone)}
               dir="ltr"
-              className="store-focus-invert hidden items-center gap-1.5 rounded-sm px-2.5 py-1.5 font-semibold text-storefront-brand-foreground/82 transition-colors hover:text-white sm:inline-flex"
+              className="store-focus-invert hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-clay-100/86 transition-colors hover:bg-white/12 hover:text-clay-100 sm:inline-flex"
             >
-              <Phone className="size-3.5" aria-hidden="true" />
+              <Phone className="size-[0.8125rem]" aria-hidden="true" />
               <span className="sr-only">{t("common.callStore")}</span>
-              {phone}
+              {toLocaleDigits(phone, locale)}
             </a>
             <LanguageSwitcher />
             <ThemeToggle />
@@ -118,45 +134,44 @@ export function Header({ showNav = true }: HeaderProps) {
       </div>
 
       <header className={cn("sticky top-0 z-50 border-b border-border bg-background/88 backdrop-blur-xl", localeClass)}>
-        <div className="store-container flex h-16 items-center gap-2 lg:h-[4.5rem] lg:gap-4">
+        <div className="store-container flex h-16 items-center gap-[clamp(0.625rem,1.6vw,1.125rem)] lg:h-[4.5rem]">
           <Link
             href="/"
-            className="group flex min-w-0 items-center gap-2.5 rounded-sm sm:gap-3"
+            className="group flex min-w-0 shrink-0 items-center gap-[0.6875rem] rounded-sm"
           >
-            <span className="organic-mark flex size-10 shrink-0 items-center justify-center transition-transform duration-300 group-hover:-translate-y-0.5">
-              <BrandIcon className="size-5" />
+            <span className="organic-mark flex size-9 shrink-0 items-center justify-center transition-transform duration-300 group-hover:-translate-y-0.5">
+              <BrandIcon className="size-[1.1875rem]" />
             </span>
             <span className="min-w-0">
-              <span className="font-display line-clamp-2 block text-base leading-tight text-foreground sm:line-clamp-1 sm:text-lg xl:text-xl">{storeName}</span>
-              <span className="mt-0.5 hidden truncate text-xs text-muted-foreground md:block">{t("common.storeTagline")}</span>
+              <span className="font-display line-clamp-2 block text-lg leading-[1.08] text-foreground sm:line-clamp-1 sm:text-xl">{storeName}</span>
+              <span className="mt-0.5 hidden truncate text-[0.71875rem] leading-normal text-foreground/60 md:block">{t("common.storeTagline")}</span>
             </span>
           </Link>
 
           {showNav ? (
             <nav
-              className="relative ms-auto hidden items-center gap-0.5 lg:flex"
+              className="relative ms-auto hidden flex-1 items-center justify-end gap-x-[clamp(0.5625rem,1.2vw,0.875rem)] gap-y-1 lg:flex"
               aria-label={t("common.mainNavigation")}
             >
               <Link
                 href="/"
                 aria-current={isPathActive(pathname, "/") ? "page" : undefined}
-                className={navLinkClass(isPathActive(pathname, "/"))}
+                data-active={isPathActive(pathname, "/")}
+                className="store-nav-link"
               >
                 {t("common.home")}
               </Link>
-              {/* The catalogue disclosure wears the same pill as the links it
-                  sits between, so Products reads as one of them rather than as
-                  a taller control of a different kind. */}
-              <CategoryMenu
-                className={navLinkClass(isProductsActive)}
-                active={isProductsActive}
-              />
-              {links.slice(1).map((item) => (
+              {/* The catalogue disclosure wears the same link as the ones it
+                  sits between, so the shop reads as one of them rather than as
+                  a control of a different kind. */}
+              <CategoryMenu active={isProductsActive} />
+              {barLinks.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   aria-current={isPathActive(pathname, item.href) ? "page" : undefined}
-                  className={navLinkClass(isPathActive(pathname, item.href))}
+                  data-active={isPathActive(pathname, item.href)}
+                  className="store-nav-link"
                 >
                   {item.label}
                 </Link>
@@ -166,7 +181,7 @@ export function Header({ showNav = true }: HeaderProps) {
 
           {/* min-w-0 so the cluster may shrink rather than force the row wider
               than the viewport when text is scaled up. */}
-          <div className="ms-auto flex min-w-0 items-center gap-0.5 lg:ms-2">
+          <div className="ms-auto flex min-w-0 shrink-0 items-center gap-2 lg:ms-2">
             <GlobalSearch />
             {showNav ? <span className="hidden sm:inline-flex"><UserButton /></span> : null}
             <CartButton />
@@ -294,7 +309,7 @@ export function Header({ showNav = true }: HeaderProps) {
                     >
                       <Phone className="size-4" aria-hidden="true" />
                       <span className="sr-only">{t("common.callStore")}</span>
-                      {phone}
+                      {toLocaleDigits(phone, locale)}
                     </a>
                   </div>
 

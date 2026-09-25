@@ -20,7 +20,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/shared/components/ui/empty";
-import { Link } from "@/shared/i18n/navigation";
+import { Link, useRouter } from "@/shared/i18n/navigation";
 import {
   Heart,
   Package,
@@ -83,7 +83,8 @@ export function UserPanel({ open, onOpenChange, onCloseAutoFocus }: UserPanelPro
   const formatPrice = useFormatPrice();
   const { favorites, removeFromFavorites, addToFavorites } = useFavorites();
   const { orders } = useOrders();
-  const { addToCart, openCart } = useCart();
+  const { addToCart } = useCart();
+  const router = useRouter();
   const { t, locale } = useTranslations();
   const numberFormat = new Intl.NumberFormat(locale);
 
@@ -177,7 +178,7 @@ export function UserPanel({ open, onOpenChange, onCloseAutoFocus }: UserPanelPro
                                 {
                                   action: {
                                     label: t("common.viewCart"),
-                                    onClick: openCart,
+                                    onClick: () => router.push("/cart"),
                                   },
                                 }
                               );

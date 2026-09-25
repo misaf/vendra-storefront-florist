@@ -1,15 +1,10 @@
 import { getTranslations } from "next-intl/server";
-import { HandHeart, Leaf, ScanHeart } from "lucide-react";
-import { getStorefrontConfig } from "@/shared/config/storefront";
-import { getBrandIcon } from "@/shared/lib/brand-icon";
-
-const BrandIcon = getBrandIcon(getStorefrontConfig().businessType);
 
 const commitments = [
-  { key: "valueFreshness", Icon: Leaf },
-  { key: "valueCraft", Icon: BrandIcon },
-  { key: "valueService", Icon: HandHeart },
-  { key: "valueDetail", Icon: ScanHeart },
+  "valueFreshness",
+  "valueCraft",
+  "valueService",
+  "valueDetail",
 ] as const;
 
 /**
@@ -22,43 +17,37 @@ const commitments = [
  * times in three shapes does not make it three times as true; it reads as
  * padding, and padding is what an about page is most often accused of.
  *
- * Ruled rows rather than cards: this is a list of commitments, and by this
- * point in the page the reader is reading, not scanning tiles.
+ * The design's composition for it: the warm surface, the heading alone across
+ * the band on a 20ch measure, and under it a row of commitments each opening
+ * with the system's petal — a soft asymmetric plate of the sage-to-clay
+ * gradient, decorative and deliberately empty. An earlier edit set an icon
+ * inside each petal and split the heading into its own column beside them,
+ * which made the band a two-column feature rather than the statement it is.
  */
 export async function AboutApproach({ locale }: { locale: string }) {
   const t = await getTranslations({ locale });
 
   return (
-    <section className="bg-secondary/45">
-      <div className="store-container store-section-lg grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
-        <div>
-          <p className="store-eyebrow">{t("about.approachEyebrow")}</p>
-          <h2 className="store-section-title mt-4 max-w-md text-foreground">
-            {t("about.approachTitle")}
-          </h2>
-          <p className="store-lede mt-5 max-w-md text-base text-muted-foreground">
-            {t("about.approachBody")}
-          </p>
-        </div>
+    <section className="bg-card text-card-foreground">
+      <div className="store-container store-section-lg">
+        <h2 className="store-section-title max-w-[20ch] text-card-foreground">
+          {t("about.approachTitle")}
+        </h2>
+        <p className="store-lede mt-5 max-w-[52ch] text-base text-card-foreground/75">
+          {t("about.approachBody")}
+        </p>
 
-        {/* The system's petal medallion above each commitment, rather than a
-            hairline above it and a small icon inline with its title. The rules
-            drew a four-cell table across a band that is a set of statements,
-            and the inline icons sat at caption size beside 1.125rem titles —
-            too small to read as anything but decoration. */}
-        <dl className="grid gap-x-10 gap-y-10 sm:grid-cols-2">
-          {commitments.map(({ key, Icon }) => (
+        <dl className="mt-11 grid gap-[2.125rem] sm:grid-cols-[repeat(auto-fit,minmax(min(100%,16.25rem),1fr))]">
+          {commitments.map((key) => (
             <div key={key}>
               <span
-                className="organic-blob flex size-14 items-center justify-center bg-gradient-to-br from-sage-200 to-clay-300 text-clay-900"
+                className="organic-blob organic-washed block size-[4.875rem] bg-[linear-gradient(150deg,var(--sage-200),var(--clay-400))]"
                 aria-hidden="true"
-              >
-                <Icon className="size-6" />
-              </span>
-              <dt className="font-display mt-5 text-lg text-foreground">
+              />
+              <dt className="font-display mt-[1.375rem] text-[1.375rem] leading-tight text-card-foreground [.locale-fa_&]:leading-normal">
                 {t(`about.${key}Title`)}
               </dt>
-              <dd className="store-lede mt-2.5 text-sm text-muted-foreground">
+              <dd className="store-lede mt-2.5 text-[0.90625rem] text-card-foreground/75">
                 {t(`about.${key}Desc`)}
               </dd>
             </div>

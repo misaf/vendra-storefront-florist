@@ -9,6 +9,14 @@ function positiveInteger(value: string | null, fallback: number, maximum: number
   return Math.min(parsed, maximum);
 }
 
+/** A price bound off the query string, or nothing when it is not a real one. */
+function priceBound(value: string | null) {
+  if (value == null || value === "") return undefined;
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+  return parsed;
+}
+
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("query")?.trim() ?? "";
   const requestedLocale = request.nextUrl.searchParams.get("locale") ?? "fa";
@@ -36,6 +44,8 @@ export async function GET(request: NextRequest) {
     category: request.nextUrl.searchParams.get("category") || undefined,
     inStock,
     sort: request.nextUrl.searchParams.get("sort") || undefined,
+    minPrice: priceBound(request.nextUrl.searchParams.get("minPrice")),
+    maxPrice: priceBound(request.nextUrl.searchParams.get("maxPrice")),
     page: positiveInteger(request.nextUrl.searchParams.get("page"), 1, 100),
     perPage: positiveInteger(
       request.nextUrl.searchParams.get("perPage"),

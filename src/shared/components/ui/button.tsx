@@ -36,10 +36,16 @@ const buttonVariants = cva(
         default: "h-11 px-5 py-2 has-[>svg]:px-4",
         sm: "h-11 gap-1.5 px-4 has-[>svg]:px-3",
         lg: "h-12 px-7 has-[>svg]:px-5",
-        /* px, like the floor in globals.css: an icon-only control holds no text
-           to read, so scaling it with the reader's font size only consumes the
-           row it sits in. Its glyph still scales, up to the box. */
-        icon: "size-[44px]",
+        /* 36px, the size the design draws a `.btn-icon` at — with a 44px
+           fingertip target laid over it by the `::after` below, which is
+           positioned and so costs the row nothing. Drawing the box at 44px
+           instead made the header's control cluster a row of oversized discs
+           beside a 36px brand tile.
+
+           px, like the floor in globals.css: an icon-only control holds no
+           text to read, so scaling it with the reader's font size only
+           consumes the row it sits in. Its glyph still scales, up to the box. */
+        icon: "size-[36px] relative after:absolute after:left-1/2 after:top-1/2 after:size-[44px] after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
       },
     },
     defaultVariants: {
@@ -64,6 +70,10 @@ function Button({
   return (
     <Comp
       data-slot="button"
+      /* Read by globals.css, which floors every *other* button at 44px. An
+         icon button opts out of that floor because it carries its own 44px
+         target as an overlay instead of as a box. */
+      data-size={size ?? "default"}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

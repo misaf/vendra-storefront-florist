@@ -29,6 +29,7 @@ import type {
   ProductMedia,
   ProductPriceField,
   ProductPriceDto,
+  ProductPriceRange,
 } from "../types";
 
 function appendOptionalQueryParam(
@@ -545,6 +546,101 @@ function sortProductsByPrice(
   });
 }
 
+/**
+ * Whether a product falls inside an active price band.
+ *
+ * An unpriced product is excluded whenever a band is active. Its price is not
+ * zero — it is "ask us" — so including it in "under $50" would be a claim the
+ * shop has not made, and the same reasoning already keeps these rows out of the
+ * head of "cheapest first" in sortProductsByPrice.
+ */
+export function matchesPriceRange(
+  product: Product,
+  minPrice: number | undefined,
+  maxPrice: number | undefined
+): boolean {
+  const price = Number(product.price) || 0;
+  if (price <= 0) return false;
+  if (minPrice != null && price < minPrice) return false;
+  if (maxPrice != null && price > maxPrice) return false;
+  return true;
+}
+
+/**
+ * Recency order over a resolved list.
+ *
+ * The catalogue sweep is fetched deliberately unsorted so one cached copy can
+ * serve every caller, which means a swept page has to be put back into the
+ * shopper's chosen order here. Products the API dated are ordered on that date;
+ * undated ones keep their catalogue position at the end, rather than being
+ * shuffled to the front by an unparseable timestamp reading as 0.
+ */
+function sortProductsByRecency(
+  products: Product[],
+  direction: "asc" | "desc",
+  locale?: string
+): Product[] {
+  const collator = new Intl.Collator(locale === "fa" ? "fa" : "en", {
+    sensitivity: "base",
+  });
+  const timeOf = (product: Product) => {
+    const parsed = Date.parse(product.createdAt ?? "");
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  return [...products].sort((a, b) => {
+    const aTime = timeOf(a);
+    const bTime = timeOf(b);
+    if (aTime == null && bTime == null) return collator.compare(a.name, b.name);
+    if (aTime == null) return 1;
+    if (bTime == null) return -1;
+    if (aTime !== bTime) return direction === "asc" ? aTime - bTime : bTime - aTime;
+    return collator.compare(a.name, b.name);
+  });
+}
+
+/**
+ * The order a resolved list should be shown in, for a fetch-layer sort token.
+ *
+ * Exported because the favourites view orders a list the browser already holds
+ * rather than one the catalogue paginated, and "cheapest first" has to mean the
+ * same thing there as it does in the grid beside it.
+ */
+export function orderProducts(
+  products: Product[],
+  sort: string | undefined,
+  locale?: string
+): Product[] {
+  if (isPriceSort(sort)) return sortProductsByPrice(products, sort, locale);
+  if (sort === "asc" || sort === "desc") {
+    return sortProductsByRecency(products, sort, locale);
+  }
+  return products;
+}
+
+/** One page of an already-resolved list, with the pagination that describes it. */
+function paginateProducts(
+  products: Product[],
+  page: number,
+  perPage: number
+): FetchProductsResult {
+  const start = (page - 1) * perPage;
+  const total = products.length;
+
+  return {
+    products: products.slice(start, start + perPage),
+    pagination: {
+      currentPage: page,
+      lastPage: Math.max(1, Math.ceil(total / perPage)),
+      perPage,
+      total,
+      from: total === 0 ? 0 : start + 1,
+      to: Math.min(start + perPage, total),
+    },
+    links: {},
+  };
+}
+
 async function fetchBrowserCatalogSearch(
   params: FetchProductsParams & { search: string }
 ): Promise<FetchProductsResult | null> {
@@ -556,6 +652,8 @@ async function fetchBrowserCatalogSearch(
     locale,
     search,
     sort,
+    minPrice,
+    maxPrice,
   } = params;
   const fallbackParams = new URLSearchParams({
     query: search,
@@ -569,6 +667,8 @@ async function fetchBrowserCatalogSearch(
     fallbackParams.set("inStock", inStock ? "1" : "0");
   }
   if (sort) fallbackParams.set("sort", sort);
+  if (minPrice != null) fallbackParams.set("minPrice", String(minPrice));
+  if (maxPrice != null) fallbackParams.set("maxPrice", String(maxPrice));
 
   const response = await fetch(`/api/catalog-search?${fallbackParams}`);
   if (!response.ok) return null;
@@ -589,14 +689,17 @@ export async function fetchProducts(
     search,
     slug,
     sort,
+    minPrice,
+    maxPrice,
   } = params;
 
-  // A price order cannot be expressed to the API, so it is resolved over the
-  // whole filtered catalogue rather than over the current page. A text query
-  // already resolves the whole catalogue on the search path below, which
-  // applies the same ordering to what it matched — so it is left to do that.
-  if (isPriceSort(sort) && !slug && !search?.trim()) {
-    return fetchProductsSortedByPrice({ ...params, sort }, client);
+  // Neither a price order nor a price band can be expressed to the API, so both
+  // are resolved over the whole filtered catalogue rather than over the current
+  // page. A text query already resolves the whole catalogue on the search path
+  // below, which applies both to what it matched — so it is left to do that.
+  const banded = minPrice != null || maxPrice != null;
+  if ((isPriceSort(sort) || banded) && !slug && !search?.trim()) {
+    return fetchProductsFromCatalog(params, client);
   }
 
   const queryParams = createProductQueryParams(page, perPage, sort);
@@ -617,6 +720,44 @@ export async function fetchProducts(
     }
 
     queryParams.append("categoryId", categoryId);
+  }
+
+  // A price band and a text query together: the API can answer the query but
+  // not the band, and its answer cannot be narrowed after the fact without
+  // reporting a total that is not the shopper's. A band already needs the whole
+  // catalogue resolved, so the search path — which applies the query and the
+  // band to the same swept set — answers both here.
+  if (banded && normalizedSearch && !slug) {
+    if (typeof window !== "undefined") {
+      const fromRoute = await fetchBrowserCatalogSearch({
+        page,
+        perPage,
+        category,
+        inStock,
+        locale,
+        search: normalizedSearch,
+        sort,
+        minPrice,
+        maxPrice,
+      });
+
+      if (fromRoute) return fromRoute;
+    }
+
+    return searchCatalogProducts(
+      {
+        page,
+        perPage,
+        category,
+        inStock,
+        locale,
+        search: normalizedSearch,
+        sort,
+        minPrice,
+        maxPrice,
+      },
+      client
+    );
   }
 
   // Text queries in the browser need the localized catalog index. Starting
@@ -815,43 +956,121 @@ async function loadFullCatalog({
 }
 
 /**
- * A page of the catalogue ordered by price.
+ * A page of the catalogue resolved over the whole filtered set rather than over
+ * one API page.
  *
- * The API exposes no price sort, so the filtered catalogue is resolved in full,
- * ordered here, and paginated from the result. That is the only way the order
- * can be true of the shop rather than of whichever twelve rows happened to
- * arrive first. If the catalogue is larger than one sweep can safely cover, the
- * request degrades to the API's own paging so the page still renders.
+ * Two questions need this and neither can be asked of the API: order by price,
+ * and restrict to a price band. Both are answered the same way — sweep the
+ * filtered catalogue, apply the band, order the result, and cut the page out of
+ * it. That is the only way either answer can be true of the shop rather than of
+ * whichever twelve rows happened to arrive first.
+ *
+ * The two degrade differently when the sweep fails, and deliberately so. A sort
+ * that cannot be resolved falls back to the API's own paging: the rows are
+ * right and only their order is not, which is worth showing. A *band* that
+ * cannot be resolved has no honest fallback — serving the API's unfiltered page
+ * would put a 200-unit bouquet under a "up to 50" filter — so the failure is
+ * allowed to reach the page, where the catalogue's error state offers a retry.
  */
-async function fetchProductsSortedByPrice(
-  params: FetchProductsParams & { sort: "price-asc" | "price-desc" },
+async function fetchProductsFromCatalog(
+  params: FetchProductsParams,
   client: ApiClient
 ): Promise<FetchProductsResult> {
-  const { page = 1, perPage = 15, category, inStock, locale, sort } = params;
+  const {
+    page = 1,
+    perPage = 15,
+    category,
+    inStock,
+    locale,
+    sort,
+    minPrice,
+    maxPrice,
+  } = params;
+  const banded = minPrice != null || maxPrice != null;
 
   let catalog: Product[];
   try {
     catalog = await loadFullCatalog({ category, inStock, locale }, client);
-  } catch {
-    return fetchProducts({ ...params, sort: undefined }, client);
+  } catch (error) {
+    if (banded) throw error;
+    return fetchProducts(
+      { ...params, sort: undefined, minPrice: undefined, maxPrice: undefined },
+      client
+    );
   }
 
-  const ordered = sortProductsByPrice(catalog, sort, locale);
-  const start = (page - 1) * perPage;
-  const total = ordered.length;
+  const matching = banded
+    ? catalog.filter((product) => matchesPriceRange(product, minPrice, maxPrice))
+    : catalog;
 
-  return {
-    products: ordered.slice(start, start + perPage),
-    pagination: {
-      currentPage: page,
-      lastPage: Math.max(1, Math.ceil(total / perPage)),
-      perPage,
-      total,
-      from: total === 0 ? 0 : start + 1,
-      to: Math.min(start + perPage, total),
-    },
-    links: {},
-  };
+  return paginateProducts(orderProducts(matching, sort, locale), page, perPage);
+}
+
+/**
+ * The cheapest and dearest priced product in the whole catalogue, for the
+ * rail's price track.
+ *
+ * Resolved over the *unfiltered* catalogue on purpose: a track that rescaled
+ * when the shopper picked a collection would move the thumbs they had just
+ * placed, and one cache entry then serves every filter combination. The sweep
+ * is the same memoized one the price sort and the search fallback already use,
+ * so for a catalogue that fits in a single page this costs one request and
+ * warms what those paths would otherwise pay for.
+ *
+ * Returns null when the shop has fewer than two distinct prices to put on a
+ * track — a slider whose ends are the same number filters nothing.
+ */
+export async function fetchCatalogPriceRange(
+  locale: string | undefined,
+  client: ApiClient = apiClient
+): Promise<ProductPriceRange | null> {
+  const catalog = await loadFullCatalog({ locale }, client);
+  const prices = catalog
+    .map((product) => Number(product.price) || 0)
+    .filter((price) => price > 0);
+
+  if (prices.length === 0) return null;
+
+  const min = Math.floor(Math.min(...prices));
+  const max = Math.ceil(Math.max(...prices));
+
+  return max > min ? { min, max } : null;
+}
+
+/**
+ * The products in a list that match a query, most relevant first.
+ *
+ * Shared by the catalogue's search fallback and by the favourites view, so a
+ * query narrows a saved list on the same terms it narrows the shop — including
+ * the digit and character folding that lets a Persian query match a name typed
+ * with Arabic yeh or Latin numerals.
+ *
+ * `query` must already be normalized (see normalizeCatalogSearchValue).
+ */
+export function rankProductsByQuery(
+  products: Product[],
+  query: string,
+  locale?: string
+): Product[] {
+  return products
+    .map((product) => ({
+      product,
+      score: productSearchScore(product, query, locale),
+    }))
+    .filter((match) => match.score >= 0)
+    .sort((left, right) => {
+      if (left.score !== right.score) return right.score - left.score;
+      return (
+        Date.parse(right.product.updatedAt ?? "") -
+        Date.parse(left.product.updatedAt ?? "")
+      );
+    })
+    .map((match) => match.product);
+}
+
+/** The query-normalizer the catalogue search folds its input with. */
+export function normalizeSearchQuery(value: string, locale?: string): string {
+  return normalizeCatalogSearchValue(value, locale);
 }
 
 export async function searchCatalogProducts(
@@ -866,6 +1085,8 @@ export async function searchCatalogProducts(
     locale,
     search = "",
     sort,
+    minPrice,
+    maxPrice,
   } = params;
   const normalizedQuery = normalizeCatalogSearchValue(search, locale);
 
@@ -873,42 +1094,20 @@ export async function searchCatalogProducts(
     return emptyProductsResult(page, perPage);
   }
 
-  const catalog = await loadFullCatalog({ category, inStock, locale }, client);
-  const matches = catalog
-    .map((product) => ({
-      product,
-      score: productSearchScore(product, normalizedQuery, locale),
-    }))
-    .filter((match) => match.score >= 0)
-    .sort((left, right) => {
-      if (left.score !== right.score) return right.score - left.score;
-      return (
-        Date.parse(right.product.updatedAt ?? "") -
-        Date.parse(left.product.updatedAt ?? "")
-      );
-    })
-    .map((match) => match.product);
+  const swept = await loadFullCatalog({ category, inStock, locale }, client);
+  // The band narrows the set the query is scored against, so the relevance
+  // ranking below is a ranking of what the shopper can actually see.
+  const catalog =
+    minPrice != null || maxPrice != null
+      ? swept.filter((product) => matchesPriceRange(product, minPrice, maxPrice))
+      : swept;
+  const matches = rankProductsByQuery(catalog, normalizedQuery, locale);
   // Relevance is the default order for a text query, but an explicitly chosen
   // price sort is the shopper's instruction and outranks it.
   const orderedMatches = isPriceSort(sort)
     ? sortProductsByPrice(matches, sort, locale)
     : matches;
-  const start = (page - 1) * perPage;
-  const paginatedProducts = orderedMatches.slice(start, start + perPage);
-  const total = orderedMatches.length;
-
-  return {
-    products: paginatedProducts,
-    pagination: {
-      currentPage: page,
-      lastPage: Math.max(1, Math.ceil(total / perPage)),
-      perPage,
-      total,
-      from: total === 0 ? 0 : start + 1,
-      to: Math.min(start + perPage, total),
-    },
-    links: {},
-  };
+  return paginateProducts(orderedMatches, page, perPage);
 }
 
 export async function fetchProductsWithDetails(
@@ -1029,9 +1228,13 @@ export const PRODUCTS_PAGE_SIZE = 12;
  */
 export function useProductCatalogue(
   params: FetchProductsParams,
-  { initialPage }: { initialPage?: FetchProductsResult } = {}
+  {
+    initialPage,
+    enabled = true,
+  }: { initialPage?: FetchProductsResult; enabled?: boolean } = {}
 ) {
   return useInfiniteQuery({
+    enabled,
     queryKey: productKeys.list(params),
     queryFn: ({ pageParam }) =>
       fetchProductsWithDetails({

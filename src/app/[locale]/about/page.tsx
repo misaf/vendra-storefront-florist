@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import {
   AboutApproach,
-  AboutCatalogue,
   AboutMasthead,
   AboutStory,
-  loadAboutCategories,
+  loadAboutStats,
 } from "@/modules/about";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { buildMetadata } from "@/shared/seo";
@@ -29,13 +28,15 @@ export async function generateMetadata({
 /**
  * Composition only, like the home page it sits beside.
  *
- *   AboutMasthead   who this shop is, in the home hero's geometry, inverted
- *   AboutStory      why it exists — the piece the home page teases
- *   AboutApproach   what it holds itself to, once, instead of three times
- *   AboutCatalogue  the work itself, and the way back into the shop
+ *   AboutMasthead  who this shop is
+ *   AboutStory     why it exists — the piece the home page teases — and the
+ *                  figures the storefront can actually count
+ *   AboutApproach  what it holds itself to, once, instead of three times
  *
- * The footer newsletter stays off: the page already closes on a call to
- * action, and a second one under it would be the third on the page.
+ * Three bands, and the page closes on the last of them. It used to end on a
+ * fourth carrying four category tiles and a pair of buttons; the design ends
+ * on the commitments, and every way onward is already in the bar above and
+ * the foot below.
  */
 export default async function AboutPage({
   params,
@@ -43,14 +44,13 @@ export default async function AboutPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const categories = await loadAboutCategories(locale);
+  const stats = await loadAboutStats(locale);
 
   return (
     <PageShell>
       <AboutMasthead locale={locale} />
-      <AboutStory locale={locale} />
+      <AboutStory locale={locale} stats={stats} />
       <AboutApproach locale={locale} />
-      <AboutCatalogue categories={categories} locale={locale} />
     </PageShell>
   );
 }

@@ -1,9 +1,7 @@
 "use client";
 
 import { Link } from "@/shared/i18n/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { BlogPostCard } from "./blog-post-card";
-import { isRtlLocale } from "@/shared/lib/locale";
 import { useCallback } from "react";
 import { formatLocaleDate } from "@/shared/lib/date";
 import { useTranslations } from "@/shared/hooks/use-translations";
@@ -27,8 +25,6 @@ export function BlogSection({ allPosts, category }: BlogSectionProps) {
     (dateString: string) => formatLocaleDate(dateString, locale),
     [locale]
   );
-  const isRTL = isRtlLocale(locale);
-  const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
   const sectionTitle = t("blog.title") || "Blog";
   const posts = allPosts.slice(0, MAX_STOREFRONT_POSTS);
   const blogHref = category
@@ -39,20 +35,13 @@ export function BlogSection({ allPosts, category }: BlogSectionProps) {
     : "/blog";
 
   return (
-    <section className="store-section store-scroll-anchor bg-secondary/45">
-      <div className="store-container relative">
+    <section className="store-scroll-anchor bg-background">
+      <div className="store-container store-section-close relative">
         <SectionHeader
-          className="mb-8 sm:mb-10"
-          eyebrow={t("blog.eyebrow")}
           title={sectionTitle}
-          description={t("blog.subtitle")}
           action={
-            <Link
-              href={blogHref}
-              className="group inline-flex min-h-11 shrink-0 items-center gap-2 rounded-sm text-sm font-bold text-foreground underline decoration-border underline-offset-8 transition-colors hover:text-primary hover:decoration-primary"
-            >
+            <Link href={blogHref} className="store-text-action">
               {t("blog.viewAllPosts") || "View All Posts"}
-              <ArrowIcon className="size-4 transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
             </Link>
           }
         />
@@ -68,7 +57,7 @@ export function BlogSection({ allPosts, category }: BlogSectionProps) {
              — a ranking the journal never expressed. Three of the same object
              is what the design system draws here, and it is also what the
              content is: three recent entries, none of them featured. */
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+          <div className="grid gap-[1.375rem] sm:grid-cols-[repeat(auto-fit,minmax(min(100%,16.375rem),1fr))]">
             {posts.map((post) => (
               <BlogPostCard
                 key={post.id}

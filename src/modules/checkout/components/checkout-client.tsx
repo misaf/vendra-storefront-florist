@@ -1,7 +1,7 @@
 "use client";
 
 import { Link, useRouter } from "@/shared/i18n/navigation";
-import { useMemo, useCallback } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +9,7 @@ import * as z from "zod";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
+import { cn } from "@/shared/lib/utils";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
 import {
@@ -105,6 +106,44 @@ function createCheckoutFormSchema(t: (key: string) => string) {
     country: z.string().trim().min(1, t("checkout.countryRequired")),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
+    /* The delivery step's three preferences. All optional: a shopper who does
+       not care when it arrives should not be made to pick, and the studio
+       reads "no preference" as "as soon as we can". */
+    deliveryDate: z.string().optional(),
+    deliveryWindow: z.string().optional(),
+    cardMessage: z.string().trim().max(400).optional(),
+  });
+}
+
+/** The three steps, and the fields each one is answerable for. */
+const STEP_FIELDS = {
+  1: ["firstName", "lastName", "email", "phone"],
+  2: ["address", "city", "zipCode", "country"],
+  3: [],
+} as const satisfies Record<1 | 2 | 3, readonly (keyof CheckoutFormValues)[]>;
+
+type Step = 1 | 2 | 3;
+
+/**
+ * The next five days the studio can deliver on, as the design offers them: a
+ * row of chips reading weekday over day-of-month.
+ *
+ * Built from today rather than hard-set, and rebuilt only when the day
+ * changes — a tab left open overnight must not still be offering yesterday.
+ */
+function deliveryDates(locale: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return Array.from({ length: 5 }, (_, offset) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() + offset);
+
+    return {
+      value: date.toISOString().slice(0, 10),
+      weekday: new Intl.DateTimeFormat(locale, { weekday: "short" }).format(date),
+      day: new Intl.DateTimeFormat(locale, { day: "numeric" }).format(date),
+    };
   });
 }
 
@@ -113,7 +152,7 @@ type CheckoutFormValues = z.infer<ReturnType<typeof createCheckoutFormSchema>>;
 export default function CheckoutClient() {
   const formatPrice = useFormatPrice();
   const router = useRouter();
-  const { items, getTotalPrice, getTotalItems, clearCart, openCart } = useCart();
+  const { items, getTotalPrice, getTotalItems, clearCart } = useCart();
   const { addOrder } = useOrders();
   const { t, locale } = useTranslations();
   const hydrated = useHydrated();
@@ -135,8 +174,42 @@ export default function CheckoutClient() {
       country: "",
       latitude: undefined,
       longitude: undefined,
+      deliveryDate: "",
+      deliveryWindow: "",
+      cardMessage: "",
     },
   });
+
+  /* The design walks checkout in three steps rather than presenting one long
+     form: who it is for, where and when it goes, then a read-back before the
+     request leaves. Held in component state, not the URL — a half-filled step
+     is not an address worth sharing, and a Back button that walked a shopper
+     out of a form they had typed into would be worse than one that returns
+     them to the cart. */
+  const [step, setStep] = useState<Step>(1);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  const dates = useMemo(() => deliveryDates(locale), [locale]);
+  const windows = useMemo(
+    () => [t("checkout.windowMorning"), t("checkout.windowAfternoon"), t("checkout.windowEvening")],
+    [t]
+  );
+
+  /* Moving on validates only the step being left, so a shopper is never told
+     about a field two screens ahead of them. Focus follows to the new step's
+     heading: without it a keyboard user presses Continue and lands nowhere,
+     with the previous step's fields gone from under them. */
+  const goToStep = useCallback((next: Step) => {
+    setStep(next);
+    requestAnimationFrame(() => stepHeadingRef.current?.focus());
+  }, []);
+
+  const handleContinue = useCallback(async () => {
+    const fields = STEP_FIELDS[step];
+    const valid = fields.length === 0 || (await form.trigger([...fields]));
+    if (!valid) return;
+    if (step < 3) goToStep((step + 1) as Step);
+  }, [form, goToStep, step]);
 
   // A resolved pin pours its address into the form; blanks never clobber
   // anything the buyer has already typed.
@@ -170,12 +243,39 @@ export default function CheckoutClient() {
    * that was not happening, and its `catch` could never fire.
    */
   const onSubmit = (values: CheckoutFormValues) => {
+    /* An order is only placed from the confirm step, whatever asked for it.
+       Two ordinary things reach this handler early: pressing Enter in any text
+       field, which is HTML's own implicit submission, and a second click that
+       lands after Continue has already swapped itself for "Place order" at the
+       same point on screen. Both would otherwise send the request from step
+       one — before the shopper has seen an address, a date, or the read-back
+       this step exists to give them. So an early submit is treated as what the
+       shopper actually meant: move on. */
+    if (step < 3) {
+      void handleContinue();
+      return;
+    }
+
     try {
+      const {
+        deliveryDate,
+        deliveryWindow,
+        cardMessage,
+        ...shippingAddress
+      } = values;
+
       addOrder({
         items,
         ...totals,
         status: "pending",
-        shippingAddress: values,
+        shippingAddress,
+        // Only what was actually chosen: an empty string is "no preference",
+        // and the request should not carry one.
+        delivery: {
+          date: deliveryDate || undefined,
+          window: deliveryWindow || undefined,
+          cardMessage: cardMessage || undefined,
+        },
       });
 
       clearCart();
@@ -252,6 +352,44 @@ export default function CheckoutClient() {
   const { subtotal, shipping, tax, total } = totals;
   const isSubmitting = form.formState.isSubmitting;
 
+  /* The read-back on step three, assembled from what has actually been typed.
+     `watch()` rather than `getValues()` so the list is live if a shopper steps
+     back, edits and returns. Empty answers are dropped, so the review never
+     shows a blank row for a preference nobody expressed. */
+  const answers = form.watch();
+  const chosenDate = dates.find((date) => date.value === answers.deliveryDate);
+  const reviewRows = [
+    {
+      label: t("checkout.stepDetailsTitle"),
+      value: `${answers.firstName} ${answers.lastName}`.trim(),
+      dir: "auto" as const,
+    },
+    { label: t("contact.email"), value: answers.email, dir: "ltr" as const },
+    { label: t("contact.phone"), value: answers.phone, dir: "ltr" as const },
+    {
+      label: t("contact.address"),
+      value: [answers.address, answers.city, answers.zipCode, answers.country]
+        .filter(Boolean)
+        .join(", "),
+      dir: "auto" as const,
+    },
+    {
+      label: t("checkout.deliveryDate"),
+      value: chosenDate ? `${chosenDate.weekday} ${chosenDate.day}` : "",
+      dir: "auto" as const,
+    },
+    {
+      label: t("checkout.deliveryWindow"),
+      value: answers.deliveryWindow ?? "",
+      dir: "auto" as const,
+    },
+    {
+      label: t("checkout.cardMessage"),
+      value: answers.cardMessage ?? "",
+      dir: "auto" as const,
+    },
+  ].filter((row) => row.value);
+
   return (
     <PageShell showFooter={false}>
       {/* Checkout Content */}
@@ -263,19 +401,17 @@ export default function CheckoutClient() {
             heading of the card in the right-hand column, so the page announced
             one thing and titled itself another. */}
         <div className="mb-4 hidden lg:block">
-          <button
-            type="button"
-            onClick={openCart}
+          <Link
+            href="/cart"
             className="-ms-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
             <ArrowLeft className="size-4 rtl:rotate-180" />
             {t("common.backToCart")}
-          </button>
+          </Link>
         </div>
-        <div className="grid gap-8 border-b border-border pb-8 sm:pb-10 lg:grid-cols-[1fr_1.05fr] lg:items-end lg:gap-16">
+        <div className="grid gap-8 pb-2 lg:grid-cols-[1fr_1.05fr] lg:items-end lg:gap-16">
           <div>
-            <p className="store-eyebrow">{t("checkout.eyebrow")}</p>
-            <h1 className="store-page-title mt-4 text-foreground">
+            <h1 className="store-page-title text-foreground">
               {t("checkout.title")}
             </h1>
             <p className="store-lede mt-4 max-w-xl text-sm text-muted-foreground sm:text-base">
@@ -293,20 +429,38 @@ export default function CheckoutClient() {
             aria-label={t("checkout.title")}
           >
             {["stepDetails", "stepReview", "stepConfirm"].map((key, index) => (
-              <li key={key} className="flex items-center gap-3">
+              <li
+                key={key}
+                aria-current={step === index + 1 ? "step" : undefined}
+                className="flex items-center gap-3"
+              >
+                {/* Filled for every step reached, warm for the ones ahead —
+                    the design's own way of saying how far along this is. A row
+                    of three identical medallions said nothing about where the
+                    shopper stands. */}
                 <span
                   aria-hidden="true"
-                  className="font-display flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-sm text-card-foreground"
+                  className={cn(
+                    "font-display flex size-[2.125rem] shrink-0 items-center justify-center rounded-full text-sm transition-colors",
+                    step >= index + 1
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-card-foreground"
+                  )}
                 >
                   {numberFormat.format(index + 1)}
                 </span>
-                <span className="text-sm text-muted-foreground">
+                <span
+                  className={cn(
+                    "text-sm",
+                    step === index + 1 ? "text-foreground" : "text-foreground/70"
+                  )}
+                >
                   {t(`checkout.${key}`)}
                 </span>
                 {index < 2 ? (
                   <span
                     aria-hidden="true"
-                    className="hidden h-px w-8 bg-border sm:block"
+                    className="hidden h-px w-[2.125rem] bg-border sm:block"
                   />
                 ) : null}
               </li>
@@ -314,11 +468,10 @@ export default function CheckoutClient() {
           </ol>
         </div>
 
-        <button
-          type="button"
-          onClick={openCart}
+        <Link
+          href="/cart"
           aria-label={`${t("common.viewCart")}: ${formatPrice(total)}`}
-          className="mb-7 mt-7 flex min-h-16 w-full items-center justify-between gap-4 border-y border-border bg-card px-4 py-3 text-start transition-colors hover:bg-secondary lg:hidden"
+          className="mb-7 mt-7 flex min-h-16 w-full items-center justify-between gap-4 rounded-[1.375rem] bg-card px-4 py-3 text-start transition-colors hover:bg-secondary lg:hidden"
         >
           <span className="min-w-0">
             <span className="block text-sm font-semibold text-foreground">
@@ -336,7 +489,7 @@ export default function CheckoutClient() {
               {t("common.viewCart")}
             </span>
           </span>
-        </button>
+        </Link>
 
         <Form {...form}>
           <form
@@ -347,19 +500,29 @@ export default function CheckoutClient() {
             {/* Left Column - Forms */}
             <div className="min-w-0 space-y-6">
               {/* Shipping Information */}
-              <section className="min-w-0 border-y border-border bg-card/45">
-                <header className="border-b border-border px-5 py-6 sm:px-8 sm:py-7">
-                  <h2 className="font-display flex items-center gap-3 text-2xl leading-none sm:text-3xl">
-                    <span className="flex size-9 items-center justify-center rounded-t-full bg-secondary text-primary">
+              <section className="min-w-0 overflow-hidden rounded-[2rem] bg-card shadow-panel">
+                <header className="px-5 pb-2 pt-7 sm:px-8">
+                  <h2
+                    ref={stepHeadingRef}
+                    tabIndex={-1}
+                    className="font-display flex items-center gap-3 text-2xl leading-none focus:outline-none"
+                  >
+                    <span className="organic-mark flex size-9 items-center justify-center">
                       <MapPin className="h-5 w-5" />
                     </span>
-                    {t("checkout.shippingInformation")}
+                    {step === 1
+                      ? t("checkout.stepDetailsTitle")
+                      : step === 2
+                        ? t("checkout.shippingInformation")
+                        : t("checkout.stepConfirmTitle")}
                   </h2>
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                    {t("checkout.requiredFieldsHint")}
+                    {step === 3
+                      ? t("checkout.reviewHint")
+                      : t("checkout.requiredFieldsHint")}
                   </p>
                 </header>
-                <div className="space-y-5 px-5 py-7 sm:px-8 sm:py-8">
+                <div className={cn("space-y-5 px-5 pb-8 pt-6 sm:px-8", step !== 1 && "hidden")}>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       control={form.control}
@@ -437,6 +600,9 @@ export default function CheckoutClient() {
                       </FormItem>
                     )}
                   />
+                </div>
+
+                <div className={cn("space-y-5 px-5 pb-8 pt-6 sm:px-8", step !== 2 && "hidden")}>
                   <AddressMapPicker
                     locale={locale}
                     t={t}
@@ -525,6 +691,195 @@ export default function CheckoutClient() {
                       </FormItem>
                     )}
                   />
+
+                  {/* When, as the design offers it: two rows of chips built on
+                      real radio groups, so each row arrow-keys and announces
+                      as one choice rather than as a row of toggle buttons.
+                      Neither is required — the studio reads no answer as "as
+                      soon as you can". */}
+                  <FormField
+                    control={form.control}
+                    name="deliveryDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel asChild>
+                          <legend className="store-label mb-3 block">
+                            {t("checkout.deliveryDate")}
+                          </legend>
+                        </FormLabel>
+                        <div role="radiogroup" className="flex flex-wrap gap-2.5">
+                          {dates.map((date) => (
+                            <label
+                              key={date.value}
+                              className={cn(
+                                "flex h-[3.875rem] cursor-pointer flex-col items-center justify-center gap-0.5 rounded-full px-[1.125rem] text-xs transition-colors",
+                                "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring",
+                                field.value === date.value
+                                  ? "bg-primary text-primary-foreground"
+                                  : "border border-border text-foreground hover:bg-foreground/8"
+                              )}
+                            >
+                              <input
+                                type="radio"
+                                name={field.name}
+                                value={date.value}
+                                checked={field.value === date.value}
+                                onChange={() => field.onChange(date.value)}
+                                className="sr-only"
+                              />
+                              <span className="opacity-70">{date.weekday}</span>
+                              <span className="font-display text-[1.0625rem]">
+                                {date.day}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="deliveryWindow"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel asChild>
+                          <legend className="store-label mb-3 block">
+                            {t("checkout.deliveryWindow")}
+                          </legend>
+                        </FormLabel>
+                        <div role="radiogroup" className="flex flex-wrap gap-2.5">
+                          {windows.map((window) => (
+                            <label
+                              key={window}
+                              className={cn(
+                                "flex h-[2.375rem] cursor-pointer items-center rounded-full px-[1.125rem] text-[0.84375rem] transition-colors",
+                                "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring",
+                                field.value === window
+                                  ? "bg-primary text-primary-foreground"
+                                  : "border border-border text-foreground hover:bg-foreground/8"
+                              )}
+                            >
+                              <input
+                                type="radio"
+                                name={field.name}
+                                value={window}
+                                checked={field.value === window}
+                                onChange={() => field.onChange(window)}
+                                className="sr-only"
+                              />
+                              {window}
+                            </label>
+                          ))}
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="cardMessage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("checkout.cardMessage")}</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            rows={3}
+                            maxLength={400}
+                            placeholder={t("checkout.cardMessagePlaceholder")}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Step three: everything already answered, read back before
+                    the request leaves. Nothing is editable here — the way to
+                    change an answer is Back, which returns to the step that
+                    owns it with the field still filled. */}
+                <div className={cn("px-5 pb-8 pt-6 sm:px-8", step !== 3 && "hidden")}>
+                  <dl className="divide-y divide-border">
+                    {reviewRows.map((row) => (
+                      <div
+                        key={row.label}
+                        className="flex flex-wrap justify-between gap-x-6 gap-y-1 py-3.5"
+                      >
+                        <dt className="text-[0.84375rem] text-card-foreground/65">
+                          {row.label}
+                        </dt>
+                        <dd
+                          dir={row.dir}
+                          className="store-dynamic-text max-w-[28ch] text-end text-[0.90625rem] text-card-foreground"
+                        >
+                          {row.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+
+                {/* Back and Continue at the foot of the card, as the design
+                    places them. Step one's Back leaves for the cart, which is
+                    the step before this page. */}
+                <div className="flex flex-wrap justify-between gap-3 px-5 pb-8 sm:px-8">
+                  {step === 1 ? (
+                    <Button key="back-to-cart" asChild type="button" variant="outline" className="h-11 px-[1.375rem]">
+                      <Link href="/cart">{t("common.backToCart")}</Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      key="back-a-step"
+                      type="button"
+                      variant="outline"
+                      className="h-11 px-[1.375rem]"
+                      onClick={() => goToStep((step - 1) as Step)}
+                    >
+                      {t("checkout.back")}
+                    </Button>
+                  )}
+
+                  {/* The keys are load-bearing, not tidiness. Without them React
+                      reconciles these two branches into the *same* <button>
+                      node and merely flips its `type` from "button" to
+                      "submit". A click's default action is evaluated after its
+                      handlers have run, so the click that advanced step two to
+                      step three then found a submit button under itself and
+                      posted the order — one click, one order, two steps early.
+                      Distinct keys make React replace the node instead, and a
+                      detached button cannot submit anything. */}
+                  {step < 3 ? (
+                    <Button
+                      key="continue"
+                      type="button"
+                      className="h-11 gap-2 px-[1.625rem]"
+                      onClick={handleContinue}
+                    >
+                      {t("checkout.continue")}
+                      <ArrowRight className="size-4 rtl:rotate-180" />
+                    </Button>
+                  ) : (
+                    <Button
+                      key="place-order"
+                      type="submit"
+                      className="h-11 gap-2 px-[1.625rem]"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" />
+                          {t("checkout.processing")}
+                        </>
+                      ) : (
+                        <>
+                          {t("checkout.completeOrder")}
+                          <ArrowRight className="size-4 rtl:rotate-180" />
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </section>
             </div>
@@ -603,24 +958,10 @@ export default function CheckoutClient() {
                     </div>
                   </div>
 
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className="w-full gap-2"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" />
-                        {t("checkout.processing")}
-                      </>
-                    ) : (
-                      <>
-                        {`${t("checkout.completeOrder")} - ${formatPrice(total)}`}
-                        <ArrowRight className="size-4 rtl:rotate-180" />
-                      </>
-                    )}
-                  </Button>
+                  {/* No action here. The summary is a running read-out of
+                      what is being bought; the one control that commits it
+                      lives at the foot of the step the shopper is working in,
+                      so there is never a second "place order" a step early. */}
                 </CardContent>
               </Card>
             </div>

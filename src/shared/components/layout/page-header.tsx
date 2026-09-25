@@ -2,7 +2,12 @@ import type { ReactNode } from "react";
 import { cn } from "@/shared/lib/utils";
 
 interface PageHeaderProps {
-  /** Small uppercase label above the title. */
+  /**
+   * The label above the title. The design sets it as one of the system's
+   * tags, so pass a `<Badge>`; the slot itself is unstyled beyond its spacing
+   * (it used to apply `.store-eyebrow`, whose seam rule then drew a hairline
+   * in front of whatever was passed in).
+   */
   eyebrow?: ReactNode;
   title: ReactNode;
   /** Lede paragraph under the title. */
@@ -48,7 +53,7 @@ export function PageHeader({
         )}
       >
         <div className="min-w-0 max-w-2xl">
-          {eyebrow ? <p className="store-eyebrow mb-3">{eyebrow}</p> : null}
+          {eyebrow ? <div className="mb-4">{eyebrow}</div> : null}
           <h1 className="store-page-title text-foreground">{title}</h1>
           {description ? (
             <p className="store-lede mt-4 text-base text-muted-foreground sm:text-lg">

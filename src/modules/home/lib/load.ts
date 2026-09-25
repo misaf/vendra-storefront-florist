@@ -13,13 +13,14 @@ import {
 
 const BLOG_PAGE_SIZE = 3;
 /**
- * Eight cards fill the arrivals rail. Twelve are requested because the API's
- * stock flag and its price record are separate facts: a product can be in stock
- * and still carry no sellable price, and a rail that shows "price on request"
- * cards is not a shop window.
+ * Four cards fill the arrivals band — the design's own row, and one that ends
+ * flush instead of leaving a second row three-quarters empty. Ten are requested
+ * because the API's stock flag and its price record are separate facts: a
+ * product can be in stock and still carry no sellable price, and a rail that
+ * shows "price on request" cards is not a shop window.
  */
-const ARRIVALS_LIMIT = 8;
-const ARRIVALS_FETCH_SIZE = 12;
+const ARRIVALS_LIMIT = 4;
+const ARRIVALS_FETCH_SIZE = 10;
 
 export interface InitialBlogData {
   initialBlogPosts: BlogPost[];

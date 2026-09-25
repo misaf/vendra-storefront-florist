@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { PRODUCTS_PAGE_SIZE } from "./queries";
 import {
+  fetchCatalogPriceRange,
   fetchProductBySlug,
   fetchProductsWithDetails,
 } from "./server-queries";
@@ -9,7 +10,11 @@ import {
   getProductsApiSort,
   type ProductSortValue,
 } from "./keys";
-import type { FetchProductsResult, Product } from "../types";
+import type {
+  FetchProductsResult,
+  Product,
+  ProductPriceRange,
+} from "../types";
 import {
   availabilityToInStock,
   type ProductAvailability,
@@ -104,12 +109,16 @@ export async function loadProductsPage({
   availability,
   search,
   sort,
+  minPrice,
+  maxPrice,
 }: {
   locale: string;
   category: string | undefined;
   availability: ProductAvailability | undefined;
   search: string;
   sort: ProductSortValue | undefined;
+  minPrice?: number;
+  maxPrice?: number;
 }): Promise<LoadProductsPageResult> {
   const apiSort = getProductsApiSort(sort);
   const inStock = availabilityToInStock(availability);
@@ -118,7 +127,9 @@ export async function loadProductsPage({
     category,
     inStock,
     search,
-    apiSort
+    apiSort,
+    minPrice,
+    maxPrice
   );
 
   try {
@@ -130,6 +141,8 @@ export async function loadProductsPage({
       locale,
       search: search || undefined,
       sort: apiSort,
+      minPrice,
+      maxPrice,
     });
 
     return { initialPage, initialQueryKey };
@@ -137,4 +150,30 @@ export async function loadProductsPage({
     console.error("Error loading the catalogue page:", error);
     return { initialPage: null, initialQueryKey };
   }
+}
+
+/**
+ * The price track for the catalogue rail.
+ *
+ * A failure here costs the shopper one filter, never the page — the rail simply
+ * renders without its price group, exactly as it does for a shop whose products
+ * are all the same price.
+ */
+export async function loadCatalogPriceRange(
+  locale: string
+): Promise<ProductPriceRange | null> {
+  try {
+    return await fetchCatalogPriceRange(locale);
+  } catch (error) {
+    console.error("Error loading the catalogue price range:", error);
+    return null;
+  }
+}
+
+/** A price bound from a search parameter, for the server render. */
+export function normalizePrice(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+  return parsed;
 }

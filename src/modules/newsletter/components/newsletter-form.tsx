@@ -47,14 +47,18 @@ export default function NewsletterForm() {
 
   useEffect(() => () => clearTimeout(idleTimer.current), []);
 
+  /* Field and action share one row and one 46px height, as the design pairs
+     them; they only stack where the panel itself has stopped being two
+     columns. Both are pills — a squared field beside a pill button was the one
+     place in the storefront where the two disagreed. */
   const styles = {
-    form: "flex flex-col gap-3 sm:flex-row",
+    form: "flex flex-col gap-2.5 min-[26rem]:flex-row",
     input:
-      "h-11 rounded-sm border-border bg-card px-5 text-card-foreground placeholder:text-muted-foreground focus:bg-card",
+      "h-[2.875rem] border-border bg-background px-5 text-foreground placeholder:text-muted-foreground focus:bg-background",
     buttonSize: "lg" as const,
-    button: "gap-2 whitespace-nowrap rounded-sm",
+    button: "h-[2.875rem] gap-2 whitespace-nowrap px-[1.375rem]",
     alert: "mt-4",
-    successAlert: "mt-4 border-border bg-secondary text-foreground",
+    successAlert: "mt-4 border-border bg-background text-foreground",
   };
 
   const onSubmit = ({ email }: NewsletterFormValues) => {

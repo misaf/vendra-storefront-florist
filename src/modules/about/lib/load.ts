@@ -1,34 +1,46 @@
 import {
   fetchProductCategories,
+  fetchProductsWithDetails,
   type ProductCategory,
 } from "@/modules/products/server";
-
-/** Four tiles: one row on desktop, two on a phone. */
-const ABOUT_CATEGORY_LIMIT = 4;
+import { fetchBlogPostsWithDetails } from "@/modules/blog/server";
 
 /**
- * The collections the about page shows as the work itself.
+ * The four numbers the story band sets beside the studio portrait.
  *
- * Image-led, so categories the catalogue has photographed come first; the
- * shop's own order decides everything after that. The band is presentation
- * only — it never asserts that these four are the shop's best or busiest,
- * because the catalogue does not say that and this page must not invent it.
+ * The source design hand-sets these — a founding year, bouquets tied, weddings
+ * delivered, people in the studio — and not one of those facts exists anywhere
+ * in this storefront's API. Printing them would be inventing a shop's history
+ * on its own About page, which is the single worst place to do it.
  *
- * A failure returns nothing and the band disappears. The about page's story
- * does not depend on the catalogue being reachable.
+ * So the band keeps the design's composition and counts what the storefront
+ * can actually see: how much is in the catalogue, how much of it is buyable
+ * today, how many collections it is grouped into, and how much the shop has
+ * written. Every one is a live figure, and any that cannot be read is simply
+ * not drawn.
  */
-export async function loadAboutCategories(
-  locale: string
-): Promise<ProductCategory[]> {
-  try {
-    const categories = await fetchProductCategories(locale);
-    const illustrated = categories.filter((category) => category.image);
+export interface AboutStat {
+  key: string;
+  value: number;
+}
 
-    return (
-      illustrated.length >= ABOUT_CATEGORY_LIMIT ? illustrated : categories
-    ).slice(0, ABOUT_CATEGORY_LIMIT);
-  } catch (error) {
-    console.error("Error loading about page categories:", error);
-    return [];
-  }
+export async function loadAboutStats(locale: string): Promise<AboutStat[]> {
+  const [categories, catalogue, inStock, journal] = await Promise.all([
+    fetchProductCategories(locale).catch(() => [] as ProductCategory[]),
+    fetchProductsWithDetails({ page: 1, perPage: 1, locale }).catch(() => null),
+    fetchProductsWithDetails({ page: 1, perPage: 1, inStock: true, locale }).catch(
+      () => null
+    ),
+    fetchBlogPostsWithDetails({ page: 1, perPage: 1, locale }).catch(() => null),
+  ]);
+
+  const total = (result: { pagination: { total?: number } } | null) =>
+    typeof result?.pagination.total === "number" ? result.pagination.total : null;
+
+  return [
+    { key: "catalogue", value: total(catalogue) },
+    { key: "inStock", value: total(inStock) },
+    { key: "collections", value: categories.length || null },
+    { key: "journal", value: total(journal) },
+  ].filter((stat): stat is AboutStat => stat.value != null && stat.value > 0);
 }

@@ -66,7 +66,6 @@ async function BlogPostsContent({
       key={locale}
       initialPage={initial.initialPage}
       initialQueryKey={initial.initialQueryKey}
-      categories={initial.categories}
     />
   );
 }

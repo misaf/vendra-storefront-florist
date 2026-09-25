@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cairo, Caprasimo, Figtree, Rakkas } from "next/font/google";
+import { Caprasimo, Figtree, Lalezar, Vazirmatn } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -7,7 +7,6 @@ import "../globals.css";
 import { ThemeProvider } from "@/shared/components/theme-provider";
 import { Toaster } from "@/shared/components/ui/sonner";
 import { getDirection } from "@/shared/lib/locale";
-import { Cart } from "@/modules/cart";
 import { JsonLd } from "@/shared/components/seo/json-ld";
 import { CartProvider } from "@/modules/cart";
 import { FavoritesProvider } from "@/modules/account";
@@ -25,10 +24,10 @@ import {
   websiteSchema,
 } from "@/shared/seo";
 
-// The Organic design system's four faces. Latin gets Figtree for text and
-// Caprasimo for display; Persian gets Cairo and Rakkas, so an fa page has the
-// same two-texture split a Latin one has rather than the body face at 700
-// standing in for a masthead.
+// The Organic design system's four faces, exactly as the source design loads
+// them. Latin gets Figtree for text and Caprasimo for display; Persian gets
+// Vazirmatn and Lalezar, so an fa page has the same two-texture split a Latin
+// one has rather than the body face at 700 standing in for a masthead.
 const figtree = Figtree({
   variable: "--font-figtree",
   subsets: ["latin"],
@@ -47,15 +46,20 @@ const caprasimo = Caprasimo({
   display: "swap",
 });
 
-const cairo = Cairo({
-  variable: "--font-cairo",
+// Vazirmatn is the design's Persian body face — a contemporary Iranian sans
+// with the same even colour Figtree has, and unlike Cairo it is drawn for
+// Persian rather than adapted to it (the ی and ک are the Persian forms).
+const vazirmatn = Vazirmatn({
+  variable: "--font-vazirmatn",
   subsets: ["arabic", "latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const rakkas = Rakkas({
-  variable: "--font-rakkas",
+// Lalezar is the design's pairing for Caprasimo: a heavy Persian display face
+// with the same slab-like weight. One file, like Caprasimo.
+const lalezar = Lalezar({
+  variable: "--font-lalezar",
   subsets: ["arabic", "latin"],
   weight: ["400"],
   display: "swap",
@@ -123,7 +127,7 @@ export default async function LocaleLayout({
       suppressHydrationWarning
       lang={locale}
       dir={direction}
-      className={`${cairo.variable} ${rakkas.variable} ${figtree.variable} ${caprasimo.variable}`}
+      className={`${vazirmatn.variable} ${lalezar.variable} ${figtree.variable} ${caprasimo.variable}`}
     >
       <body className={`font-sans antialiased ${localeClassName}`}>
         <JsonLd data={[organizationSchema(locale), websiteSchema(locale)]} />
@@ -140,7 +144,6 @@ export default async function LocaleLayout({
                   <FavoritesProvider>
                     <OrderProvider>
                       {children}
-                      <Cart />
                       <Toaster
                         position={direction === "rtl" ? "bottom-left" : "bottom-right"}
                       />

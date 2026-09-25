@@ -18,7 +18,7 @@ import { cn } from "@/shared/lib/utils";
  * page it was standing in for.
  */
 const GRID_CLASS =
-  "grid grid-cols-2 items-stretch gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10 md:grid-cols-3 xl:grid-cols-4";
+  "grid grid-cols-2 items-stretch gap-x-3 gap-y-8 sm:gap-x-[1.375rem] sm:gap-y-10 md:grid-cols-3 lg:grid-cols-4";
 
 /**
  * What a card in this grid actually occupies, matched to the ramp above. Passed
@@ -26,7 +26,7 @@ const GRID_CLASS =
  * the drawn size instead of the full-width one.
  */
 export const PRODUCT_GRID_IMAGE_SIZES =
-  "(min-width: 1280px) 17vw, (min-width: 768px) 24vw, 45vw";
+  "(min-width: 1024px) 17vw, (min-width: 768px) 24vw, 45vw";
 
 export function ProductGrid({
   children,
@@ -46,7 +46,7 @@ export function ProductGrid({
 export function ProductCardSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <Skeleton className="aspect-[4/5] w-full rounded-b-2xl rounded-t-[min(10rem,45%)]" />
+      <Skeleton className="aspect-[4/5] w-full rounded-[1.625rem]" />
       <div className="flex flex-1 flex-col gap-2 pt-3">
         <Skeleton className="h-3.5 w-20" />
         <Skeleton className="h-4 w-full" />

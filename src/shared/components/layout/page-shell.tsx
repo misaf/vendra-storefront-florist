@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Footer } from "@/modules/navigation";
 import { Header } from "@/modules/navigation";
+import { SectionRise } from "@/shared/components/layout/section-rise";
 import { SkipLink } from "@/shared/components/layout/skip-link";
 import { cn } from "@/shared/lib/utils";
 
@@ -28,6 +29,7 @@ export function PageShell({
       <main id="main-content" tabIndex={-1} className="store-scroll-anchor focus:outline-none">
         {children}
       </main>
+      <SectionRise />
       {showFooter ? <Footer /> : null}
     </div>
   );

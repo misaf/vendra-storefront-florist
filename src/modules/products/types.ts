@@ -163,6 +163,25 @@ export interface FetchProductsParams {
   search?: string;
   slug?: string;
   sort?: string;
+  /**
+   * Inclusive price bounds. The catalogue API exposes no price parameter, so —
+   * exactly like a price sort — a range is resolved over the whole filtered
+   * catalogue rather than over whichever page happened to arrive first.
+   * Products with no price are excluded by an active range: "price on request"
+   * cannot be said to fall inside a band of numbers.
+   */
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+/**
+ * The cheapest and dearest priced product in the catalogue — the rail's slider
+ * track. Resolved over the unfiltered catalogue so the track does not rescale
+ * under the shopper's thumb when they change collection.
+ */
+export interface ProductPriceRange {
+  min: number;
+  max: number;
 }
 
 export interface FetchProductsResult {

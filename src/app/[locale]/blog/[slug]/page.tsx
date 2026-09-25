@@ -5,12 +5,14 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/shared/i18n/navigation";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { Breadcrumbs, type BreadcrumbItem } from "@/shared/components/layout/breadcrumbs";
+import { Badge } from "@/shared/components/ui/badge";
+import { getStorefrontName } from "@/shared/config/storefront";
 import { JsonLd } from "@/shared/components/seo/json-ld";
 import { Button } from "@/shared/components/ui/button";
 import { SafeImage } from "@/shared/components/ui/safe-image";
 import { ShareButton } from "@/shared/components/ui/share-button";
 import { RichText } from "@/shared/components/rich-text";
-import { Calendar, ArrowLeft, ArrowRight, BookOpen, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen } from "lucide-react";
 import { isRtlLocale } from "@/shared/lib/locale";
 import { getPost, loadRelatedPosts } from "@/modules/blog/server";
 import type { Post as BlogPost } from "@/modules/blog";
@@ -97,6 +99,7 @@ export default async function BlogPostDetail({
 }) {
   const { locale, slug } = await params;
   const t = await getTranslations({ locale });
+  const storeName = getStorefrontName(locale);
   const BackArrow = isRtlLocale(locale) ? ArrowRight : ArrowLeft;
   const ForwardArrow = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
 
@@ -222,50 +225,50 @@ export default async function BlogPostDetail({
                 />
               </div>
 
-              <div className={`${ARTICLE_COLUMN} mt-6 flex flex-col gap-6 pb-9 lg:pb-11`}>
-                {/* One line of facts under the title — collection, date,
-                    reading time — the way a journal sets a byline. The rail
-                    that used to hold them stacked each value under a
-                    "CATEGORY" / "PUBLISHED" caption, which is a table's
-                    grammar: three headings for three single values, and an
-                    uneven baseline across the row. */}
-                <div className="order-2 flex flex-wrap items-center gap-x-2.5 gap-y-2 text-sm text-muted-foreground">
-                  {post.category ? (
-                    <>
-                      {post.categorySlug ? (
-                        <Link
-                          href={{
-                            pathname: "/blog",
-                            query: { category: post.categorySlug },
-                          }}
-                          /* The negative margin keeps the 44px tap target from
-                             stretching the line, the way Breadcrumbs does it. */
-                          className="store-dynamic-text -my-2 inline-flex min-h-11 items-center rounded-sm py-2 font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
-                        >
-                          <bdi>{post.category}</bdi>
-                        </Link>
-                      ) : (
-                        <span className="store-dynamic-text font-medium text-foreground">
+              {/* The design opens an article on its collection tag, then the
+                  headline, then one quiet line of facts — not a row of glyphs
+                  before the title. The tag is a link where the journal can
+                  filter by that collection, and plain text where it cannot. */}
+              <div className={`${ARTICLE_COLUMN} mt-6 flex flex-col items-start gap-4 pb-9 lg:pb-11`}>
+                {post.category ? (
+                  post.categorySlug ? (
+                    <Link
+                      href={{
+                        pathname: "/blog",
+                        query: { category: post.categorySlug },
+                      }}
+                      className="rounded-full"
+                    >
+                      <Badge variant="clay" className="px-3 py-1 text-xs">
+                        <span className="store-dynamic-text">
                           <bdi>{post.category}</bdi>
                         </span>
-                      )}
-                      <span aria-hidden="true" className="text-border">&middot;</span>
-                    </>
-                  ) : null}
+                      </Badge>
+                    </Link>
+                  ) : (
+                    <Badge variant="clay" className="px-3 py-1 text-xs">
+                      <span className="store-dynamic-text">
+                        <bdi>{post.category}</bdi>
+                      </span>
+                    </Badge>
+                  )
+                ) : null}
 
-                  <time dateTime={publishedAt} className="inline-flex items-center gap-2">
-                    <Calendar className="size-3.5 shrink-0" aria-hidden="true" />
+                <h1
+                  className="store-dynamic-text store-page-title min-w-0 text-foreground"
+                  dir="auto"
+                >
+                  {post.title}
+                </h1>
+
+                <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.84375rem] text-foreground/60">
+                  <time dateTime={publishedAt}>
                     {formatLocaleDate(publishedAt, locale as Locale)}
                   </time>
-
                   {readingMinutes > 0 ? (
                     <>
-                      <span aria-hidden="true" className="text-border">&middot;</span>
-                      <time
-                        dateTime={`PT${readingMinutes}M`}
-                        className="inline-flex items-center gap-2"
-                      >
-                        <Clock className="size-3.5 shrink-0" aria-hidden="true" />
+                      <span aria-hidden="true">&middot;</span>
+                      <time dateTime={`PT${readingMinutes}M`}>
                         {t("blog.readingTime", {
                           /* A bare ICU placeholder substitutes the raw value,
                              which put a Latin "3" beside a Persian date on the
@@ -278,16 +281,7 @@ export default async function BlogPostDetail({
                       </time>
                     </>
                   ) : null}
-                </div>
-
-                <div className="order-1 min-w-0">
-                  <h1
-                    className="store-dynamic-text store-page-title text-foreground"
-                    dir="auto"
-                  >
-                    {post.title}
-                  </h1>
-                </div>
+                </p>
               </div>
             </header>
 
@@ -295,7 +289,7 @@ export default async function BlogPostDetail({
               /* No caption, because the API carries none — inventing one would
                  be worse than the photograph standing on its own. */
               <figure className="store-container">
-                <div className={`${ARTICLE_COLUMN} relative aspect-[16/9] overflow-hidden rounded-[2rem] bg-muted shadow-card`}>
+                <div className={`${ARTICLE_COLUMN} organic-washed relative aspect-[16/9] overflow-hidden rounded-[2rem] bg-muted shadow-card`}>
                   <SafeImage
                     src={post.image}
                     alt={post.title}
@@ -343,7 +337,28 @@ export default async function BlogPostDetail({
                       into the shop it belongs to. No product block — the API
                       ties no products to a post, and a guessed recommendation
                       is an advert, not an editorial one. */}
-                  <footer className="mt-12 flex flex-col items-start gap-4 border-t border-border pt-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+                  {/* The byline the design closes an article on: the system's
+                      petal, a name and what they do. The journal API carries
+                      no author, and inventing one would put a person's name
+                      on writing they did not sign — so the byline is the shop
+                      itself, from the store configuration the page already
+                      holds. */}
+                  <div className="mt-11 flex items-center gap-[1.125rem] border-t border-border pt-[1.875rem]">
+                    <span
+                      className="organic-blob organic-washed size-[3.875rem] shrink-0 bg-[linear-gradient(150deg,var(--sage-200),var(--clay-400))]"
+                      aria-hidden="true"
+                    />
+                    <div className="min-w-0">
+                      <p className="store-dynamic-text font-display text-[1.0625rem] leading-tight text-foreground">
+                        {storeName}
+                      </p>
+                      <p className="mt-1 text-[0.84375rem] text-foreground/65">
+                        {t("common.storeTagline")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <footer className="mt-9 flex flex-col items-start gap-4 border-t border-border pt-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
                     <div className="min-w-0">
                       <p className="text-sm leading-6 text-muted-foreground">
                         {t("blog.shopCtaDescription")}

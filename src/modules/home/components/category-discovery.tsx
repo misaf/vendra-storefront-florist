@@ -1,9 +1,7 @@
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CategoryTile, type ProductCategory } from "@/modules/products";
 import { SectionHeader } from "@/shared/components/layout/section-header";
 import { Link } from "@/shared/i18n/navigation";
-import { isRtlLocale } from "@/shared/lib/locale";
 
 interface CategoryDiscoveryProps {
   categories: ProductCategory[];
@@ -11,23 +9,23 @@ interface CategoryDiscoveryProps {
 }
 
 /**
- * The home page's single discovery surface: every collection the shop sells, in
- * the shop's own order, in two tiers.
+ * The home page's way in by occasion: the design's single row of three, with
+ * the whole set one click away.
  *
- * It replaces a six-tile preview that hid seven categories behind "view all" —
- * including most of the occasions this florist actually trades on, since Bridal
- * Bouquets, Flower Stands and Luxury Flowers all sort below that cut. On a
- * florist storefront the occasion *is* the entry intent, so the band that
- * answers "what are you shopping for" has to be complete rather than a sample.
+ * Three, not thirteen — and only because `/collections` now exists to hold the
+ * rest. An earlier edit put every category here on the grounds that "view all"
+ * hid seven of them behind a link that led to the *unfiltered catalogue*, which
+ * answers a different question entirely. With a real collections page at the
+ * end of that link, the home page can do what the design has it do: open the
+ * subject and hand it on.
  *
- * One grid, every tile the same size. The band previously opened on two
- * feature-sized tiles above a rail of small ones, which put ~700px-wide plates
- * on the page and made the pair read as the shop's two *recommended* ways in —
- * a ranking the catalogue never expressed and the shopkeeper cannot influence.
- * The source design lays collections out as one even wall at ~15rem, on both
- * this page and the catalogue, and an even wall is also the honest shape: these
- * are alternatives, not a podium.
+ * The shop's own order decides which three. Nothing here ranks them — they are
+ * the first three the catalogue returns, not a podium the shopkeeper cannot
+ * influence.
  */
+/** One row on the design's measure. */
+const HOME_COLLECTION_LIMIT = 3;
+
 export async function CategoryDiscovery({
   categories,
   locale,
@@ -38,47 +36,33 @@ export async function CategoryDiscovery({
     return null;
   }
 
-  const ArrowIcon = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
+  const shown = categories.slice(0, HOME_COLLECTION_LIMIT);
 
   return (
     <section id="collections" className="store-scroll-anchor bg-background">
-      <div className="store-container store-section-lg">
+      <div className="store-container store-section">
         <SectionHeader
-          eyebrow={t("home.collectionsEyebrow")}
           title={t("home.collectionsTitle")}
-          description={t("home.collectionsSubtitle")}
           action={
-            /* A text link, not a button: the band beneath it already holds every
-               collection, so this is the unfiltered shelf rather than a second
-               copy of the hero's action. */
-            <Link
-              href="/products"
-              className="group inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-bold text-foreground underline decoration-border underline-offset-8 transition-colors hover:text-primary hover:decoration-primary"
-            >
-              {t("common.allProducts")}
-              <ArrowIcon
-                className="size-4 transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5"
-                aria-hidden="true"
-              />
+            /* A text link, not a button: this band shows the collections as a
+               wall of plates, and the page it leads to gives each one a card
+               with the catalogue's own sentence — the same set, read slowly. */
+            <Link href="/collections" className="store-text-action">
+              {t("collections.viewAll")}
             </Link>
           }
         />
 
-        {/* Two up on a phone, then `auto-fit` at a 15rem floor so the wall
-            reflows to three and four without a breakpoint per step — and a shop
-            with three collections fills its row instead of leaving two gaps.
-            The phone case is stated separately because `auto-fit` would give it
-            a single column: thirteen full-width plates is most of a minute's
-            scrolling to reach the products underneath. */}
-        <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] sm:gap-5 lg:mt-10 lg:gap-6">
-          {categories.map((category, index) => (
+        {/* `auto-fit` at the design's 244px floor, so three tiles fill the row
+            on a laptop and reflow on their own below it. Two up on a phone is
+            stated separately because `auto-fit` would give it one column. */}
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-[repeat(auto-fit,minmax(min(100%,15.25rem),1fr))] sm:gap-[1.375rem]">
+          {shown.map((category, index) => (
             <li key={category.id}>
               <CategoryTile
                 category={category}
-                locale={locale}
                 tone={index}
                 aspect="aspect-square"
-                shape="arch"
                 /* The API has written a sentence for every category and
                    nothing in the storefront was reading it. */
                 showDescription

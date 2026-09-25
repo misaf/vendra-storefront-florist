@@ -33,9 +33,13 @@ export function SectionHeader({
   className,
 }: SectionHeaderProps) {
   return (
+    /* The design's band header: the title flush left, its one action flush
+       right, both sitting on the same baseline, and 30px of air before the
+       content. Most bands carry no eyebrow and no lede — the heading is a
+       sentence and the grid under it is the explanation. */
     <div
       className={cn(
-        "flex flex-wrap items-end justify-between gap-5",
+        "mb-[1.875rem] flex flex-wrap items-end justify-between gap-6",
         className
       )}
     >

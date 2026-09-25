@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Link } from "@/shared/i18n/navigation";
-import { Heart, Plus } from "lucide-react";
+import { Link, useRouter } from "@/shared/i18n/navigation";
+import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { ThemedProductImage } from "./themed-product-image";
 import { ProductImageFallback } from "./product-image-fallback";
@@ -12,7 +12,7 @@ import { useCart } from "@/modules/cart";
 import { useFavorites } from "@/modules/account";
 import { cn, normalizeImageUrl } from "@/shared/lib/utils";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
-import { formatRemainingQuantity, isLowStock } from "../lib/format";
+import { formatRemainingQuantity, isLowStock, isNewArrival } from "../lib/format";
 import { Price, getDiscountPercent } from "./price";
 import type { Product } from "../types";
 import { DynamicText } from "@/shared/components/dynamic-text";
@@ -50,7 +50,8 @@ export function ProductCard({
   showCategory = false,
   className,
 }: ProductCardProps) {
-  const { addToCart, openCart } = useCart();
+  const { addToCart } = useCart();
+  const router = useRouter();
   const { toggleFavorite, isFavorite } = useFavorites();
   const [hasImageError, setHasImageError] = useState(false);
   const saved = isFavorite(product.id);
@@ -64,6 +65,23 @@ export function ProductCard({
   const hasDiscount = isPurchasable && originalPrice > price;
   const discountPercent = hasDiscount ? getDiscountPercent(product) : 0;
   const isLowQuantity = isLowStock(product);
+  /* The design pins exactly one pill to the plate's foot. Three facts can want
+     that corner, so they are ranked by what changes a decision: a reduction
+     expires, a new arrival is a reason to look, low stock is a reason to
+     hurry — and the availability line under the price says the last one
+     again in words, so it is the one that yields. */
+  const footBadge = hasDiscount
+    ? {
+        label: t("products.discountBadge", {
+          percent: new Intl.NumberFormat(locale).format(discountPercent),
+        }),
+        tone: "bg-rose",
+      }
+    : isNewArrival(product)
+      ? { label: t("products.newBadge"), tone: "bg-leaf" }
+      : isLowQuantity
+        ? { label: t("products.lowStockBadge"), tone: "bg-rose" }
+        : null;
   // A sold-out product the shop expects back reads differently from one that
   // is simply gone, and the difference decides whether a customer waits.
   const outOfStockLabel = product.availableSoon
@@ -73,7 +91,10 @@ export function ProductCard({
   const handleAddToCart = () => {
     addToCart(product);
     toast.success(t("common.addedToCart", { name: product.name }), {
-      action: { label: t("common.viewCart"), onClick: openCart },
+      action: {
+        label: t("common.viewCart"),
+        onClick: () => router.push("/cart"),
+      },
     });
   };
 
@@ -86,7 +107,7 @@ export function ProductCard({
            arch belongs to the plates that carry nothing but a picture — the
            hero and the collection tiles. */
         className={cn(
-          "relative aspect-[4/5] overflow-hidden rounded-3xl bg-secondary",
+          "relative aspect-[4/5] overflow-hidden rounded-[1.625rem] bg-secondary",
           !inStock && "opacity-90"
         )}
       >
@@ -103,7 +124,7 @@ export function ProductCard({
           href={detailHref}
           aria-hidden="true"
           tabIndex={-1}
-          className="store-focus-inset block h-full w-full rounded-3xl"
+          className="store-focus-inset organic-washed block h-full w-full rounded-[1.625rem]"
         >
           {hasImageError ? (
             <ProductImageFallback label={t("products.imageUnavailable")} />
@@ -116,18 +137,16 @@ export function ProductCard({
               width={480}
               height={600}
               sizes={sizes}
-              /* `contain`, not `cover`: a bouquet cropped to fill loses its
-                 stems or its vase.
-                 The 4:5 frame is measured, not assumed. Across 113 catalogue
-                 photographs the shapes are 3:4 (70), taller portrait (14),
-                 square (24) and 4:3 (5); mean fill under `contain` is 0.90 in a
-                 3:4 frame, 0.874 in this one and 0.788 in a square. 4:5 is
-                 within three points of the best fit and keeps the card shorter,
-                 so more of the grid stays above the fold.
-                 What was actually costing the picture room was the padding that
-                 used to sit here: `contain` already insets the image, and the
-                 padding then shrank it again inside its own letterbox. */
-              className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.035]"
+              /* `cover`, filling the plate edge to edge — the design draws a
+                 catalogue tile as a photograph, not as a picture letterboxed
+                 inside one. The 4:5 frame is measured, not assumed: across 113
+                 catalogue photographs the shapes are 3:4 (70), taller portrait
+                 (14), square (24) and 4:3 (5), so the common case crops by a
+                 few percent of its height and a square loses its margins. The
+                 `object-top` bias keeps that crop off the flowers — a bouquet
+                 photographed on a stand has its stems and plinth at the foot,
+                 which is the part worth losing. */
+              className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.035]"
               unoptimized
               loading={eager ? "eager" : "lazy"}
               onError={() => setHasImageError(true)}
@@ -146,7 +165,7 @@ export function ProductCard({
         {showCategory && product.category ? (
           <Badge
             variant="clay"
-            className="pointer-events-none absolute start-3 top-3 max-w-[calc(100%-4rem)] px-2.5 text-[0.6875rem]"
+            className="pointer-events-none absolute start-3 top-3 max-w-[calc(100%-3.875rem)] px-2.5 py-0.5 text-[0.65625rem]"
           >
             <span className="store-dynamic-text truncate">
               <DynamicText>{product.category}</DynamicText>
@@ -154,12 +173,14 @@ export function ProductCard({
           </Badge>
         ) : null}
 
-        {/* Only the reduction is drawn here. Availability is the dot line's
-            job below, and stating it in the corner as well printed "Back in
-            stock soon" three times on one card — badge, price slot and line. */}
-        {hasDiscount ? (
-          <span className="pointer-events-none absolute bottom-3 start-3 rounded-full bg-rose px-2.5 py-1 text-xs font-bold text-rose-foreground">
-            {t("products.discountBadge", { percent: new Intl.NumberFormat(locale).format(discountPercent) })}
+        {footBadge ? (
+          <span
+            className={cn(
+              "pointer-events-none absolute bottom-3 start-3 inline-flex h-6 items-center rounded-full px-[0.6875rem] text-[0.65625rem] font-semibold uppercase tracking-[0.04em] text-background [.locale-fa_&]:normal-case [.locale-fa_&]:tracking-normal",
+              footBadge.tone
+            )}
+          >
+            {footBadge.label}
           </span>
         ) : null}
 
@@ -172,7 +193,7 @@ export function ProductCard({
           onClick={() => toggleFavorite(product)}
           aria-pressed={saved}
           aria-label={saved ? t("common.removeFromFavorites") : t("common.favorites")}
-          className="absolute end-3 top-3 flex size-9 items-center justify-center rounded-full bg-background text-foreground shadow-card transition-colors hover:text-rose"
+          className="absolute end-3 top-3 flex size-[2.125rem] items-center justify-center rounded-full bg-background text-foreground shadow-card transition-colors hover:text-rose"
         >
           <Heart
             className={cn("size-4", saved && "fill-current text-rose")}
@@ -181,11 +202,13 @@ export function ProductCard({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-1 pt-3">
+      <div className="flex flex-1 flex-col gap-1 pt-2.5">
         {/* <bdi> isolates a name written in the other script so it orders
             correctly, while the card keeps the page's own alignment — dir="auto"
-            on the block pushed Persian titles to the far edge of an LTR grid. */}
-        <h3 className="store-dynamic-text text-sm font-semibold leading-6 sm:text-base">
+            on the block pushed Persian titles to the far edge of an LTR grid.
+            The design sets a product's name in the display face at 17px, the
+            same face its price is set in — the two are one object. */}
+        <h3 className="store-dynamic-text font-display text-base leading-[1.25] sm:text-[1.0625rem] [.locale-fa_&]:leading-normal">
           <Link
             href={detailHref}
             className="-my-1 line-clamp-2 rounded-sm py-1 transition-colors hover:text-rose"
@@ -199,7 +222,7 @@ export function ProductCard({
           came to find out, and it is still true while the shop is restocking —
           the availability line below says the rest. Only a product the
           catalogue has given no price at all falls back to words. */}
-      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
         {hasPrice ? (
           <Price product={product} showDiscount={hasDiscount} />
         ) : (
@@ -214,7 +237,7 @@ export function ProductCard({
           low, so "in stock" was communicated by the *absence* of a line, which
           is not something a shopper can read. Colour never carries the meaning
           on its own (WCAG 1.4.1): the dot and the words say the same thing. */}
-      <p className="mt-1.5 flex items-center gap-2 text-xs leading-5 text-muted-foreground">
+      <p className="mt-2 flex items-center gap-[0.4375rem] text-xs leading-5 text-muted-foreground">
         <span
           className={cn(
             "size-[0.4375rem] shrink-0 rounded-full",
@@ -233,22 +256,24 @@ export function ProductCard({
 
 
       {showAddToCart ? (
-        <div className="mt-3">
+        <div className="mt-2.5">
           {isPurchasable ? (
+            /* No leading glyph: the design's card action is the label alone in
+               an outlined pill, and a plus in front of it read as a stepper
+               control rather than as "add to cart". */
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="w-full gap-1.5"
+              className="w-full text-[0.78125rem]"
               onClick={handleAddToCart}
             >
-              <Plus className="size-4" aria-hidden="true" />
               <span className="truncate">{t("common.addToCart")}</span>
             </Button>
           ) : (
             /* Bordered like the buy action so it still reads as a control —
                just quieter, since there is nothing to buy here. */
-            <Button asChild variant="outline" size="sm" className="w-full border-dashed text-muted-foreground">
+            <Button asChild variant="outline" size="sm" className="w-full border-dashed text-[0.78125rem] text-muted-foreground">
               <Link href={detailHref}>{t("products.viewDetails")}</Link>
             </Button>
           )}

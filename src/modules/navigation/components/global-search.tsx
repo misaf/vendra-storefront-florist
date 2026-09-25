@@ -18,19 +18,8 @@ export function GlobalSearch({ full = false }: { full?: boolean }) {
   // Kept mounted after the first open so re-opening is instant rather than
   // re-suspending on the chunk.
   const [hasOpened, setHasOpened] = useState(false);
-  const [isMac, setIsMac] = useState(false);
   const { t } = useTranslations();
   const { capture, onCloseAutoFocus } = useFocusReturn();
-
-  // Which modifier to draw in the hint. `navigator.platform` is deprecated, so
-  // the UA-data platform is preferred where it exists and it is the fallback.
-  useEffect(() => {
-    if (typeof navigator === "undefined") return;
-    const platform =
-      (navigator as Navigator & { userAgentData?: { platform?: string } })
-        .userAgentData?.platform ?? navigator.platform;
-    setIsMac(/mac/i.test(platform));
-  }, []);
 
   // Keyboard shortcut (Cmd+K / Ctrl+K)
   useEffect(() => {
@@ -57,31 +46,20 @@ export function GlobalSearch({ full = false }: { full?: boolean }) {
     <>
       <button
         onClick={openSearch}
-        className={full ? "flex h-11 w-full items-center gap-3 rounded-sm px-2 text-start text-sm text-muted-foreground transition-colors hover:text-foreground" : "flex size-[44px] items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground xl:hidden"}
+        /* Icon-only at every width. The bar's own composition is brand,
+           navigation, then a cluster of round controls; a 14rem search field
+           wedged between the links and that cluster was the one rectangle in a
+           row of pills, and it took the width the navigation needs. */
+        className={full ? "flex h-11 w-full items-center gap-3 rounded-sm px-2 text-start text-sm text-muted-foreground transition-colors hover:text-foreground" : /* 36px drawn, 44px targeted — matched to the Button component's own
+           icon size so the three controls in the cluster are one row of discs
+           rather than two sizes side by side. */
+        "relative flex size-[36px] items-center justify-center rounded-full border border-border text-foreground transition-colors after:absolute after:left-1/2 after:top-1/2 after:size-[44px] after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-foreground/8 active:bg-foreground/14"}
         aria-label={t("search.title")}
       >
         <Search className="h-4 w-4" />
         {full ? <span>{t("search.placeholder")}</span> : null}
       </button>
 
-      {!full ? <button
-        onClick={openSearch}
-        /* The width is capped against the viewport as well as stated in rem.
-           A bare `w-56` is 14rem, which at a doubled root font size becomes
-           448px of unshrinkable control and pushed the whole header cluster
-           past the right edge of a 1280px window — content loss under WCAG
-           1.4.4. `min()` leaves the resting width untouched and only bites
-           once the text is scaled up. */
-        className="hidden h-11 min-w-0 items-center gap-2 rounded-sm border-b border-border px-1 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/45 hover:text-foreground xl:flex xl:w-[min(14rem,22vw)] 2xl:w-[min(16rem,22vw)]"
-        aria-label={t("search.title")}
-      >
-        <Search className="h-4 w-4" />
-        <span className="min-w-0 flex-1 truncate whitespace-nowrap text-start">{t("search.placeholder")}</span>
-        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded-sm border border-border bg-card px-1.5 text-xs font-medium xl:flex">
-          <span className="text-xs">{isMac ? "⌘" : "Ctrl"}</span>
-          {isMac ? "K" : "+K"}
-        </kbd>
-      </button> : null}
 
       {hasOpened ? <SearchPanel open={open} onOpenChange={setOpen} onCloseAutoFocus={onCloseAutoFocus} /> : null}
     </>

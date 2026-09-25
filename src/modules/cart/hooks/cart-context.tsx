@@ -5,8 +5,6 @@ import React, {
   useCallback,
   useContext,
   useMemo,
-  useRef,
-  useState,
 } from "react";
 import type { Product } from "@/modules/products";
 import { usePersistentState } from "@/shared/hooks/use-persistent-state";
@@ -45,33 +43,12 @@ interface CartContextType {
   clearCart: () => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
-  /** Cart drawer visibility — lifted here so any component (e.g. an
-   *  add-to-cart toast action) can open it without prop-drilling. */
-  isCartOpen: boolean;
-  setCartOpen: (open: boolean) => void;
-  openCart: () => void;
-  closeCart: () => void;
-  /** The element that opened the cart, so focus can return there on close. */
-  cartOpenerRef: React.RefObject<HTMLElement | null>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = usePersistentState<CartItem[]>("cart", []);
-  const [isCartOpen, setCartOpenState] = useState(false);
-  // The drawer is opened programmatically from several places and has no
-  // Radix trigger, so Radix has nothing to hand focus back to on close. Record
-  // whatever had focus at open time and restore it ourselves.
-  const cartOpenerRef = useRef<HTMLElement | null>(null);
-
-  const setCartOpen = useCallback((open: boolean) => {
-    if (open && typeof document !== "undefined") {
-      const active = document.activeElement;
-      cartOpenerRef.current = active instanceof HTMLElement ? active : null;
-    }
-    setCartOpenState(open);
-  }, []);
 
   const addToCart = useCallback(
     (product: Product) => {
@@ -153,9 +130,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [items]
   );
 
-  const openCart = useCallback(() => setCartOpen(true), [setCartOpen]);
-  const closeCart = useCallback(() => setCartOpen(false), [setCartOpen]);
-
   const value = useMemo(
     () => ({
       items,
@@ -166,11 +140,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       clearCart,
       getTotalPrice,
       getTotalItems,
-      isCartOpen,
-      setCartOpen,
-      openCart,
-      closeCart,
-      cartOpenerRef,
     }),
     [
       items,
@@ -181,10 +150,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       clearCart,
       getTotalPrice,
       getTotalItems,
-      isCartOpen,
-      setCartOpen,
-      openCart,
-      closeCart,
     ]
   );
 

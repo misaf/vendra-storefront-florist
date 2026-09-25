@@ -33,6 +33,20 @@ export interface Order {
     latitude?: number;
     longitude?: number;
   };
+  /**
+   * What the buyer asked for at the delivery step. There is no order endpoint
+   * to send these to, so they travel in the request the confirmation screen
+   * hands to the studio — which is exactly why they are stored as the words a
+   * florist reads rather than as indices only this code could decode.
+   */
+  delivery?: {
+    /** ISO date the buyer chose, or undefined for "any day". */
+    date?: string;
+    /** The chosen window, already written out ("Morning 9–12"). */
+    window?: string;
+    /** The message to hand-write on the card, if any. */
+    cardMessage?: string;
+  };
 }
 
 interface OrderContextType {

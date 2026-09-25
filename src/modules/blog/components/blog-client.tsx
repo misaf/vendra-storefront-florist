@@ -6,25 +6,21 @@ import { PostGrid, PostGridSkeleton } from "./post-grid";
 import { PageHeader } from "@/shared/components/layout/page-header";
 import { BlogPostCard } from "./blog-post-card";
 import { Link } from "@/shared/i18n/navigation";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { ErrorState } from "@/shared/components/ui/error-state";
-import { Input } from "@/shared/components/ui/input";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from "@/shared/components/ui/empty";
-import { useState, useEffect, useMemo, useRef, useCallback, type FormEvent } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useTranslations } from "@/shared/hooks/use-translations";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/shared/i18n/navigation";
-import { Loader2, BookOpen, Calendar, Search, ArrowLeft, ArrowRight, ImageOff } from "lucide-react";
+import { Loader2, BookOpen, ArrowLeft, ArrowRight, ImageOff } from "lucide-react";
 import { usePostFeed } from "../lib/queries";
-import type {
-  FetchBlogPostsResult,
-  Post as BlogPost,
-  PostCategory,
-} from "../types";
+import type { FetchBlogPostsResult, Post as BlogPost } from "../types";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { formatLocaleDate } from "@/shared/lib/date";
 import { createReadableResourcePath } from "@/shared/lib/slug-url";
-import { cn, normalizeImageUrl } from "@/shared/lib/utils";
+import { normalizeImageUrl } from "@/shared/lib/utils";
 import { isRtlLocale } from "@/shared/lib/locale";
 import { buildBlogQueryKey } from "../lib/keys";
 import { DynamicText } from "@/shared/components/dynamic-text";
@@ -34,7 +30,6 @@ interface BlogPostsClientProps {
   initialPage: FetchBlogPostsResult | null;
   /** The filters `initialPage` answers, so a stale page is not seeded. */
   initialQueryKey: string;
-  categories: PostCategory[];
 }
 
 /* The featured lead — the journal opens on its most recent entry, set as an
@@ -62,8 +57,8 @@ function FeaturedPost({
       href={`/blog/${createReadableResourcePath(post.id, post.slug)}`}
       className="group block rounded-2xl"
     >
-      <article className="grid gap-6 lg:grid-cols-12 lg:items-center lg:gap-10">
-        <div className="relative aspect-[16/10] overflow-hidden rounded-3xl bg-muted lg:col-span-7">
+      <article className="grid items-center gap-[clamp(1.75rem,4vw,2.75rem)] [grid-template-columns:repeat(auto-fit,minmax(min(100%,20.625rem),1fr))]">
+        <div className="organic-washed relative aspect-[16/10] overflow-hidden rounded-[2.125rem] bg-muted shadow-card">
           {hasImageError ? (
             <div className="flex h-full w-full items-center justify-center text-storefront-text-muted">
               <ImageOff className="h-8 w-8" />
@@ -83,33 +78,36 @@ function FeaturedPost({
           )}
         </div>
 
-        <div className="lg:col-span-5">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 store-label">
-            <span className="text-foreground">{metaText}</span>
-            {post.category ? (
-              <>
-                <span aria-hidden="true">/</span>
-                <span>{post.category}</span>
-              </>
-            ) : null}
-          </div>
+        {/* The collection as a tag, then the headline, the standfirst and one
+            dated line. It used to open on "LATEST ENTRY / GENERAL" in tracked
+            capitals and close on a second dated line with a calendar glyph —
+            three meta rows around two of content. */}
+        <div>
+          <Badge variant="sage" className="px-3 py-1 text-xs">
+            <span className="store-dynamic-text">
+              {post.category ? (
+                <DynamicText>{post.category}</DynamicText>
+              ) : (
+                metaText
+              )}
+            </span>
+          </Badge>
 
-          <h2 className="store-dynamic-text font-display mt-4 text-3xl leading-[1.1] tracking-tight text-foreground transition-colors group-hover:text-muted-foreground [.locale-fa_&]:leading-[1.45] sm:text-4xl lg:text-5xl">
+          <h2 className="store-dynamic-text font-display mt-4 text-[clamp(1.75rem,3vw,2.5rem)] leading-[1.1] text-foreground transition-colors group-hover:text-rose [.locale-fa_&]:leading-[1.45]">
             <DynamicText>{post.title}</DynamicText>
           </h2>
 
           {post.excerpt ? (
-            <p className="mt-4 line-clamp-3 leading-7 text-muted-foreground">
+            <p className="store-lede mt-3.5 line-clamp-3 text-[0.96875rem] leading-[1.65] text-foreground/75">
               {post.excerpt}
             </p>
           ) : null}
 
-          <div className="mt-5 flex items-center gap-2 store-label">
-            <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+          <p className="mt-4 text-[0.8125rem] text-foreground/60">
             <time dateTime={dateValue}>{dateText}</time>
-          </div>
+          </p>
 
-          <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <span className="store-text-action mt-3">
             {readMoreText}
             <ArrowIcon className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
           </span>
@@ -122,7 +120,6 @@ function FeaturedPost({
 export default function BlogPostsClient({
   initialPage,
   initialQueryKey,
-  categories,
 }: BlogPostsClientProps) {
   const { t, locale } = useTranslations();
   const searchParams = useSearchParams();
@@ -131,17 +128,7 @@ export default function BlogPostsClient({
   const selectedCategory = searchParams.get("category") || "all";
   const searchQuery = searchParams.get("search") || "";
   const queryKey = buildBlogQueryKey(locale, selectedCategory, searchQuery);
-  const [searchInput, setSearchInput] = useState(searchQuery);
   const observerTarget = useRef<HTMLDivElement>(null);
-
-  // Keep the search field in sync with the URL (e.g. the global header search)
-  // by adjusting state during render rather than in an effect: an effect would
-  // paint one frame carrying the previous query before correcting itself.
-  const [syncedSearchQuery, setSyncedSearchQuery] = useState(searchQuery);
-  if (syncedSearchQuery !== searchQuery) {
-    setSyncedSearchQuery(searchQuery);
-    setSearchInput(searchQuery);
-  }
 
   const {
     data,
@@ -176,17 +163,6 @@ export default function BlogPostsClient({
   const loading = isFetching && !isFetchingNextPage;
   const loadingMore = isFetchingNextPage;
   const hasMore = hasNextPage;
-
-  const ledgerItems = useMemo(
-    () => [
-      { value: "all", label: t("blog.allCategories") || "All" },
-      ...categories.map((category) => ({
-        value: category.slug,
-        label: category.name,
-      })),
-    ],
-    [categories, t]
-  );
 
   useEffect(() => {
     const target = observerTarget.current;
@@ -226,21 +202,9 @@ export default function BlogPostsClient({
     [router, selectedCategory, searchQuery]
   );
 
-  const handleCategoryChange = useCallback(
-    (value: string) => navigate({ category: value }),
-    [navigate]
-  );
-
-  const handleSearchSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      navigate({ search: searchInput });
-    },
-    [navigate, searchInput]
-  );
-
+  /* Still reachable: the header's search palette can land here with a query,
+     and this is the way back out of it. */
   const handleClearSearch = useCallback(() => {
-    setSearchInput("");
     navigate({ search: "" });
   }, [navigate]);
 
@@ -262,82 +226,17 @@ export default function BlogPostsClient({
     <PageShell>
       <section className="bg-background pb-16 sm:pb-24">
         <PageHeader
-          eyebrow={t("blog.eyebrow") || "Field notes"}
+          eyebrow={
+            <Badge variant="clay" className="px-3 py-1 text-xs">
+              {t("blog.eyebrow") || "Field notes"}
+            </Badge>
+          }
           title={t("blog.title") || "Blog"}
           description={t("blog.subtitle") || "Read our latest articles and updates"}
           className="pb-0 sm:pb-0"
-          aside={
-            <form
-              onSubmit={handleSearchSubmit}
-              role="search"
-              className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-2"
-            >
-              <Input
-                type="search"
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                aria-label={t("blog.searchPlaceholder") || "Search the journal"}
-                placeholder={t("blog.searchPlaceholder") || "Search the journal"}
-                className="h-11 rounded-sm bg-card px-4"
-              />
-              <Button type="submit" className="h-11 rounded-sm px-4">
-                <Search className="h-4 w-4" aria-hidden="true" />
-                <span>{t("blog.searchAction") || "Search"}</span>
-              </Button>
-            </form>
-          }
         />
 
         <div className="store-container">
-          {/* Category ledger — the journal's contents rail */}
-          {ledgerItems.length > 1 && (
-            <nav
-              aria-label={t("blog.browseBy") || "Browse by topic"}
-              className="mt-10"
-            >
-              <div className="store-scroll-row -mx-1 flex items-stretch gap-1 overflow-x-auto px-1 [mask-image:linear-gradient(to_right,transparent,black_1.25rem,black_calc(100%-1.25rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {ledgerItems.map((item) => {
-                  const isActive = selectedCategory === item.value;
-
-                  return (
-                    <button
-                      key={item.value}
-                      type="button"
-                      aria-pressed={isActive}
-                      onClick={() => handleCategoryChange(item.value)}
-                      className={cn(
-                        "group/cat relative min-h-11 shrink-0 whitespace-nowrap rounded-sm px-3 py-2.5 store-label transition-colors",
-                        isActive
-                          ? "text-foreground"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        {isActive && (
-                          <span
-                            className="h-1.5 w-1.5 rounded-full bg-foreground"
-                            aria-hidden="true"
-                          />
-                        )}
-                        {item.label}
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "absolute inset-x-2 -bottom-px h-0.5 rounded-full transition-colors",
-                          isActive
-                            ? "bg-foreground"
-                            : "bg-transparent group-hover/cat:bg-border"
-                        )}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="h-px bg-border" />
-            </nav>
-          )}
-
           {/* Results meta */}
           <div className="mt-8 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             <p className="store-label">

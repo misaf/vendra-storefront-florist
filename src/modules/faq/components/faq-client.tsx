@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { ArrowRight, HelpCircle, Search } from "lucide-react";
+import { ArrowRight, HelpCircle } from "lucide-react";
 import { PageShell } from "@/shared/components/layout/page-shell";
 import { PageHeader } from "@/shared/components/layout/page-header";
 import {
@@ -12,15 +12,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/shared/components/ui/empty";
-import { Input } from "@/shared/components/ui/input";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { ErrorState } from "@/shared/components/ui/error-state";
 import { useTranslations } from "@/shared/hooks/use-translations";
-import { useSearchParams } from "next/navigation";
-import { Link, useRouter } from "@/shared/i18n/navigation";
+import { Link } from "@/shared/i18n/navigation";
 import { fetchFaqs } from "../lib/queries";
 import type { Faq, FaqCategory } from "../types";
-import { cn } from "@/shared/lib/utils";
 
 interface FaqClientProps {
   initialFaqs: Faq[];
@@ -44,16 +42,11 @@ export default function FaqClient({
   initialError,
 }: FaqClientProps) {
   const { t, locale } = useTranslations();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const selectedCategory = searchParams.get("category")?.trim() || "all";
 
   const [faqs, setFaqs] = useState<Faq[]>(initialFaqs);
   const [error, setError] = useState<string | null>(initialError);
   const [reloading, setReloading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [openIds, setOpenIds] = useState<Set<number>>(new Set());
-  const numberFormat = useMemo(() => new Intl.NumberFormat(locale), [locale]);
 
   const reload = useCallback(async () => {
     setReloading(true);
@@ -84,36 +77,13 @@ export default function FaqClient({
     return ordered;
   }, [faqs, initialCategories, t]);
 
-  // Search narrows the working set; counts and the ledger derive from it.
-  const matched = useMemo(() => {
-    const query = searchQuery.trim().toLocaleLowerCase(locale);
-    if (!query) return faqs;
-    return faqs.filter(
-      (faq) =>
-        faq.question.toLocaleLowerCase(locale).includes(query) ||
-        faq.answer.toLocaleLowerCase(locale).includes(query)
-    );
-  }, [faqs, searchQuery, locale]);
-
-  const counts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const faq of matched) {
-      const key = bucketKey(faq);
-      map.set(key, (map.get(key) ?? 0) + 1);
-    }
-    return map;
-  }, [matched]);
-
-  const visible = useMemo(() => {
-    if (selectedCategory === "all") return matched;
-    return matched.filter((faq) => bucketKey(faq) === selectedCategory);
-  }, [matched, selectedCategory]);
-
-  // Group the visible entries by bucket in a single pass so the ledger reads
-  // as a guide.
+  /* Every entry, grouped under its own heading. The page carried a search
+     field and a row of category pills; the design has neither, and neither
+     was earning its place — the whole set fits on one 900px column, so both
+     controls filtered a list the reader can already see all of. */
   const groups = useMemo(() => {
     const byKey = new Map<string, Faq[]>();
-    for (const faq of visible) {
+    for (const faq of faqs) {
       const key = bucketKey(faq);
       const list = byKey.get(key);
       if (list) list.push(faq);
@@ -122,26 +92,7 @@ export default function FaqClient({
     return buckets
       .map((bucket) => ({ ...bucket, items: byKey.get(bucket.key) ?? [] }))
       .filter((group) => group.items.length > 0);
-  }, [buckets, visible]);
-
-  const handleCategoryChange = useCallback(
-    (category: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (category === "all") {
-        params.delete("category");
-      } else {
-        params.set("category", category);
-      }
-      router.replace(
-        {
-          pathname: "/faq",
-          query: Object.fromEntries(params),
-        },
-        { scroll: false }
-      );
-    },
-    [router, searchParams]
-  );
+  }, [buckets, faqs]);
 
   const toggle = useCallback((id: number) => {
     setOpenIds((prev) => {
@@ -155,49 +106,28 @@ export default function FaqClient({
     });
   }, []);
 
-  const railItems = useMemo(
-    () => [
-      { key: "all", name: t("faq.allCategories"), count: matched.length },
-      ...buckets.map((bucket) => ({
-        key: bucket.key,
-        name: bucket.name,
-        count: counts.get(bucket.key) ?? 0,
-      })),
-    ],
-    [buckets, counts, matched.length, t]
-  );
-
   const showGroupHeadings = groups.length > 1;
-  const hasResults = visible.length > 0;
+  const hasResults = faqs.length > 0;
 
   return (
     <PageShell>
-      {/* Masthead — quiet porcelain, search promoted as the real task */}
-      <section className="border-b border-border">
+      {/* Masthead — quiet porcelain, on the narrow measure the design sets
+          this page to, with search promoted as the real task. */}
+      <section>
         <PageHeader
-          eyebrow={t("faq.indexLabel")}
+          className="mx-auto max-w-[56.25rem] pb-[2.125rem] sm:pb-[2.125rem]"
+          eyebrow={
+            <Badge variant="clay" className="px-3 py-1 text-xs">
+              {t("faq.indexLabel")}
+            </Badge>
+          }
           title={t("faq.heading")}
           description={t("faq.subtitle")}
-        >
-          <div className="relative mt-8 max-w-xl">
-            <Search
-              className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder={t("faq.searchPlaceholder")}
-              aria-label={t("faq.searchPlaceholder")}
-              className="h-11 ps-9"
-            />
-          </div>
-        </PageHeader>
+        />
       </section>
 
-      {/* Index rail + hairline ledger */}
-      <section className="store-container store-section">
+      {/* Index tags + the ledger, one column */}
+      <section className="store-container pb-10">
         {error ? (
           <ErrorState
             message={t("faq.loadError")}
@@ -207,69 +137,9 @@ export default function FaqClient({
             isRetrying={reloading}
           />
         ) : (
-          <div className="grid gap-10 lg:grid-cols-[15rem_1fr] lg:gap-16">
-            {/* Rail */}
-            <aside className="store-sticky-lg lg:rounded-3xl lg:bg-card/55 lg:p-5">
-              <p
-                id="faq-index-label"
-                className="store-label"
-              >
-                {t("faq.indexLabel")}
-              </p>
-              {/* Mobile: hairline tab row · Desktop: vertical index */}
-              <ul
-                aria-labelledby="faq-index-label"
-                className="mt-4 flex gap-x-5 overflow-x-auto pb-1 lg:mt-5 lg:flex-col lg:gap-0 lg:overflow-visible lg:pb-0"
-              >
-                {railItems.map((item) => {
-                  const isActive = selectedCategory === item.key;
-                  return (
-                    <li key={item.key} className="shrink-0 lg:shrink">
-                      <button
-                        type="button"
-                        aria-pressed={isActive}
-                        onClick={() => handleCategoryChange(item.key)}
-                        className={cn(
-                          "group flex min-h-11 w-full items-center justify-between gap-3 whitespace-nowrap rounded-sm py-1.5 text-start transition-colors lg:border-t lg:border-border lg:py-2.5 lg:first:border-t-0",
-                          isActive
-                            ? "text-foreground"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <span className="flex items-center gap-2.5">
-                          <span
-                            className={cn(
-                              "petal-dot transition-colors",
-                              isActive
-                                ? "bg-foreground"
-                                : "group-hover:bg-foreground/70"
-                            )}
-                            aria-hidden="true"
-                          />
-                          <span
-                            className={cn(
-                              "text-sm",
-                              isActive && "font-display tracking-tight"
-                            )}
-                          >
-                            {item.name}
-                          </span>
-                        </span>
-                        <span className="text-xs tabular-nums text-muted-foreground">
-                          {numberFormat.format(item.count)}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </aside>
-
+          <div className="mx-auto max-w-[56.25rem]">
             {/* Ledger */}
             <div className="min-w-0">
-              <p className="sr-only" role="status" aria-live="polite">
-                {t("faq.resultsCount", { count: visible.length })}
-              </p>
               {!hasResults ? (
                 <Empty className="py-12">
                   <EmptyHeader>
@@ -277,39 +147,22 @@ export default function FaqClient({
                       <HelpCircle className="h-6 w-6" />
                     </EmptyMedia>
                     <EmptyTitle>{t("faq.noResults")}</EmptyTitle>
-                    <EmptyDescription>
-                      {searchQuery ? t("faq.noSearchResults") : t("faq.noFaqs")}
-                    </EmptyDescription>
+                    <EmptyDescription>{t("faq.noFaqs")}</EmptyDescription>
                   </EmptyHeader>
-                  {searchQuery ? (
-                    <EmptyContent>
-                      <button
-                        type="button"
-                        onClick={() => setSearchQuery("")}
-                        className="rounded-sm text-sm font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground"
-                      >
-                        {t("faq.clearSearch")}
-                      </button>
-                    </EmptyContent>
-                  ) : (
-                    <EmptyContent>
-                      <Button asChild variant="outline">
-                        <Link href="/contact">{t("faq.contactForAnswer")}</Link>
-                      </Button>
-                    </EmptyContent>
-                  )}
+                  <EmptyContent>
+                    <Button asChild variant="outline">
+                      <Link href="/contact">{t("faq.contactForAnswer")}</Link>
+                    </Button>
+                  </EmptyContent>
                 </Empty>
               ) : (
-                <div className="space-y-12">
+                <div className="space-y-11">
                   {groups.map((group) => (
                     <section key={group.key} aria-label={group.name}>
                       {showGroupHeadings ? (
-                        <div className="mb-1 flex items-center gap-2.5">
-                          <span className="petal-dot" aria-hidden="true" />
-                          <h2 className="store-label">
-                            {group.name}
-                          </h2>
-                        </div>
+                        <h2 className="font-display mb-[1.125rem] text-[1.625rem] leading-tight text-foreground [.locale-fa_&]:leading-normal">
+                          {group.name}
+                        </h2>
                       ) : (
                         <h2 className="sr-only">{group.name}</h2>
                       )}
@@ -326,7 +179,7 @@ export default function FaqClient({
                           return (
                             <li
                               key={faq.id}
-                              className="overflow-hidden rounded-3xl bg-card"
+                              className="overflow-hidden rounded-[1.625rem] bg-card"
                             >
                               <div>
                                 {hasAnswer ? (
@@ -336,10 +189,10 @@ export default function FaqClient({
                                       aria-expanded={open}
                                       aria-controls={panelId}
                                       onClick={() => toggle(faq.id)}
-                                      className="group flex min-h-14 w-full items-start justify-between gap-5 px-6 py-5 text-start"
+                                      className="group flex min-h-14 w-full items-center justify-between gap-[1.125rem] px-[1.625rem] py-5 text-start"
                                     >
                                       <span
-                                        className="font-display text-xl leading-snug text-foreground [.locale-fa_&]:leading-[1.75] sm:text-2xl"
+                                        className="font-display flex-1 text-[1.09375rem] leading-[1.3] text-foreground [.locale-fa_&]:leading-[1.75]"
                                       >
                                         {faq.question}
                                       </span>
@@ -349,7 +202,7 @@ export default function FaqClient({
                                           are one shape rather than two icons
                                           swapping places. */}
                                       <span
-                                        className="relative mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-background text-primary transition-colors group-hover:bg-accent"
+                                        className="relative grid size-[1.875rem] shrink-0 place-items-center rounded-full bg-background text-rose transition-colors group-hover:bg-accent"
                                         aria-hidden="true"
                                       >
                                         <span className="absolute inset-x-0 mx-auto h-px w-3.5 bg-current" />
@@ -388,7 +241,7 @@ export default function FaqClient({
                                   className="grid grid-rows-[0fr] motion-safe:transition-[grid-template-rows] motion-safe:duration-300 data-[open]:grid-rows-[1fr]"
                                 >
                                   <div className="overflow-hidden">
-                                    <p className="max-w-2xl px-6 pb-6 text-sm leading-7 text-muted-foreground">
+                                    <p className="max-w-2xl px-[1.625rem] pb-6 text-[0.9375rem] leading-[1.68] text-card-foreground/80">
                                       {faq.answer}
                                     </p>
                                   </div>
@@ -414,20 +267,17 @@ export default function FaqClient({
           system's quiet call-to-action surface — the same one the newsletter
           panel uses — so the two read as the same kind of invitation. */}
       <section className="bg-background">
-        <div className="store-container store-section">
-          <div className="grid gap-8 rounded-[2.5rem] bg-sage-100 px-6 py-10 text-sage-900 sm:px-10 sm:py-12 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-16 lg:px-14">
-            <div className="max-w-2xl">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-sage-800 [.locale-fa_&]:tracking-normal">
-                {t("faq.closingEyebrow")}
-              </p>
-              <h2 className="store-section-title mt-4 text-sage-900">
+        <div className="store-container pb-[6.25rem]">
+          <div className="mx-auto flex max-w-[56.25rem] flex-wrap items-center justify-between gap-[1.875rem] rounded-[2.25rem] bg-sage-100 px-[clamp(1.5rem,4vw,2.5rem)] py-[clamp(2rem,5vw,2.75rem)] text-sage-900">
+            <div className="max-w-[38ch]">
+              <h2 className="font-display text-[1.625rem] leading-tight text-sage-900 [.locale-fa_&]:leading-normal">
                 {t("faq.closingTitle")}
               </h2>
-              <p className="store-lede mt-4 max-w-[52ch] text-sm text-sage-800 sm:text-base">
+              <p className="store-lede mt-2 text-[0.9375rem] text-sage-800">
                 {t("faq.closingDescription")}
               </p>
             </div>
-            <Button asChild size="lg" className="w-full gap-2 sm:w-auto">
+            <Button asChild size="lg" className="h-[2.875rem] gap-2 px-6 text-[0.9375rem]">
               <Link href="/contact">
                 {t("faq.contactForAnswer")}
                 <ArrowRight className="size-4 rtl:rotate-180" aria-hidden="true" />

@@ -25,12 +25,19 @@ export function buildProductsQueryKey(
   category: string | undefined,
   inStock: boolean | undefined,
   search: string,
-  apiSort: string | undefined
+  apiSort: string | undefined,
+  // The band is part of the identity of a catalogue page, not a display option:
+  // leaving it out would let the server's page for "any price" be seeded under a
+  // URL that asks for "up to 50", which is the same class of bug the key already
+  // exists to prevent for category and availability.
+  minPrice?: number,
+  maxPrice?: number
 ): string {
   const order = apiSort ?? "client-sort";
   const availability =
     typeof inStock === "boolean" ? (inStock ? "in-stock" : "out-of-stock") : "all";
-  return `${locale}|${category ?? "all"}|${availability}|${search}|${order}`;
+  const band = `${minPrice ?? ""}-${maxPrice ?? ""}`;
+  return `${locale}|${category ?? "all"}|${availability}|${search}|${order}|${band}`;
 }
 
 export const productKeys = {

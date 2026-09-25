@@ -5,7 +5,6 @@ import {
   CategoryDiscovery,
   FreshArrivals,
   Hero,
-  OrderHelp,
   ServicePromises,
   loadInitialBlog,
   loadInitialHomeCatalogue,
@@ -37,16 +36,15 @@ export async function generateMetadata({
  * stays on the server and only the genuinely interactive sections — the product
  * rail and the journal — ship as islands.
  *
- * The order is one journey, not a stack of blocks:
+ * The order is one journey, not a stack of blocks, and it is the source
+ * design's own seven bands:
  *
- *   Hero            what this shop sells, and one way in
+ *   Hero               what this shop sells, and two ways in
  *   CategoryDiscovery  every collection it sells, so "what for?" is answerable
  *   FreshArrivals      the one product surface — newest, buyable, today
- *   ServicePromises    how the shop works, on its own band
- *   BrandStory         the editorial turn, in its own words
+ *   ServicePromises    how ordering works, on the one warm band of the page
+ *   BrandStory         the editorial turn: one centred sentence
  *   BlogSection        what the shop knows, secondary to what it sells
- *   OrderHelp          the second conversion path, for the order that needs a
- *                      conversation rather than a cart
  *   Newsletter         the standing invitation, for the visitor who is not
  *                      buying today
  *
@@ -54,6 +52,10 @@ export async function generateMetadata({
  * order: a shopper who has just been told what the shop sells is ready to be
  * told how buying works, whereas the same strip placed directly under the hero
  * interrupts the one journey the page exists to start.
+ *
+ * There is no eighth "call us" band. The design opens the shop's phone line in
+ * the hero and repeats it in the utility bar and the footer, so a fourth copy
+ * of it directly above the footer was the page asking three times.
  */
 export default async function HomePage({
   params,
@@ -83,7 +85,6 @@ export default async function HomePage({
         allPosts={blog.initialBlogPosts}
         category={blog.initialBlogCategory}
       />
-      <OrderHelp locale={locale} />
       <Newsletter />
     </PageShell>
   );

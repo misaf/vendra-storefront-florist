@@ -9,6 +9,8 @@ import { useTranslations } from "@/shared/hooks/use-translations";
 import { useHydrated } from "@/shared/hooks/use-hydrated";
 import { useFormatPrice } from "@/shared/config/storefront-context";
 import { formatLocaleDate } from "@/shared/lib/date";
+import type { Locale } from "@/shared/i18n/routing";
+import { toLocaleDigits } from "@/shared/lib/hours";
 import { CheckCircle2, MessageCircle, Phone } from "lucide-react";
 import { telHref } from "@/shared/lib/utils";
 import { whatsappUrl } from "@/shared/lib/social-url";
@@ -40,6 +42,18 @@ export default function CheckoutSuccess() {
               `${t("contact.phone")}: ${latestOrder.shippingAddress.phone}`,
               `${t("contact.address")}: ${latestOrder.shippingAddress.address}, ${latestOrder.shippingAddress.city}, ${latestOrder.shippingAddress.zipCode}, ${latestOrder.shippingAddress.country}`,
             ].join("\n")
+          : "",
+        // What the buyer asked for at the delivery step. Each line only
+        // appears when it was actually chosen, so a request never carries a
+        // preference the buyer did not express.
+        latestOrder.delivery?.date
+          ? `${t("checkout.deliveryDate")}: ${formatLocaleDate(latestOrder.delivery.date, locale as Locale)}`
+          : "",
+        latestOrder.delivery?.window
+          ? `${t("checkout.deliveryWindow")}: ${latestOrder.delivery.window}`
+          : "",
+        latestOrder.delivery?.cardMessage
+          ? `${t("checkout.cardMessage")}: ${latestOrder.delivery.cardMessage}`
           : "",
       ]
         .filter(Boolean)
@@ -125,7 +139,7 @@ export default function CheckoutSuccess() {
                 <a href={telHref(storefront.contact.mobilePhone)} dir="ltr">
                   <Phone className="size-4" aria-hidden="true" />
                   <span className="sr-only">{t("common.callStore")}</span>
-                  {storefront.contact.mobilePhone}
+                  {toLocaleDigits(storefront.contact.mobilePhone, locale)}
                 </a>
               </Button>
               </div>

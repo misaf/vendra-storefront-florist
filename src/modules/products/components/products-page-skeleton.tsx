@@ -19,43 +19,51 @@ export function ProductsPageSkeleton() {
       <section className="bg-background pb-16 sm:pb-20">
         {/* Mirrors PageHeader's band padding so the real masthead lands where
             this one stood. */}
-        <div className="store-container store-section-head">
-          <Skeleton className="mb-4 h-5 w-40" />
-          <Skeleton className="mb-3 h-3 w-24" />
+        <div className="store-container store-section-head pb-[1.875rem] sm:pb-[1.875rem]">
           <Skeleton className="h-12 w-64" />
           <Skeleton className="mt-4 h-5 w-full max-w-md" />
         </div>
 
         <div className="store-container">
           <div className="grid min-w-0 gap-7 lg:grid-cols-[minmax(14.125rem,15.75rem)_minmax(0,1fr)] lg:items-start lg:gap-[clamp(1.875rem,3.4vw,2.75rem)]">
-            {/* Desktop filter rail */}
+            {/* Desktop filter rail — the same four groups in the same order as
+                ProductFilters, so the rail does not resettle when the real one
+                arrives. A shop with no price spread renders one group fewer;
+                that is the only place these two can disagree. */}
             <aside className="hidden pe-2.5 lg:block">
-              <Skeleton className="h-6 w-24" />
-              <Skeleton className="mt-7 h-5 w-28" />
+              {/* The rail opens on its search field. */}
+              <Skeleton className="h-[2.625rem] w-full rounded-full" />
+              <Skeleton className="mt-[2.125rem] h-5 w-28" />
               <div className="mt-3 space-y-2">
                 {Array.from({ length: 6 }, (_, i) => (
                   <Skeleton key={i} className="h-11 w-full rounded-full" />
                 ))}
               </div>
-              <Skeleton className="mt-7 h-px w-full" />
-              <Skeleton className="mt-7 h-5 w-24" />
+              <Skeleton className="mt-8 h-5 w-16" />
+              <Skeleton className="mt-4 h-[1.375rem] w-full rounded-full" />
+              <div className="mt-2.5 flex justify-between gap-3">
+                <Skeleton className="h-4 w-14" />
+                <Skeleton className="h-4 w-14" />
+              </div>
+              <Skeleton className="mt-8 h-5 w-24" />
               <div className="mt-3 space-y-2">
                 {Array.from({ length: 3 }, (_, i) => (
                   <Skeleton key={i} className="h-11 w-full rounded-full" />
                 ))}
               </div>
+              <Skeleton className="mt-8 h-11 w-full rounded-full" />
             </aside>
 
             {/* Product grid */}
             <div>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-3 border-b border-border pb-5">
                 <Skeleton className="h-5 w-24" />
                 <div className="flex gap-2">
-                  <Skeleton className="h-11 w-24 rounded-sm lg:hidden" />
-                  <Skeleton className="h-11 w-28 rounded-sm" />
+                  <Skeleton className="h-11 w-24 rounded-full lg:hidden" />
+                  <Skeleton className="h-11 w-28 rounded-full" />
                 </div>
               </div>
-              <div className="mb-7 mt-5 border-t border-border" />
+              <div className="mb-[1.625rem] mt-5" />
               <ProductGridSkeleton />
             </div>
           </div>

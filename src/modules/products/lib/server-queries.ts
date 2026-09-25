@@ -8,6 +8,7 @@ import {
   fetchProductCategories as fetchProductCategoriesCore,
   fetchProducts as fetchProductsCore,
   fetchProductsWithDetails as fetchProductsWithDetailsCore,
+  fetchCatalogPriceRange as fetchCatalogPriceRangeCore,
   searchCatalogProducts as searchCatalogProductsCore,
 } from "./queries";
 import type { FetchProductsParams } from "../types";
@@ -20,6 +21,11 @@ export const fetchProductsWithDetails = (params: FetchProductsParams = {}) =>
 
 export const searchCatalogProducts = (params: FetchProductsParams = {}) =>
   searchCatalogProductsCore(params, serverApiClient);
+
+/** The catalogue's price extent, deduplicated across the page's own awaits. */
+export const fetchCatalogPriceRange = cache((locale?: string) =>
+  fetchCatalogPriceRangeCore(locale, serverApiClient)
+);
 
 export const fetchProduct = (
   id: string | number,

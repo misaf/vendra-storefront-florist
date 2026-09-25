@@ -28,12 +28,12 @@ export function Newsletter({ className = "" }: NewsletterProps) {
   return (
     <section className={`bg-background ${className}`}>
       <div className="store-container store-section">
-        <div className="grid items-center gap-8 rounded-[2.5rem] bg-clay-100 px-6 py-10 text-clay-900 sm:px-10 sm:py-12 lg:grid-cols-2 lg:gap-14 lg:px-14">
+        <div className="organic-panel bg-clay-100 text-clay-900">
           <div>
-            <h2 className="store-section-title text-clay-900">
+            <h2 className="font-display text-[clamp(1.5rem,2.4vw,2.125rem)] leading-tight text-clay-900 [.locale-fa_&]:leading-normal">
               {t("newsletter.title")}
             </h2>
-            <p className="store-lede mt-3 max-w-[44ch] text-sm text-clay-800 sm:text-base">
+            <p className="store-lede mt-2.5 max-w-[40ch] text-[0.9375rem] text-clay-800">
               {t("newsletter.description")}
             </p>
           </div>

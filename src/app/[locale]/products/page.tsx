@@ -7,10 +7,13 @@ import {
 } from "@/modules/products";
 import {
   fetchProductCategories,
+  loadCatalogPriceRange,
   loadProductsPage,
   normalizeAvailability,
   normalizeCategory,
+  normalizePrice,
   normalizeSort,
+  resolvePriceRange,
 } from "@/modules/products/server";
 import { buildMetadata } from "@/shared/seo";
 import { readFirst, normalizeSearch } from "@/shared/lib/search-params";
@@ -66,14 +69,30 @@ async function ProductsPageContent({
   const search = normalizeSearch(readFirst(query.search));
   const sort = normalizeSort(readFirst(query.sort));
 
+  const requestedMin = normalizePrice(readFirst(query.minPrice));
+  const requestedMax = normalizePrice(readFirst(query.maxPrice));
+  const wantsBand = requestedMin != null || requestedMax != null;
+
+  // The price track is wanted by every catalogue render — the rail draws it —
+  // but it only *gates* the products fetch when the URL actually carries a
+  // bound, because clamping a bound to the track is what decides whether it
+  // narrows anything. So it is started here and awaited early only in that
+  // case; on the ordinary page load it resolves alongside the products instead
+  // of in front of them.
+  const priceRangePromise = loadCatalogPriceRange(locale);
+  const band = wantsBand
+    ? resolvePriceRange(requestedMin, requestedMax, await priceRangePromise)
+    : {};
+
   // The catalogue render already resolves this list server-side (and
   // fetchProductCategories is request-cached), so handing it to the client
   // costs nothing and spares the page a hydration swap: without it the heading
   // renders "All Products" for a category URL until the browser's own copy of
   // the list arrives. A failure here only costs the labels, never the page.
-  const [initial, categories] = await Promise.all([
-    loadProductsPage({ locale, category, availability, search, sort }),
+  const [initial, categories, priceRange] = await Promise.all([
+    loadProductsPage({ locale, category, availability, search, sort, ...band }),
     fetchProductCategories(locale).catch(() => []),
+    priceRangePromise,
   ]);
 
   return (
@@ -82,6 +101,7 @@ async function ProductsPageContent({
       initialPage={initial.initialPage}
       initialQueryKey={initial.initialQueryKey}
       initialCategories={categories}
+      priceRange={priceRange}
     />
   );
 }

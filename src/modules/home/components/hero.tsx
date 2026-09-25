@@ -1,11 +1,12 @@
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { PhoneCall } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { Link } from "@/shared/i18n/navigation";
-import { isRtlLocale } from "@/shared/lib/locale";
-import { getStorefrontName } from "@/shared/config/storefront";
+import { toLocaleDigits } from "@/shared/lib/hours";
+import { telHref } from "@/shared/lib/utils";
+import { getStorefrontConfig, getStorefrontName } from "@/shared/config/storefront";
 
 /**
  * The florist template's own hero art.
@@ -36,14 +37,11 @@ interface HeroProps {
  * survive on top of it, which meant two thirds of the artwork was being paid
  * for in bytes and then covered up.
  *
- * Under the buttons sit facts rather than slogans: how much is actually
- * buyable, and across how many collections. Both are counted from the
- * catalogue the page has already loaded, so neither can drift into a promise
- * the storefront cannot keep, and both answer the question the discovery band
- * below is about to act on. (The source design floats a hand-set "11k bouquets
- * tied by hand" plaque over the artwork; there is no such number in the API and
- * inventing one is the exact failure this paragraph exists to prevent, so the
- * plaque is not reproduced.)
+ * The design floats a plaque off the arch's leading edge carrying one number
+ * about the shop. Here that number is counted from the catalogue the page has
+ * already loaded — how much is actually buyable — rather than hand-set, so it
+ * cannot drift into a promise the storefront will not keep. With an
+ * unreachable catalogue there is no number, and the plaque is simply not drawn.
  */
 export async function Hero({
   locale,
@@ -52,15 +50,24 @@ export async function Hero({
 }: HeroProps) {
   const t = await getTranslations({ locale });
   const storeName = getStorefrontName(locale);
-  const ArrowIcon = isRtlLocale(locale) ? ArrowLeft : ArrowRight;
+  const phone = getStorefrontConfig().contact.mobilePhone;
 
   const formatCount = new Intl.NumberFormat(locale);
+  /* The plaque's number, set the way the design sets it: compact, so a large
+     catalogue reads "11K" at the width the plate allows rather than spilling
+     "11,482" across the label beside it. A small catalogue is unaffected —
+     compact notation leaves anything under a thousand exactly as it is. */
+  const formatPlaqueCount = new Intl.NumberFormat(locale, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  });
+  /* Three short assurances under the actions, as the design sets them: two
+     from the shop's standing promises and one counted from the catalogue.
+     "1 collection" is not a range worth advertising, so a shop with one simply
+     does not make the claim. */
   const facts = [
-    inStockTotal && inStockTotal > 0
-      ? t("home.heroInStock", { count: formatCount.format(inStockTotal) })
-      : null,
-    // "1 collection" is not a range worth advertising, so a shop with one
-    // simply does not make the claim.
+    t("home.heroQuality"),
+    t("home.heroDelivery"),
     collectionCount > 1
       ? t("home.heroCollections", { count: formatCount.format(collectionCount) })
       : null,
@@ -69,45 +76,59 @@ export async function Hero({
   return (
     <section className="organic-hero-shell bg-background">
       <div className="store-container">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+        <div className="grid items-center gap-[clamp(2.125rem,5vw,4rem)] [grid-template-columns:repeat(auto-fit,minmax(min(100%,23.75rem),1fr))]">
           <div>
             <Badge variant="sage" className="px-3.5 py-1.5 text-xs">
               {t("home.heroBadge")}
             </Badge>
-            <h1 className="font-display mt-5 text-[clamp(2.6rem,5.6vw,4.15rem)] leading-[1.02] tracking-[-0.02em] text-foreground [.locale-fa_&]:leading-[1.3] [.locale-fa_&]:tracking-normal">
+            <h1 className="font-display mt-3.5 text-[clamp(2.875rem,5.6vw,5.125rem)] leading-[0.98] tracking-[-0.02em] text-foreground [.locale-fa_&]:leading-[1.3] [.locale-fa_&]:tracking-normal">
               {t("home.title")}
             </h1>
-            <p className="store-lede mt-6 max-w-[44ch] text-base text-muted-foreground sm:text-lg">
+            <p className="store-lede mt-5 max-w-[44ch] text-lg leading-[1.62] text-foreground/78">
               {t("home.subtitle")}
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button asChild size="lg" className="group px-7">
+            {/* Two ways in, as the design pairs them: the catalogue, and the
+                shop's phone. A florist sells the order that needs a
+                conversation — a sympathy arrangement, a wedding, a date and a
+                budget — by talking, and that line belongs here rather than only
+                at the foot of the page. Tinted rather than outlined, so it
+                reads as the quieter of two offers without becoming a second
+                filled button beside the primary. */}
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Button asChild size="lg" className="h-12 px-[1.625rem] text-[0.9375rem]">
                 <Link
                   href="/products"
                   aria-label={`${t("common.shopNow")} — ${storeName}`}
                 >
                   {t("common.shopNow")}
-                  <ArrowIcon
-                    className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none rtl:group-hover:-translate-x-0.5"
-                    aria-hidden="true"
-                  />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="px-7">
-                <a href="#collections">{t("home.heroExplore")}</a>
+              <Button
+                asChild
+                size="lg"
+                variant="secondary"
+                className="h-12 gap-2.5 bg-clay-100 px-[1.375rem] text-[0.9375rem] text-clay-800 hover:bg-clay-200"
+              >
+                {/* A plain anchor: `tel:` is not an app route. */}
+                <a href={telHref(phone)}>
+                  <PhoneCall className="size-4" aria-hidden="true" />
+                  <span className="sr-only">{t("common.callStore")}</span>
+                  <span dir="ltr">{toLocaleDigits(phone, locale)}</span>
+                </a>
               </Button>
             </div>
 
             {/* A list, not three headings: supporting facts under the action,
-                marked by the system's dot rather than boxed in a pill. With an
-                unreachable catalogue there are no facts to state and the row
-                disappears rather than leaving an empty rule. */}
+                marked by the system's dot rather than boxed in a pill. */}
             {facts.length > 0 ? (
-              <ul className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-muted-foreground">
+              <ul className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-2.5 text-[0.84375rem] text-foreground/70">
                 {facts.map((fact) => (
                   <li key={fact} className="flex items-center gap-2.5">
-                    <span className="petal-dot" aria-hidden="true" />
+                    <span
+                      className="size-[0.4375rem] shrink-0 rounded-full bg-rose"
+                      aria-hidden="true"
+                    />
                     <span>{fact}</span>
                   </li>
                 ))}
@@ -130,6 +151,21 @@ export async function Hero({
                 className="object-cover object-[58%_center]"
               />
             </div>
+
+            {/* The plaque, cut off the plate's leading edge. It is pinned
+                inside the column on a phone — hung outside, it would sit under
+                the viewport's own edge — and only steps out at the width where
+                the two columns separate. */}
+            {inStockTotal && inStockTotal > 0 ? (
+              <div className="absolute bottom-8 start-2 flex items-center gap-3 rounded-full bg-background py-3.5 pe-[1.375rem] ps-[1.375rem] shadow-card lg:bottom-[3.375rem] lg:-start-[1.625rem]">
+                <span className="font-display text-[1.625rem] leading-none text-rose">
+                  {formatPlaqueCount.format(inStockTotal)}
+                </span>
+                <span className="max-w-[13ch] text-[0.78125rem] leading-[1.3] text-foreground/70">
+                  {t("home.heroPlaqueLabel")}
+                </span>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

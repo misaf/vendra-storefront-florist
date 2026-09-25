@@ -11,9 +11,11 @@ import { Badge } from "@/shared/components/ui/badge";
  * dropped onto this page: nothing else here inverts the surface, and the
  * photograph it framed is the same studio shot the home page already opens on.
  *
- * No image of its own, and no buttons. The story band directly below carries
- * the portrait, and an about page that opens by asking you to leave has not
- * earned the scroll yet — the page closes with the one CTA pair it needs.
+ * No image of its own, no lede and no buttons. The story band directly below
+ * carries both the portrait and the prose, so a paragraph here was the same
+ * voice twice before the reader had scrolled once; and an about page that
+ * opens by asking you to leave has not earned the scroll yet — the page closes
+ * with the one CTA pair it needs.
  */
 export async function AboutMasthead({ locale }: { locale: string }) {
   const t = await getTranslations({ locale });
@@ -25,10 +27,9 @@ export async function AboutMasthead({ locale }: { locale: string }) {
           <Badge variant="sage" className="px-3.5 py-1.5 text-xs">
             {t("common.storeTagline")}
           </Badge>
-          <h1 className="store-page-title mt-5">{t("about.heroTitle")}</h1>
-          <p className="store-lede mt-6 max-w-[52ch] text-base text-muted-foreground sm:text-lg">
-            {t("about.heroSubtitle")}
-          </p>
+          <h1 className="store-page-title mt-[1.125rem] tracking-[-0.02em]">
+            {t("about.heroTitle")}
+          </h1>
         </div>
       </div>
     </section>

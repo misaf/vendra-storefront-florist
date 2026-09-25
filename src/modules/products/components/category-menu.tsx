@@ -11,10 +11,7 @@ import { DynamicText } from "@/shared/components/dynamic-text";
 import { Button } from "@/shared/components/ui/button";
 
 interface CategoryMenuProps {
-  /**
-   * Trigger classes, supplied by the bar it sits in so the catalogue reads as
-   * one of the navigation links rather than as a control of its own kind.
-   */
+  /** Extra trigger classes; the bar's own link style is applied here. */
   className?: string;
   /** The catalogue is the section currently being viewed. */
   active?: boolean;
@@ -133,19 +130,20 @@ export function CategoryMenu({ className, active = false }: CategoryMenuProps) {
         onClick={() => setOpen((isOpen) => !isOpen)}
         onKeyDown={handleTriggerKeyDown}
         onBlur={handleFocusOut}
-        className={cn(
-          "inline-flex items-center gap-1.5",
-          className,
-          // Open reads exactly like current: both mean "this is the section
-          // you are in", and a fainter open state let the neighbouring active
-          // link out-shout the trigger whose panel was on screen.
-          open && !active && "bg-secondary text-foreground"
-        )}
+        // Open reads exactly like current: both mean "this is the section you
+        // are in", and a fainter open state let the neighbouring active link
+        // out-shout the trigger whose panel was on screen.
+        data-active={active || open}
+        className={cn("store-nav-link gap-1.5", className)}
       >
-        {t("common.products")}
+        {t("common.shop")}
         <ChevronDown
           aria-hidden="true"
-          className={cn("size-3.5 opacity-60 transition-transform duration-200", open && "rotate-180")}
+          className={cn(
+            "size-[0.8125rem] transition-transform duration-200",
+            open && "rotate-180"
+          )}
+          strokeWidth={2.75}
         />
       </button>
 
@@ -163,7 +161,7 @@ export function CategoryMenu({ className, active = false }: CategoryMenuProps) {
              by whichever viewport edge it collided with. */
           className={cn(
             "absolute end-0 top-[calc(50%+var(--store-header-h)/2)] z-10",
-            "w-[min(34.5rem,calc(100vw-3rem))] overflow-hidden rounded-[1.625rem] bg-popover p-4 text-popover-foreground shadow-panel",
+            "w-[min(34.5rem,calc(100vw-3rem))] overflow-hidden rounded-[1.625rem] bg-background p-4 text-foreground shadow-panel",
             /* The header is not the only chrome above the panel — the utility
                bar sits above it until the page is scrolled — so the allowance
                covers both. Without it a short viewport clips the last category
@@ -217,7 +215,7 @@ export function CategoryMenu({ className, active = false }: CategoryMenuProps) {
                 {t("home.collectionsSubtitle")}
               </p>
               <Button asChild variant="outline" size="sm" onClick={close}>
-                <Link href="/products">{t("common.allProducts")}</Link>
+                <Link href="/collections">{t("collections.viewAll")}</Link>
               </Button>
             </div>
           </div>
