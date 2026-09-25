@@ -1,0 +1,67 @@
+{
+  "projectId": "a72bb02e-2d3a-449a-968f-bc3c07726a8a",
+  "shape": "package",
+  "pkg": "vendra-storefront-florist",
+  "globalName": "VendraUI",
+  "entry": ".design-sync/entry.ts",
+  "buildCmd": "node .design-sync/build-css.mjs",
+  "srcDir": "src/shared/components/ui",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": ".design-sync/.cache/ds-styles.css",
+  "componentSrcMap": {
+    "Alert": "src/shared/components/ui/alert.tsx",
+    "Badge": "src/shared/components/ui/badge.tsx",
+    "Button": "src/shared/components/ui/button.tsx",
+    "Card": "src/shared/components/ui/card.tsx",
+    "Carousel": "src/shared/components/ui/carousel.tsx",
+    "Command": "src/shared/components/ui/command.tsx",
+    "Dialog": "src/shared/components/ui/dialog.tsx",
+    "DropdownMenu": "src/shared/components/ui/dropdown-menu.tsx",
+    "Empty": "src/shared/components/ui/empty.tsx",
+    "ErrorState": "src/shared/components/ui/error-state.tsx",
+    "Form": "src/shared/components/ui/form.tsx",
+    "Input": "src/shared/components/ui/input.tsx",
+    "Label": "src/shared/components/ui/label.tsx",
+    "Sheet": "src/shared/components/ui/sheet.tsx",
+    "Skeleton": "src/shared/components/ui/skeleton.tsx",
+    "Tabs": "src/shared/components/ui/tabs.tsx",
+    "Textarea": "src/shared/components/ui/textarea.tsx",
+    "Toaster": "src/shared/components/ui/sonner.tsx",
+    "WhatsAppIcon": "src/shared/components/ui/social-icons.tsx"
+  },
+  "overrides": {
+    "Dialog": {
+      "cardMode": "single",
+      "viewport": "720x420"
+    },
+    "Sheet": {
+      "cardMode": "single",
+      "viewport": "720x520"
+    },
+    "DropdownMenu": {
+      "cardMode": "single",
+      "primaryStory": "AccountMenu",
+      "viewport": "720x360"
+    },
+    "Toaster": {
+      "cardMode": "single",
+      "viewport": "720x320"
+    },
+    "Carousel": {
+      "cardMode": "column"
+    },
+    "Form": {
+      "cardMode": "column"
+    },
+    "Skeleton": {
+      "cardMode": "column"
+    },
+    "Tabs": {
+      "cardMode": "column"
+    },
+    "Textarea": {
+      "cardMode": "column"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}

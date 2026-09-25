@@ -1,0 +1,23 @@
+/* Design-sync stylesheet entry: the storefront's own globals.css, compiled
+   outside Next. next/font normally injects the four brand faces and their
+   --font-* variables; here they come from Google Fonts with the same weights
+   and subsets the [locale] layout requests. */
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Caprasimo&family=Vazirmatn:wght@400;500;600;700&family=Lalezar&display=swap");
+@import "../src/app/globals.css";
+@source "../src";
+@source "./previews";
+
+:root {
+  --font-figtree: "Figtree";
+  --font-caprasimo: "Caprasimo";
+  --font-vazirmatn: "Vazirmatn";
+  --font-lalezar: "Lalezar";
+}
+
+/* Safelist: the design agent composes with these families, and the design
+   environment has no Tailwind compiler — a class that isn't compiled here
+   doesn't exist there. */
+@source inline("{hover:,}{bg,text,border}-{clay,sage,sand}-{100,200,300,400,500,600,700,800,900}");
+@source inline("{hover:,}{bg,text,border}-{primary,secondary,card,muted,accent,background,foreground,destructive,rose,leaf,border}");
+@source inline("{text}-{primary,secondary,card,muted,accent,rose,destructive}-foreground");
+@source inline("{bg,text,border}-{primary,secondary,rose,leaf,foreground}/{10,20,50,80}");

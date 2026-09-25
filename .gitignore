@@ -26,3 +26,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+
+# design-sync
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
