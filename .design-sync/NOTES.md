@@ -12,6 +12,12 @@
   - `node .ds-sync/package-build.mjs --config .design-sync/config.json --node-modules ./node_modules --out ./ds-bundle`
   - re-sync: `node .ds-sync/resync.mjs --config .design-sync/config.json --node-modules ./node_modules --out ./ds-bundle --remote .design-sync/.cache/remote-sync.json`
 
+## Storefront "View" components
+
+- Module components that need the Next app (next/image, the locale-aware `Link`, storefront context, translations) are split in two: a drawing-only `*View` in `src/shared/components/ui/` (synced) and a thin wrapper in `src/modules/**` (not synced). Synced so far: `CategoryTileView`, `PriceView`, `BlogPostCardView`, `NewsletterFormView`.
+- Views take the router link through `asChild` + Radix `Slottable` (the child `<Link />` becomes the root, and the view's markup renders inside it). Previews pass a plain `href="#"` instead.
+- Previews use `organic-wash-*` divs as photography stand-ins, the same as the Carousel previews.
+
 ## Excluded components
 
 - `SafeImage` (`next/image`) and `ShareButton` (needs next-intl context) only run inside the Next app — left out of entry.ts and componentSrcMap.
@@ -27,6 +33,8 @@
 - `DropdownMenuTrigger asChild` + `Button`: the Radix trigger's `data-slot` replaces `data-slot="button"`, so the trigger loses the display face and the 44px floor from globals.css.
 
 ## Re-sync risks
+
+- 2026-09-26: the original project (`a72bb02e-…`) disappeared from this account mid-session (`list_projects` returned nothing, `get_file` returned 404). It was re-created as `7900327d-…`. If a pinned project 404s again, check the account or organization before creating another one.
 
 - `ds-entry.css` duplicates the font list from `src/app/[locale]/layout.tsx` — a font change there must be mirrored here.
 - `entry.ts` and `componentSrcMap` are hand-maintained; a new file in `src/shared/components/ui/` is invisible to the sync until added.
