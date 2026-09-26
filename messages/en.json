@@ -450,8 +450,10 @@
     "metadataDescription": "Find answers to common questions about flowers, orders, delivery, and care."
   },
   "newsletter": {
-    "title": "Subscribe to Our Newsletter",
-    "description": "Request occasional updates through a pre-addressed email you review and send.",
+    "eyebrow": "Newsletter",
+    "title": "Letters from the studio",
+    "lede": "What came in at the dawn market, how to keep it fresh at home, and first word when a seasonal collection opens.",
+    "note": "Unsubscribe from the foot of any letter.",
     "emailPlaceholder": "Enter your email address",
     "subscribe": "Request updates",
     "subscribing": "Preparing email...",

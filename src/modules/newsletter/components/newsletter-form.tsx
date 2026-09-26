@@ -23,8 +23,11 @@ type NewsletterFormValues = z.infer<ReturnType<typeof createNewsletterSchema>>;
  *
  * This owns validation and submission; the drawing is `NewsletterFormView`,
  * in the shared kit.
+ *
+ * `note` sits under the field and is dropped once the request is made — the
+ * success alert takes its place.
  */
-export default function NewsletterForm() {
+export default function NewsletterForm({ note }: { note?: string }) {
   const { t } = useTranslations();
   const storefront = useStorefrontConfig();
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -48,7 +51,7 @@ export default function NewsletterForm() {
          an address was subscribed when nothing left the browser. The visitor
          still reviews and sends the message in their own mail application. */
       window.location.href = `mailto:${storefront.contact.email}?subject=${encodeURIComponent(
-        t("newsletter.requestSubject")
+        t("newsletter.requestSubject"),
       )}&body=${encodeURIComponent(t("newsletter.requestBody", { email }))}`;
 
       setIsSubmitted(true);
@@ -61,19 +64,26 @@ export default function NewsletterForm() {
   };
 
   return (
-    <NewsletterFormView
-      status={isSubmitting ? "submitting" : isSubmitted ? "submitted" : "idle"}
-      error={error}
-      fieldError={form.formState.errors.email?.message}
-      inputProps={form.register("email")}
-      onSubmit={form.handleSubmit(onSubmit)}
-      labels={{
-        placeholder: t("newsletter.emailPlaceholder"),
-        subscribe: t("newsletter.subscribe"),
-        subscribing: t("newsletter.subscribing"),
-        subscribed: t("newsletter.subscribed"),
-        success: t("newsletter.success"),
-      }}
-    />
+    <>
+      <NewsletterFormView
+        status={
+          isSubmitting ? "submitting" : isSubmitted ? "submitted" : "idle"
+        }
+        error={error}
+        fieldError={form.formState.errors.email?.message}
+        inputProps={form.register("email")}
+        onSubmit={form.handleSubmit(onSubmit)}
+        labels={{
+          placeholder: t("newsletter.emailPlaceholder"),
+          subscribe: t("newsletter.subscribe"),
+          subscribing: t("newsletter.subscribing"),
+          subscribed: t("newsletter.subscribed"),
+          success: t("newsletter.success"),
+        }}
+      />
+      {note && !isSubmitted ? (
+        <p className="text-xs text-muted-foreground">{note}</p>
+      ) : null}
+    </>
   );
 }
