@@ -43,6 +43,7 @@
 
 - 2026-09-26: the original project (`a72bb02e-…`) disappeared from this account mid-session (`list_projects` returned nothing, `get_file` returned 404). It was re-created as `7900327d-…`. If a pinned project 404s again, check the account or organization before creating another one.
 
+- Claude Design's token scanner reads only the first ~100 KB of `_ds_bundle.css` (verified 2026-09-26: the manifest's last token sat at byte 100,102 of 185 KB). The brand palette therefore lives in `src/app/palette.css`, imported by globals.css *before* `tailwindcss`, so it compiles to ~13 KB. Anything that pushes those `:root` blocks back below the utilities hides clay/sage/sand and the semantic tokens from the app again. After a sync, check that `_ds_manifest.json` lists `--clay-100`.
 - `ds-entry.css` duplicates the font list from `src/app/[locale]/layout.tsx` — a font change there must be mirrored here.
 - `entry.ts` and `componentSrcMap` are hand-maintained; a new file in `src/shared/components/ui/` is invisible to the sync until added.
 - Preview tiles in Carousel use gradient stand-ins, not product photography.

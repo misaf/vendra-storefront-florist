@@ -1,0 +1,175 @@
+/* The palette lives in its own file, imported ahead of Tailwind, so it is
+   emitted near the top of the compiled stylesheet. Claude Design only reads
+   custom properties from the first ~100 KB of a stylesheet; after the
+   utilities these blocks sat past that and never showed up as tokens.
+   Source order does not change the cascade: these rules are unlayered, and
+   unlayered rules beat Tailwind's layers wherever they appear. */
+
+/* ── The Organic palette ────────────────────────────────────────────────
+   Imported from the "Houshang Flowers" canvas design. Three tonal ramps
+   (clay / sage / sand) generated on one shared lightness scale, plus the
+   semantic tokens the storefront's components already speak in, chosen from
+   those ramps.
+
+   `--primary` is the design's own `--color-accent` (#c67139 light, #dd9059
+   dark), matched exactly by choice. Its cream label measures 3.03:1 — below
+   WCAG 1.4.3's 4.5:1 for small text — so buttons set their labels in the
+   display face at 14px+, and small text that must read (prices, `text-rose`)
+   stays on the text-safe clay-700. */
+
+:root.dark {
+  --clay-100: #3b2113;
+  --clay-200: #52301c;
+  --clay-300: #6e4225;
+  --clay-400: #915a31;
+  --clay-500: #c07948;
+  --clay-600: #e2a071;
+  --clay-700: #eebb92;
+  --clay-800: #ffd8bd;
+  --clay-900: #ffeee2;
+
+  --sage-100: #262c1c;
+  --sage-200: #333c26;
+  --sage-300: #444f33;
+  --sage-400: #5a6845;
+  --sage-500: #7d8f5f;
+  --sage-600: #9aab7c;
+  --sage-700: #b8c79b;
+  --sage-800: #d6e2bd;
+  --sage-900: #eef4de;
+
+  --sand-100: #2a241f;
+  --sand-200: #362f28;
+  --sand-300: #473f36;
+  --sand-400: #5d5347;
+  --sand-500: #7a6f60;
+  --sand-600: #9a8e7c;
+  --sand-700: #bdb0a0;
+  --sand-800: #ddd2c1;
+  --sand-900: #120e0c;
+
+  --shadow-ink: #000000;
+
+  --background: #1b1613;
+  --foreground: #f3e9d8;
+  --card: #272019;
+  --card-foreground: #f3e9d8;
+  --popover: #272019;
+  --popover-foreground: #f3e9d8;
+  /* The design's dark-theme terracotta under cream-black text: 7.01:1 */
+  --primary: #dd9059;
+  --primary-foreground: #1b1613;
+  --secondary: #362f28;
+  --secondary-foreground: #f3e9d8;
+  --muted: #2a241f;
+  --muted-foreground: #9a8e7c;
+  --accent: #3b2113;
+  --accent-foreground: #ffd8bd;
+  --destructive: oklch(0.64 0.2 22);
+  /* The design's own divider: the ink at 18%. Decorative hairlines only. */
+  --border: color-mix(in srgb, #f3e9d8 18%, transparent);
+  /* Field boundaries carry more weight than the decorative hairline above
+     them — a text field's border is the only thing that says where the field
+     is, so it clears WCAG 2.1 SC 1.4.11 (Non-text Contrast, 3:1) on its own.
+     sand-500 measures 3.27:1 against the card. Only `border-input` and the
+     `bg-input/30` field fill use this token; the page's hairlines are
+     untouched. */
+  --input: #7a6f60;
+  --ring: #dd9059;
+  /* The storefront's one accent, in the Organic system's terracotta. Used as
+     small text (`text-rose`) as often as it is used as a fill, so it is the
+     text-safe step of the ramp: 9.30:1 on the card. */
+  --rose: #eebb92;
+  --rose-foreground: #1b1613;
+  /* The second accent — availability, growth, the quieter of the two tints. */
+  --leaf: #b8c79b;
+  --storefront-surface: #272019;
+  --storefront-brand: #120e0c;
+  --storefront-brand-foreground: #f3e9d8;
+  --storefront-brand-soft: #2a241f;
+  --storefront-brand-muted: #bdb0a0;
+  --storefront-text-muted: #9a8e7c;
+}
+
+:root {
+  --radius: 1rem;
+  /* The pinned navigation bar's height (the utility bar above it scrolls away).
+     Sticky asides and scroll anchors offset against this instead of guessing —
+     they used to sit at top-24 / top-28 / top-32 against a 4rem bar. */
+  --store-header-h: 4rem;
+  --font-persian: var(--font-vazirmatn), Tahoma, Arial, sans-serif;
+  /* Persian display is a real Persian display face, not the body face at its
+     heaviest. Lalezar is the Organic system's pairing for Caprasimo. */
+  --font-persian-display: var(--font-lalezar), var(--font-vazirmatn), Tahoma, serif;
+
+  --clay-100: #fff2eb;
+  --clay-200: #ffe1d0;
+  --clay-300: #ffc6a5;
+  --clay-400: #f6a06b;
+  --clay-500: #d67f48;
+  --clay-600: #b2622d;
+  --clay-700: #8c491a;
+  --clay-800: #643312;
+  --clay-900: #402310;
+
+  --sage-100: #f0fae1;
+  --sage-200: #e1eecc;
+  --sage-300: #ccdbb2;
+  --sage-400: #aebf92;
+  --sage-500: #8fa073;
+  --sage-600: #728157;
+  --sage-700: #56633f;
+  --sage-800: #3d472b;
+  --sage-900: #272e1b;
+
+  --sand-100: #f9f4ed;
+  --sand-200: #eee7db;
+  --sand-300: #dcd3c4;
+  --sand-400: #c0b6a5;
+  --sand-500: #a19786;
+  --sand-600: #82796a;
+  --sand-700: #645c50;
+  --sand-800: #474238;
+  --sand-900: #2e2b25;
+
+  --shadow-ink: #2e2b25;
+
+  --background: #f5ead8;
+  --foreground: #201e1d;
+  /* Surface sits *darker* than the page here, not lighter. That inversion is
+     the Organic system's, and it is what makes a card read as a resting place
+     cut into the cream rather than a sheet laid on top of it. */
+  --card: #ebddc5;
+  --card-foreground: #201e1d;
+  /* A popover has to lift off both the page and the cards it covers, so it is
+     the one surface that goes lighter than the ground. */
+  --popover: #f9f4ed;
+  --popover-foreground: #201e1d;
+  /* The design's terracotta under cream text: 3.03:1 (see the note above) */
+  --primary: #c67139;
+  --primary-foreground: #f5ead8;
+  --secondary: #eee7db;
+  --secondary-foreground: #201e1d;
+  --muted: #eee7db;
+  --muted-foreground: #645c50;
+  --accent: #fff2eb;
+  --accent-foreground: #643312;
+  --destructive: oklch(0.52 0.2 27);
+  /* The design's own divider: the ink at 16%. Decorative hairlines only. */
+  --border: color-mix(in srgb, #201e1d 16%, transparent);
+  /* See the dark block for why this is darker than `--border`: sand-600
+     measures 3.21:1 against the card and 3.5:1 against the page. */
+  --input: #82796a;
+  /* The design focuses in its accent: 3.03:1 on the page, just over the 3:1
+     floor a focus indicator has to hold — but 2.69:1 on the card, under it. */
+  --ring: #c67139;
+  --rose: #8c491a;
+  --rose-foreground: #fff2eb;
+  --leaf: #56633f;
+  --storefront-surface: #ebddc5;
+  --storefront-brand: #2e2b25;
+  --storefront-brand-foreground: #f9f4ed;
+  --storefront-brand-soft: #474238;
+  --storefront-brand-muted: #c0b6a5;
+  --storefront-text-muted: #645c50;
+}
